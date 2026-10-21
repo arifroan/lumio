@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.content.SharedPreferences;
+import android.view.WindowManager;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -19,14 +20,20 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.MimeTypes;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.common.MediaItem.SubtitleConfiguration;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
+@UnstableApi
 public class MainActivity extends AppCompatActivity {
     private static final int BG = Color.rgb(9, 11, 18);
     private static final int PANEL = Color.rgb(20, 24, 36);
@@ -38,9 +45,16 @@ public class MainActivity extends AppCompatActivity {
     private PlayerView playerView;
     private TextView nowPlaying;
     private TextView libraryCount;
+    private LinearLayout rootLayout;
+    private LinearLayout playerCard;
+    private Uri currentMediaUri;
+    private Uri selectedSubtitleUri;
+    private boolean fullscreen = false;
+    private int normalPlayerHeight;
     private LinearLayout libraryList;
     private final ArrayList<Uri> mediaItems = new ArrayList<>();
     private ActivityResultLauncher<String[]> openMedia;
+    private ActivityResultLauncher<String[]> openSubtitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +62,14 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
         getWindow().getDecorView().setSystemUiVisibility(0);
+
+        openSubtitle = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+            if (uri == null) return;
+            try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (SecurityException ignored) { }
+            selectedSubtitleUri = uri;
+            if (currentMediaUri != null) playUri(currentMediaUri);
+            Toast.makeText(this, "Subtitle selected", Toast.LENGTH_SHORT).show();
+        });
 
         openMedia = registerForActivityResult(
             new ActivityResultContracts.OpenMultipleDocuments(),
@@ -93,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
         scroll.setBackgroundColor(BG);
 
         LinearLayout root = new LinearLayout(this);
+        rootLayout = root;
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(20), dp(12), dp(20), dp(28));
         scroll.addView(root);
@@ -133,16 +156,17 @@ public class MainActivity extends AppCompatActivity {
         root.addView(text("A beautiful home for your videos and music.", 14, MUTED, false));
         addSpace(root, 22);
 
-        LinearLayout playerCard = new LinearLayout(this);
+        playerCard = new LinearLayout(this);
         playerCard.setOrientation(LinearLayout.VERTICAL);
         playerCard.setPadding(dp(8), dp(8), dp(8), dp(12));
         playerCard.setBackground(roundRect(PANEL, 24));
+        normalPlayerHeight = dp(245);
         playerView = new PlayerView(this);
         playerView.setUseController(true);
         playerView.setShowNextButton(false);
         playerView.setShowPreviousButton(false);
         playerView.setBackgroundColor(Color.BLACK);
-        playerCard.addView(playerView, new LinearLayout.LayoutParams(-1, dp(245)));
+        playerCard.addView(playerView, new LinearLayout.LayoutParams(-1, normalPlayerHeight));
         nowPlaying = text("Nothing playing yet", 15, TEXT, true);
         nowPlaying.setMaxLines(1);
         nowPlaying.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -151,6 +175,23 @@ public class MainActivity extends AppCompatActivity {
         TextView helper = text("Select files below to start playback", 12, MUTED, false);
         helper.setPadding(dp(8), 0, dp(8), dp(8));
         playerCard.addView(helper);
+
+        LinearLayout playbackActions = new LinearLayout(this);
+        playbackActions.setOrientation(LinearLayout.HORIZONTAL);
+        playbackActions.setGravity(Gravity.CENTER_VERTICAL);
+        Button subtitleButton = new Button(this);
+        subtitleButton.setText("Subtitles");
+        subtitleButton.setAllCaps(false);
+        subtitleButton.setTextColor(TEXT);
+        subtitleButton.setOnClickListener(v -> openSubtitle.launch(new String[]{"text/*", "application/x-subrip", "application/octet-stream"}));
+        playbackActions.addView(subtitleButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        Button fullscreenButton = new Button(this);
+        fullscreenButton.setText("Fullscreen");
+        fullscreenButton.setAllCaps(false);
+        fullscreenButton.setTextColor(TEXT);
+        fullscreenButton.setOnClickListener(v -> toggleFullscreen());
+        playbackActions.addView(fullscreenButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        playerCard.addView(playbackActions);
         root.addView(playerCard, params(-1, -2));
 
         addSpace(root, 24);
@@ -292,10 +333,50 @@ public class MainActivity extends AppCompatActivity {
 
     private void playUri(Uri uri) {
         if (player == null) return;
-        player.setMediaItem(MediaItem.fromUri(uri));
+        currentMediaUri = uri;
+        MediaItem item;
+        if (selectedSubtitleUri != null && isVideo(uri)) {
+            String path = selectedSubtitleUri.getLastPathSegment();
+            String lower = path == null ? "" : path.toLowerCase(java.util.Locale.ROOT);
+            String mime = lower.endsWith(".vtt") ? MimeTypes.TEXT_VTT : lower.endsWith(".ssa") || lower.endsWith(".ass") ? MimeTypes.TEXT_SSA : MimeTypes.APPLICATION_SUBRIP;
+            SubtitleConfiguration subtitle = new SubtitleConfiguration.Builder(selectedSubtitleUri)
+                .setMimeType(mime).setLanguage("und").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build();
+            item = new MediaItem.Builder().setUri(uri).setSubtitleConfigurations(Collections.singletonList(subtitle)).build();
+        } else {
+            item = MediaItem.fromUri(uri);
+        }
+        player.setMediaItem(item);
         player.prepare();
         player.play();
         nowPlaying.setText(displayName(uri));
+    }
+
+
+    private void toggleFullscreen() {
+        fullscreen = !fullscreen;
+        if (fullscreen) {
+            for (int i = 0; i < rootLayout.getChildCount(); i++) {
+                View child = rootLayout.getChildAt(i);
+                child.setVisibility(child == playerCard ? View.VISIBLE : View.GONE);
+            }
+            rootLayout.setPadding(0, 0, 0, 0);
+            playerCard.setPadding(0, 0, 0, 0);
+            playerCard.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
+            playerView.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1f));
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else {
+            for (int i = 0; i < rootLayout.getChildCount(); i++) rootLayout.getChildAt(i).setVisibility(View.VISIBLE);
+            rootLayout.setPadding(dp(20), dp(12), dp(20), dp(28));
+            playerCard.setPadding(dp(8), dp(8), dp(8), dp(12));
+            playerCard.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+            playerView.setLayoutParams(new LinearLayout.LayoutParams(-1, normalPlayerHeight));
+            getWindow().getDecorView().setSystemUiVisibility(0);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
     }
 
     private TextView text(String value, int size, int color, boolean bold) {
@@ -329,6 +410,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (fullscreen) toggleFullscreen();
         if (player != null) {
             player.release();
             player = null;
