@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Rational;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -39,17 +40,22 @@ import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
+import androidx.media3.ui.CaptionStyleCompat;
+import androidx.media3.ui.SubtitleView;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public final class PlayerActivity extends Activity {
     public static final String EXTRA_URI = "media_uri";
     public static final String EXTRA_TITLE = "media_title";
     public static final String EXTRA_AUDIO = "media_is_audio";
+    public static final String EXTRA_PLAYLIST = "media_playlist";
     private static final int REQUEST_SUBTITLE = 4301;
     private static final String PREFS = "lumio_playback";
     private static final float[] SPEEDS = {0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f};
@@ -76,6 +82,8 @@ public final class PlayerActivity extends Activity {
     private float panY = 0f;
     private float brightness = 0.7f;
     private float volumeFraction = 0.5f;
+    private int subtitleTextSize = 22;
+    private int subtitleStylePreset = 0;
     private float touchDownX;
     private float touchDownY;
     private boolean gestureHandled;
@@ -93,7 +101,10 @@ public final class PlayerActivity extends Activity {
         requestedUri = getIntent().getStringExtra(EXTRA_URI);
         requestedTitle = getIntent().getStringExtra(EXTRA_TITLE);
         requestedAudio = getIntent().getBooleanExtra(EXTRA_AUDIO, false);
+        subtitleTextSize = prefs.getInt("subtitle_size", 22);
+        subtitleStylePreset = prefs.getInt("subtitle_style", 0);
         buildPlayerUi();
+        applySubtitleAppearance();
     }
 
     private GradientDrawable rounded(int color, int stroke, int radiusDp) {
@@ -242,20 +253,50 @@ public final class PlayerActivity extends Activity {
             titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
             return;
         }
-        Uri uri = Uri.parse(requestedUri);
-        MediaItem item = new MediaItem.Builder()
-                .setUri(uri)
-                .setMediaId(requestedUri)
-                .setMediaMetadata(new androidx.media3.common.MediaMetadata.Builder()
-                        .setTitle(requestedTitle == null ? "Local media" : requestedTitle)
-                        .build())
-                .build();
+
+        List<MediaItem> playlist = new ArrayList<>();
+        int selectedIndex = 0;
+        String queueJson = getIntent().getStringExtra(EXTRA_PLAYLIST);
+        if (queueJson != null) {
+            try {
+                JSONArray rows = new JSONArray(queueJson);
+                int count = Math.min(rows.length(), 500);
+                for (int i = 0; i < count; i++) {
+                    JSONObject row = rows.optJSONObject(i);
+                    if (row == null) continue;
+                    String uriText = row.optString("uri", "");
+                    if (uriText.isEmpty()) continue;
+                    String name = row.optString("name", "Local media");
+                    MediaItem item = new MediaItem.Builder()
+                            .setUri(Uri.parse(uriText))
+                            .setMediaId(uriText)
+                            .setMediaMetadata(new androidx.media3.common.MediaMetadata.Builder().setTitle(name).build())
+                            .build();
+                    if (requestedUri.equals(uriText)) selectedIndex = playlist.size();
+                    playlist.add(item);
+                }
+            } catch (Exception ignored) {
+                playlist.clear();
+            }
+        }
+        if (playlist.isEmpty()) {
+            MediaItem item = new MediaItem.Builder()
+                    .setUri(Uri.parse(requestedUri))
+                    .setMediaId(requestedUri)
+                    .setMediaMetadata(new androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle(requestedTitle == null ? "Local media" : requestedTitle)
+                            .build())
+                    .build();
+            playlist.add(item);
+            selectedIndex = 0;
+        }
+
         long startPosition = 0L;
         String lastUri = prefs.getString("last_uri", "");
         if (requestedUri.equals(lastUri)) {
             startPosition = Math.max(0L, prefs.getLong("position:" + requestedUri, 0L));
         }
-        controller.setMediaItem(item, startPosition);
+        controller.setMediaItems(playlist, selectedIndex, startPosition);
         controller.prepare();
         controller.play();
         titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
@@ -386,6 +427,12 @@ public final class PlayerActivity extends Activity {
                     }
                     @Override public boolean onScale(ScaleGestureDetector detector) {
                         zoom = clamp(zoom * detector.getScaleFactor(), 1f, 3f);
+                        if (hasSelectedTextTrack()) {
+                            subtitleTextSize = Math.max(14, Math.min(38,
+                                    subtitleTextSize + (detector.getScaleFactor() > 1f ? 1 : -1)));
+                            applySubtitleAppearance();
+                            prefs.edit().putInt("subtitle_size", subtitleTextSize).apply();
+                        }
                         if (contentFrame != null) {
                             contentFrame.setScaleX(zoom);
                             contentFrame.setScaleY(zoom);
@@ -493,10 +540,91 @@ public final class PlayerActivity extends Activity {
                 });
             }
         }
-        labels.add("Load external subtitle (SRT/VTT/SSA)");
+        labels.add("Load external subtitle (SRT/VTT/ASS/SSA)");
         actions.add(this::pickSubtitle);
+        labels.add("Subtitle appearance and size");
+        actions.add(this::showSubtitleAppearance);
         new AlertDialog.Builder(this).setTitle("Subtitles").setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
                 .setNegativeButton("Close", null).show();
+    }
+
+    private void showSubtitleAppearance() {
+        String[] choices = {
+                "Text size: Small",
+                "Text size: Medium",
+                "Text size: Large",
+                "Text size: Extra large",
+                "White text with outline",
+                "Yellow text with shadow",
+                "White text on translucent black",
+                "Serif white text",
+                "Monospace yellow text",
+                "Android caption defaults"
+        };
+        new AlertDialog.Builder(this).setTitle("Subtitle appearance")
+                .setItems(choices, (dialog, which) -> {
+                    if (which <= 3) {
+                        int[] sizes = {16, 22, 28, 34};
+                        subtitleTextSize = sizes[which];
+                        prefs.edit().putInt("subtitle_size", subtitleTextSize).apply();
+                    } else if (which == 4) subtitleStylePreset = 0;
+                    else if (which == 5) subtitleStylePreset = 1;
+                    else if (which == 6) subtitleStylePreset = 2;
+                    else if (which == 7) subtitleStylePreset = 3;
+                    else if (which == 8) subtitleStylePreset = 4;
+                    else subtitleStylePreset = 5;
+                    prefs.edit().putInt("subtitle_style", subtitleStylePreset).apply();
+                    applySubtitleAppearance();
+                    showHint("Subtitle style updated");
+                }).setNegativeButton("Close", null).show();
+    }
+
+    private boolean hasSelectedTextTrack() {
+        if (controller == null) return false;
+        Tracks tracks = controller.getCurrentTracks();
+        for (Tracks.Group group : tracks.getGroups()) {
+            if (group.getType() == C.TRACK_TYPE_TEXT) {
+                for (int i = 0; i < group.length; i++) if (group.isTrackSelected(i)) return true;
+            }
+        }
+        return false;
+    }
+
+    private void applySubtitleAppearance() {
+        if (playerView == null) return;
+        SubtitleView subtitle = playerView.getSubtitleView();
+        if (subtitle == null) return;
+        subtitle.setApplyEmbeddedStyles(false);
+        subtitle.setApplyEmbeddedFontSizes(false);
+        subtitle.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleTextSize);
+        CaptionStyleCompat style;
+        switch (subtitleStylePreset) {
+            case 1:
+                style = new CaptionStyleCompat(Color.YELLOW, Color.TRANSPARENT, Color.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW, Color.BLACK, Typeface.DEFAULT);
+                break;
+            case 2:
+                style = new CaptionStyleCompat(Color.WHITE, 0xAA000000, Color.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_NONE, Color.BLACK, Typeface.DEFAULT_BOLD);
+                break;
+            case 3:
+                style = new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, Typeface.SERIF);
+                break;
+            case 4:
+                style = new CaptionStyleCompat(Color.YELLOW, 0x99000000, Color.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW, Color.BLACK, Typeface.MONOSPACE);
+                break;
+            case 5:
+                subtitle.setUserDefaultStyle();
+                subtitle.setUserDefaultTextSize();
+                return;
+            default:
+                style = new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT,
+                        CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, Typeface.DEFAULT);
+                break;
+        }
+        subtitle.setStyle(style);
     }
 
     private void pickSubtitle() {
