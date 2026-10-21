@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.media.AudioManager;
 import android.content.Context;
@@ -60,6 +61,7 @@ public final class PlayerActivity extends Activity {
     private TextView hint;
     private TextView titleText;
     private Button speedButton;
+    private Button pipButton;
     private Button zoomButton;
     private Button lockButton;
     private FrameLayout contentFrame;
@@ -161,6 +163,12 @@ public final class PlayerActivity extends Activity {
         Button tracks = button("Tracks");
         tracks.setOnClickListener(v -> showTrackMenu());
         topBar.addView(tracks, new LinearLayout.LayoutParams(-2, dp(40)));
+
+        pipButton = button("PiP");
+        pipButton.setOnClickListener(v -> enterPipIfSupported());
+        LinearLayout.LayoutParams pipParams = new LinearLayout.LayoutParams(-2, dp(40));
+        pipParams.setMargins(dp(4), 0, 0, 0);
+        topBar.addView(pipButton, pipParams);
 
         Button cc = button("CC");
         cc.setOnClickListener(v -> showSubtitleMenu());
@@ -351,7 +359,7 @@ public final class PlayerActivity extends Activity {
                                 showHint((delta >= 0 ? "+" : "") + Math.round(delta / 1000f) + "s");
                             }
                         } else {
-                            float fraction = -distanceY / Math.max(1, playerView.getHeight());
+                            float fraction = distanceY / Math.max(1, playerView.getHeight());
                             if (first.getX() < playerView.getWidth() / 2f) {
                                 brightness = clamp(brightness + fraction * 1.25f, 0.08f, 1f);
                                 WindowManager.LayoutParams attrs = getWindow().getAttributes();
@@ -552,12 +560,13 @@ public final class PlayerActivity extends Activity {
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        ViewGroup topBar = titleText != null && titleText.getParent() instanceof ViewGroup
+                ? (ViewGroup) titleText.getParent() : null;
         if (isInPictureInPictureMode) {
             if (playerView != null) playerView.setUseController(true);
-            if (titleText != null && titleText.getParent() instanceof View) {
-                View parent = (View) titleText.getParent();
-                if (parent instanceof ViewGroup) parent.setVisibility(View.GONE);
-            }
+            if (topBar != null) topBar.setVisibility(View.GONE);
+        } else {
+            if (topBar != null) topBar.setVisibility(View.VISIBLE);
         }
     }
 
