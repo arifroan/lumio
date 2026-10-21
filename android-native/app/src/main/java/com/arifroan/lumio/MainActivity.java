@@ -450,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
             if (bytes != null) return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (Exception ignored) {
         } finally {
-            try { retriever.release(); } catch (RuntimeException ignored) {}
+            try { retriever.release(); } catch (Exception ignored) {}
         }
         return null;
     }
