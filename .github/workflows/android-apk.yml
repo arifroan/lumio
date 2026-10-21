@@ -1,0 +1,42 @@
+name: Build Lumio Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["draft/android-player"]
+    paths:
+      - "android-native/**"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+      - name: Build debug APK
+        working-directory: android-native
+        run: gradle --no-daemon assembleDebug
+      - name: Report APK size
+        run: |
+          ls -lh android-native/app/build/outputs/apk/debug/app-debug.apk
+          du -b android-native/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-draft-debug-apk
+          path: android-native/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
