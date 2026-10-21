@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="Lumio is a free, modern media player for the web and Android. Play local videos and audio right in your browser.">
+  <title>Lumio — Media Player</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Lumio home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><defs><linearGradient id="lumio-grad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8b7cff"/><stop offset="1" stop-color="#39d9c5"/></linearGradient></defs><rect width="40" height="40" rx="13" fill="url(#lumio-grad)"/><path d="M16 11.5a2 2 0 0 0-3 1.75v13.5a2 2 0 0 0 3 1.75l12-6.75a2 2 0 0 0 0-3.5z" fill="#071016"/></svg></span>
+        <span class="brand-copy"><strong>Lumio</strong><small>MEDIA PLAYER</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="local-badge"><i></i> Local playback</span>
+        <button class="icon-button" id="installBtn" title="Install Lumio" aria-label="Install Lumio" hidden><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"/></svg></button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="main-column">
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow">YOUR MEDIA, YOUR SPACE</p>
+            <h1>Press play on<br><span>your world.</span></h1>
+            <p class="intro">A calmer place for your videos and music.<br class="desktop-only"> Private, simple, and ready to play.</p>
+          </div>
+          <div class="orb-art" aria-hidden="true"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="orb-ring"></div><div class="orb-core">L</div><span class="spark spark-a">✦</span><span class="spark spark-b">·</span></div>
+        </div>
+
+        <section class="player-card" aria-label="Media player">
+          <div class="player-stage" id="dropZone">
+            <video id="media" playsinline preload="metadata" aria-label="Media playback"></video>
+            <div class="audio-art" id="audioArt" hidden><div class="audio-disc"><span></span></div><p>NOW PLAYING</p><h2 id="audioTitle">Choose a track</h2><small id="audioArtist">Your music, uninterrupted</small></div>
+            <div class="empty-player" id="emptyPlayer">
+              <div class="play-orbit"><svg viewBox="0 0 24 24"><path d="m9 5 11 7-11 7z"/></svg></div>
+              <h2>Your next favourite moment.</h2>
+              <p>Open a video or audio file to get started.</p>
+              <button class="primary-button" id="chooseMain"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Open media</button>
+              <span class="drop-hint">or drop a file anywhere in this player</span>
+            </div>
+            <div class="stage-vignette"></div>
+            <div class="stage-topline"><span class="playing-label"><i></i><span id="playingLabel">READY WHEN YOU ARE</span></span><button class="stage-icon" id="pipBtn" title="Picture in picture" aria-label="Picture in picture"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="6" height="5" rx="1"/></svg></button></div>
+            <div class="center-play" id="centerPlay" hidden><button aria-label="Play or pause"><svg viewBox="0 0 24 24"><path d="m9 5 11 7-11 7z"/></svg></button></div>
+            <div class="controls" id="controls">
+              <div class="timeline-row"><span id="currentTime">0:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek through media"><span id="duration">0:00</span></div>
+              <div class="control-row">
+                <div class="control-group">
+                  <button class="control-button" id="backBtn" title="Back 10 seconds" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 1.5 6M4 4v7h7M12 8v8m-3-4h6"/></svg></button>
+                  <button class="control-button main-play" id="playBtn" title="Play" aria-label="Play"><svg class="play-icon" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg><svg class="pause-icon" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM14 5h4v14h-4z"/></svg></button>
+                  <button class="control-button" id="forwardBtn" title="Forward 10 seconds" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-1.5 6M20 4v7h-7M12 8v8m-3-4h6"/></svg></button>
+                </div>
+                <div class="control-group right-controls">
+                  <label class="volume-control" title="Volume"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4zM16 9a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg><input id="volume" type="range" min="0" max="1" step=".05" value=".85" aria-label="Volume"></label>
+                  <button class="speed-button" id="speedBtn" title="Playback speed">1×</button>
+                  <button class="control-button" id="fullscreenBtn" title="Fullscreen" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="now-playing">
+            <div class="track-art" id="trackArt"><svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="m10 8 6 4-6 4z"/></svg></div>
+            <div class="track-info"><strong id="trackName">Nothing playing yet</strong><span id="trackMeta">Choose a local file to begin</span></div>
+            <button class="secondary-button" id="openPlayerBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Open file</span></button>
+          </div>
+        </section>
+        <div class="privacy-note"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg><span><strong>Your files stay on your device.</strong> Lumio plays local media in your browser; files are not uploaded.</span></div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="side-card library-card">
+          <div class="side-heading"><div><p class="eyebrow">YOUR COLLECTION</p><h2>Media library</h2></div><span class="count-pill" id="fileCount">0</span></div>
+          <div class="library-tabs"><button class="tab active" data-filter="all">All media</button><button class="tab" data-filter="video">Videos</button><button class="tab" data-filter="audio">Audio</button></div>
+          <div class="library-list" id="libraryList"><div class="library-empty"><div class="empty-folder"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><strong>Your library is waiting</strong><span>Open files to build a temporary playlist.</span></div></div>
+          <button class="outline-button full-button" id="browseBtn"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4zM4 7V5h6l2 2"/></svg> Browse media files</button>
+          <input id="fileInput" type="file" accept="video/*,audio/*,.mp4,.m4v,.mkv,.webm,.mov,.avi,.mp3,.m4a,.aac,.wav,.ogg,.flac" multiple hidden>
+          <input id="subtitleInput" type="file" accept=".srt,.vtt,.txt" hidden>
+        </section>
+
+        <section class="side-card quick-card">
+          <p class="eyebrow">MADE FOR EVERYDAY</p>
+          <div class="feature-row"><span class="feature-icon mint"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span><div><strong>Private by design</strong><span>Local playback, no account.</span></div></div>
+          <div class="feature-row"><span class="feature-icon purple"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><strong>Your pace</strong><span>Fine-tune playback speed.</span></div></div>
+          <div class="feature-row"><span class="feature-icon blue"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg></span><div><strong>Made for mobile</strong><span>Comfortable on small screens.</span></div></div>
+        </section>
+        <div class="sidebar-footer"><span class="status-dot"></span> Lumio web preview <span class="version">v0.1</span><p>More features are on the way.</p></div>
+      </aside>
+    </main>
+    <footer class="footer"><span>© 2026 Lumio</span><span>Made for your media. Built to feel simple.</span></footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
