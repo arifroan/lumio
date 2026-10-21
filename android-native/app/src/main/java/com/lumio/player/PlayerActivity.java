@@ -24,6 +24,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.SeekBar;
 import android.media.AudioManager;
 import android.content.Context;
 
@@ -254,6 +255,7 @@ public final class PlayerActivity extends Activity {
             return;
         }
 
+        PlaybackService.setVolumeBoost(prefs.getFloat("volume_boost", 1.0f));
         List<MediaItem> playlist = new ArrayList<>();
         int selectedIndex = 0;
         String queueJson = getIntent().getStringExtra(EXTRA_PLAYLIST);
@@ -499,8 +501,44 @@ public final class PlayerActivity extends Activity {
                 });
             }
         }
-        new AlertDialog.Builder(this).setTitle("Audio track").setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
+        labels.add("Volume boost settings");
+        actions.add(this::showVolumeBoost);
+        new AlertDialog.Builder(this).setTitle("Audio track and sound").setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
                 .setNegativeButton("Close", null).show();
+    }
+
+    private void showVolumeBoost() {
+        int currentPercent = Math.round((prefs.getFloat("volume_boost", 1.0f) - 1.0f) * 100f);
+        final SeekBar seek = new SeekBar(this);
+        seek.setMax(100);
+        seek.setProgress(Math.max(0, Math.min(100, currentPercent)));
+        final TextView value = new TextView(this);
+        value.setTextColor(Color.WHITE);
+        value.setTextSize(15);
+        value.setPadding(0, 0, 0, dp(8));
+        value.setText((100 + seek.getProgress()) + "% output gain");
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                value.setText((100 + progress) + "% output gain");
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) { }
+            @Override public void onStopTrackingTouch(SeekBar bar) { }
+        });
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(24), dp(8), dp(24), dp(4));
+        content.addView(value, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(seek, new LinearLayout.LayoutParams(-1, -2));
+        new AlertDialog.Builder(this).setTitle("Volume boost")
+                .setMessage("Boost decoded PCM audio up to 200%. Strong boost may distort quiet or already loud recordings.")
+                .setView(content)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply", (dialog, which) -> {
+                    float factor = 1.0f + seek.getProgress() / 100f;
+                    prefs.edit().putFloat("volume_boost", factor).apply();
+                    PlaybackService.setVolumeBoost(factor);
+                    showHint("Volume boost " + Math.round(factor * 100f) + "%");
+                }).show();
     }
 
     private String readableLanguage(String language, String fallback) {
