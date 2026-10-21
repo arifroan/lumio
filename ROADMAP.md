@@ -9,18 +9,20 @@ Lumio is being developed as a **native Android media player first**. The browser
 - CI success is necessary but not sufficient: install and smoke-test each release on a physical Android device.
 - Codec support depends on Android/Media3 and device capabilities; do not promise universal playback.
 
-## v0.5.0 — Stability and release foundation (next)
+## v0.5.0 — Stability and release foundation
 - [ ] Verify launcher icon and animated splash on a physical Android phone.
 - [ ] Smoke-test local audio/video selection, playback, pause, seek, and relaunch.
 - [ ] Harden library behavior when a saved file is moved, deleted, or loses permission.
 - [ ] Check subtitle loading and fullscreen entry/exit.
 - [ ] Verify the APK build and document known limitations.
 
-## v0.6.0 — Playback essentials
-- [ ] Add previous/next track controls for the selected library.
-- [ ] Remember playback position for the last played item.
-- [ ] Improve errors for unsupported, unavailable, or permission-denied files.
-- [ ] Verify audio-only playback and audio-focus behavior.
+## v0.6.0 — Playback essentials (implementation started)
+- [x] Add previous/next controls for items in the selected library.
+- [x] Remember playback position for the last played item when the app pauses/stops.
+- [x] Add playback speed cycling (1×, 1.25×, 1.5×, 2×).
+- [x] Show a user-facing message when Media3 reports a playback error.
+- [ ] Verify audio-only playback and audio-focus behavior on a physical device.
+- [ ] Test previous/next boundaries, saved position, and speed controls on-device.
 
 ## v0.7.0 — Library usability
 - [ ] Add sorting and video/audio filters.
