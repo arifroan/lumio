@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Each source edit triggers CI; keep only the newest branch build running.
+concurrency:
+  group: lumio-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,7 +41,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lumio-draft-debug-apk
+          name: lumio-android-debug-apk
           path: android-native/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
