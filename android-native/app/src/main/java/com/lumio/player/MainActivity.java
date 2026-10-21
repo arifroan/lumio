@@ -1,34 +1,45 @@
 package com.lumio.player;
 
+import android.Manifest;
 import android.app.Activity;
-import android.app.PictureInPictureParams;
-import android.content.Context;
+import android.content.ContentUris;
 import android.content.Intent;
-import android.media.AudioManager;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Rational;
-import android.view.Window;
-import android.view.WindowManager;
+import android.provider.MediaStore;
 import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.graphics.Color;
+import android.view.Window;
+import android.widget.Toast;
 
-public class MainActivity extends Activity {
-    private static final int FILE_PICKER_REQUEST = 4107;
+import androidx.annotation.Nullable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public final class MainActivity extends Activity {
+    private static final int REQUEST_PICK_MEDIA = 4107;
+    private static final int REQUEST_SCAN_PERMISSION = 4108;
+    private static final int REQUEST_SCAN_AFTER_PICK = 4109;
     private WebView webView;
-    private ValueCallback<Uri[]> filePathCallback;
-    private AudioManager audioManager;
+    private boolean pendingScan;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         Window window = getWindow();
         window.setStatusBarColor(Color.rgb(16, 16, 24));
         window.setNavigationBarColor(Color.rgb(16, 16, 24));
@@ -36,131 +47,232 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(16, 16, 24));
-        webView.addJavascriptInterface(new LumioBridge(), "LumioNative");
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String scheme = request.getUrl().getScheme();
+                return scheme != null && !(scheme.equals("file") || scheme.equals("content") || scheme.equals("about"));
+            }
+        });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        webView.setWebViewClient(new WebViewClient());
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
-                    FileChooserParams params) {
-                if (filePathCallback != null) filePathCallback.onReceiveValue(null);
-                filePathCallback = callback;
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("*/*");
-                boolean subtitles = false;
-                if (params != null && params.getAcceptTypes() != null) {
-                    for (String type : params.getAcceptTypes()) {
-                        if (type != null && (type.contains("vtt") || type.contains("subrip")
-                                || type.contains(".srt") || type.contains(".vtt"))) {
-                            subtitles = true;
-                        }
-                    }
-                }
-                if (!subtitles) {
-                    intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"video/*", "audio/*"});
-                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                }
-                try {
-                    startActivityForResult(intent, FILE_PICKER_REQUEST);
-                } catch (Exception exception) {
-                    filePathCallback = null;
-                    callback.onReceiveValue(null);
-                    return false;
-                }
-                return true;
-            }
-        });
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        webView.addJavascriptInterface(new LumioBridge(), "LumioNative");
         setContentView(webView);
         webView.loadUrl("file:///android_asset/player.html");
     }
 
-    private class LumioBridge {
+    private final class LumioBridge {
         @JavascriptInterface
-        public void setBrightness(final float level) {
-            runOnUiThread(() -> {
-                WindowManager.LayoutParams attributes = getWindow().getAttributes();
-                attributes.screenBrightness = Math.max(0.05f, Math.min(1.0f, level));
-                getWindow().setAttributes(attributes);
-            });
+        public void pickMedia() {
+            runOnUiThread(() -> launchMediaPicker());
         }
 
         @JavascriptInterface
-        public void setVolumePercent(final int percent) {
-            runOnUiThread(() -> {
-                if (audioManager == null) return;
-                int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                int target = Math.round(max * Math.max(0, Math.min(100, percent)) / 100f);
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0);
-            });
+        public void scanLocalMedia() {
+            runOnUiThread(() -> beginMediaScan());
         }
 
         @JavascriptInterface
-        public boolean enterPictureInPicture() {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false;
+        public void playMedia(String uri, String title, boolean isAudio) {
             runOnUiThread(() -> {
+                if (uri == null || uri.trim().isEmpty()) {
+                    Toast.makeText(MainActivity.this, "Choose a media file first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+                intent.putExtra(PlayerActivity.EXTRA_URI, uri);
+                intent.putExtra(PlayerActivity.EXTRA_TITLE, title == null ? "Local media" : title);
+                intent.putExtra(PlayerActivity.EXTRA_AUDIO, isAudio);
                 try {
-                    PictureInPictureParams params = new PictureInPictureParams.Builder()
-                            .setAspectRatio(new Rational(16, 9))
-                            .build();
-                    enterPictureInPictureMode(params);
-                } catch (Exception ignored) {
-                    // The web player will show a fallback hint if PiP cannot be entered.
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Could not open this media file", Toast.LENGTH_LONG).show();
                 }
-            });
-            return true;
-        }
-
-        @JavascriptInterface
-        public void keepScreenOn(final boolean enabled) {
-            runOnUiThread(() -> {
-                if (webView != null) webView.setKeepScreenOn(enabled);
             });
         }
     }
 
+    private void launchMediaPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"video/*", "audio/*"});
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        try {
+            startActivityForResult(intent, REQUEST_PICK_MEDIA);
+        } catch (Exception e) {
+            Toast.makeText(this, "This device has no document picker", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean hasMediaReadPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            return checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        }
+        return Build.VERSION.SDK_INT < 23
+                || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void beginMediaScan() {
+        if (hasMediaReadPermission()) {
+            publishScannedMedia();
+            return;
+        }
+        pendingScan = true;
+        if (Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_SCAN_PERMISSION);
+        } else if (Build.VERSION.SDK_INT >= 23) {
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_SCAN_PERMISSION);
+        } else {
+            publishScannedMedia();
+        }
+    }
+
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FILE_PICKER_REQUEST && filePathCallback != null) {
-            Uri[] results = null;
-            if (resultCode == RESULT_OK && data != null) {
-                if (data.getClipData() != null) {
-                    int count = data.getClipData().getItemCount();
-                    results = new Uri[count];
-                    for (int i = 0; i < count; i++) {
-                        results[i] = data.getClipData().getItemAt(i).getUri();
-                    }
-                } else if (data.getData() != null) {
-                    results = new Uri[]{data.getData()};
-                }
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_SCAN_PERMISSION && pendingScan) {
+            pendingScan = false;
+            if (hasMediaReadPermission()) publishScannedMedia();
+            else {
+                callJs("window.onNativeMediaScan && window.onNativeMediaScan([], 'Storage permission was not granted. Use Add media to choose files manually.')");
             }
-            filePathCallback.onReceiveValue(results);
-            filePathCallback = null;
         }
     }
 
-    @Override
-    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
-        if (webView != null) webView.setKeepScreenOn(isInPictureInPictureMode);
+    private void publishScannedMedia() {
+        JSONArray array = new JSONArray();
+        appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
+        appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+        callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + array.toString() + ", null)");
+    }
+
+    private void appendStore(JSONArray results, Uri collection, boolean video) {
+        List<String> columns = new ArrayList<>();
+        columns.add(MediaStore.MediaColumns._ID);
+        columns.add(MediaStore.MediaColumns.DISPLAY_NAME);
+        columns.add(MediaStore.MediaColumns.SIZE);
+        columns.add(MediaStore.MediaColumns.MIME_TYPE);
+        columns.add(MediaStore.MediaColumns.DATE_MODIFIED);
+        if (video) columns.add(MediaStore.Video.Media.DURATION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) columns.add(MediaStore.MediaColumns.RELATIVE_PATH);
+        String sort = MediaStore.MediaColumns.DISPLAY_NAME + " COLLATE NOCASE ASC";
+        try (Cursor cursor = getContentResolver().query(collection, columns.toArray(new String[0]), null, null, sort)) {
+            if (cursor == null) return;
+            int idCol = cursor.getColumnIndex(MediaStore.MediaColumns._ID);
+            int nameCol = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
+            int sizeCol = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE);
+            int mimeCol = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE);
+            int dateCol = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED);
+            int pathCol = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH);
+            int durationCol = video ? cursor.getColumnIndex(MediaStore.Video.Media.DURATION) : -1;
+            while (cursor.moveToNext()) {
+                long id = idCol >= 0 ? cursor.getLong(idCol) : -1;
+                if (id < 0) continue;
+                Uri fileUri = ContentUris.withAppendedId(collection, id);
+                String name = nameCol >= 0 ? cursor.getString(nameCol) : (video ? "Video" : "Audio");
+                String mime = mimeCol >= 0 ? cursor.getString(mimeCol) : null;
+                JSONObject entry = new JSONObject();
+                try {
+                    entry.put("key", fileUri.toString());
+                    entry.put("uri", fileUri.toString());
+                    entry.put("name", name == null ? "Local media" : name);
+                    entry.put("size", sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L);
+                    entry.put("mime", mime == null ? (video ? "video/*" : "audio/*") : mime);
+                    entry.put("type", video ? "video" : "audio");
+                    entry.put("folder", pathCol >= 0 && cursor.getString(pathCol) != null ? cursor.getString(pathCol) : "Device storage");
+                    entry.put("lastModified", dateCol >= 0 ? cursor.getLong(dateCol) * 1000L : 0L);
+                    entry.put("duration", durationCol >= 0 ? cursor.getLong(durationCol) : 0L);
+                    results.put(entry);
+                } catch (JSONException ignored) { }
+            }
+        } catch (SecurityException ignored) {
+            // A permission may have been revoked while scanning; the picker remains available.
+        } catch (Exception ignored) {
+            // Leave other file types/results available when a manufacturer-specific media provider fails.
+        }
+    }
+
+    private JSONObject readDocument(Uri uri) {
+        JSONObject entry = new JSONObject();
+        String name = "Local media";
+        long size = 0L;
+        String mime = getContentResolver().getType(uri);
+        try (Cursor cursor = getContentResolver().query(uri,
+                new String[]{android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE},
+                null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameCol = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                int sizeCol = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE);
+                if (nameCol >= 0 && cursor.getString(nameCol) != null) name = cursor.getString(nameCol);
+                if (sizeCol >= 0) size = cursor.getLong(sizeCol);
+            }
+        } catch (Exception ignored) { }
+        boolean audio = (mime != null && mime.startsWith("audio/")) || looksLikeAudio(name);
+        try {
+            entry.put("key", uri.toString());
+            entry.put("uri", uri.toString());
+            entry.put("name", name);
+            entry.put("size", size);
+            entry.put("mime", mime == null ? (audio ? "audio/*" : "video/*") : mime);
+            entry.put("type", audio ? "audio" : "video");
+            entry.put("folder", "Chosen files");
+            entry.put("lastModified", System.currentTimeMillis());
+        } catch (JSONException ignored) { }
+        return entry;
+    }
+
+    private boolean looksLikeAudio(String name) {
+        String n = name == null ? "" : name.toLowerCase(Locale.ROOT);
+        return n.endsWith(".mp3") || n.endsWith(".m4a") || n.endsWith(".aac")
+                || n.endsWith(".wav") || n.endsWith(".ogg") || n.endsWith(".flac")
+                || n.endsWith(".opus") || n.endsWith(".wma") || n.endsWith(".mid")
+                || n.endsWith(".midi");
     }
 
     @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_PICK_MEDIA || resultCode != RESULT_OK || data == null) return;
+        JSONArray results = new JSONArray();
+        int flags = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        try {
+            if (data.getClipData() != null) {
+                for (int i = 0; i < data.getClipData().getItemCount(); i++) {
+                    Uri uri = data.getClipData().getItemAt(i).getUri();
+                    try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
+                    results.put(readDocument(uri));
+                }
+            } else if (data.getData() != null) {
+                Uri uri = data.getData();
+                try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
+                results.put(readDocument(uri));
+            }
+        } catch (Exception ignored) { }
+        callJs("window.onNativeMediaPicked && window.onNativeMediaPicked(" + results.toString() + ")");
+    }
+
+    private void callJs(String script) {
+        if (webView != null) runOnUiThread(() -> {
+            if (webView != null) webView.evaluateJavascript(script, null);
+        });
     }
 
     @Override
     protected void onDestroy() {
-        if (filePathCallback != null) filePathCallback.onReceiveValue(null);
-        if (webView != null) webView.destroy();
+        if (webView != null) {
+            webView.removeJavascriptInterface("LumioNative");
+            webView.destroy();
+            webView = null;
+        }
         super.onDestroy();
     }
 }
