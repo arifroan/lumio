@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,6 +14,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -38,12 +42,12 @@ import java.util.Locale;
 
 @UnstableApi
 public class MainActivity extends AppCompatActivity {
-    private static final int BG = Color.rgb(15, 16, 18);
-    private static final int SURFACE = Color.rgb(28, 29, 31);
-    private static final int SURFACE_2 = Color.rgb(39, 40, 42);
+    private static final int BG = Color.rgb(12, 13, 16);
+    private static final int SURFACE = Color.rgb(23, 24, 29);
+    private static final int SURFACE_2 = Color.rgb(34, 35, 41);
     private static final int TEXT = Color.rgb(247, 245, 241);
     private static final int MUTED = Color.rgb(157, 157, 155);
-    private static final int LIME = Color.rgb(255, 91, 46);
+    private static final int LIME = Color.rgb(255, 104, 68);
 
     private ExoPlayer player;
     private PlayerView playerView;
@@ -128,140 +132,210 @@ public class MainActivity extends AppCompatActivity {
     private void addBrandHeader(LinearLayout page) {
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        TextView mark = text("L", 18, TEXT, true);
+        TextView mark = text("L", 18, Color.WHITE, true);
         mark.setGravity(Gravity.CENTER);
-        mark.setBackground(shape(LIME, 10));
-        bar.addView(mark, lp(dp(34), dp(34)));
+        mark.setBackground(shape(LIME, 11));
+        bar.addView(mark, lp(dp(36), dp(36)));
         LinearLayout names = new LinearLayout(this);
         names.setOrientation(LinearLayout.VERTICAL);
         names.setPadding(dp(10), 0, 0, 0);
-        names.addView(text("lumio", 21, TEXT, true));
-        TextView sub = text("YOUR PERSONAL MEDIA SPACE", 8, MUTED, true);
-        sub.setLetterSpacing(0.08f);
-        names.addView(sub);
+        names.addView(text("lumio", 22, TEXT, true));
+        TextView tagline = text("WATCH. LISTEN. REPEAT.", 8, MUTED, true);
+        tagline.setLetterSpacing(0.11f);
+        names.addView(tagline);
         bar.addView(names, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView add = text("＋  ADD MEDIA", 10, TEXT, true);
+        TextView search = text("⌕", 27, TEXT, false);
+        search.setGravity(Gravity.CENTER);
+        search.setBackground(shape(SURFACE, 13));
+        search.setOnClickListener(v -> showLibrarySearch());
+        LinearLayout.LayoutParams sp = lp(dp(42), dp(42)); sp.rightMargin = dp(8);
+        bar.addView(search, sp);
+        TextView add = text("＋", 25, BG, true);
         add.setGravity(Gravity.CENTER);
-        add.setPadding(dp(13), 0, dp(13), 0);
-        add.setBackground(outlineShape(LIME, 18));
+        add.setBackground(shape(LIME, 13));
         add.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        bar.addView(add, lp(-2, dp(36)));
-        page.addView(bar, lp(-1, dp(42)));
-        View rule = new View(this);
-        rule.setBackgroundColor(Color.rgb(48, 48, 48));
-        LinearLayout.LayoutParams rp = lp(-1, dp(1)); rp.topMargin = dp(15);
-        page.addView(rule, rp);
-        space(page, 21);
+        bar.addView(add, lp(dp(42), dp(42)));
+        page.addView(bar, lp(-1, dp(44)));
+        space(page, 25);
     }
 
     private void buildHome(LinearLayout page) {
-        TextView eyebrow = text("YOUR LIBRARY, REIMAGINED", 10, LIME, true);
-        eyebrow.setLetterSpacing(0.12f);
+        TextView eyebrow = text("YOUR PERSONAL MEDIA SPACE", 9, LIME, true);
+        eyebrow.setLetterSpacing(0.15f);
         page.addView(eyebrow);
         space(page, 8);
-        page.addView(text("Press play.\nLeave the world behind.", 30, TEXT, true));
-        space(page, 8);
-        page.addView(text("Movies, memories and music — all on your device.", 12, MUTED, false));
+        page.addView(text("What are we\nin the mood for?", 31, TEXT, true));
+        space(page, 9);
+        page.addView(text("Your favourite stories, right here on your phone.", 12, MUTED, false));
+        space(page, 19);
+
+        LinearLayout modes = new LinearLayout(this);
+        modes.setGravity(Gravity.CENTER_VERTICAL);
+        addModeChip(modes, "For you", true, () -> renderTab("Home"));
+        addModeChip(modes, "Videos", false, () -> renderTab("Videos"));
+        addModeChip(modes, "Music", false, () -> renderTab("Music"));
+        page.addView(modes, lp(-1, dp(36)));
         space(page, 20);
-        LinearLayout hero = new LinearLayout(this);
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(19), dp(18), dp(19), dp(18));
-        hero.setBackground(gradientShape(Color.rgb(69, 34, 27), Color.rgb(31, 29, 29), 22));
-        LinearLayout heroTop = new LinearLayout(this);
-        heroTop.setGravity(Gravity.CENTER_VERTICAL);
-        TextView kicker = text("THE LUMIO EXPERIENCE", 9, Color.rgb(255, 177, 151), true);
-        kicker.setLetterSpacing(0.1f);
-        heroTop.addView(kicker, new LinearLayout.LayoutParams(0, -2, 1));
-        heroTop.addView(text("●  ON DEVICE", 8, Color.rgb(235, 207, 195), true));
-        hero.addView(heroTop);
-        space(hero, 18);
-        hero.addView(text(mediaItems.size() == 1 ? "1 title in your library" : mediaItems.size() + " titles in your library", 22, TEXT, true));
-        space(hero, 5);
-        hero.addView(text("Private by design. Ready when you are.", 12, Color.rgb(208, 193, 187), false));
-        space(hero, 18);
-        LinearLayout heroActions = new LinearLayout(this);
-        heroActions.setGravity(Gravity.CENTER_VERTICAL);
-        Button browse = button("＋  Import media", true);
-        browse.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        heroActions.addView(browse, new LinearLayout.LayoutParams(0, dp(45), 1.1f));
-        heroActions.addView(new View(this), lp(dp(9), 1));
-        Button explore = button("Explore library  ›", false);
-        explore.setOnClickListener(v -> renderTab("Videos"));
-        heroActions.addView(explore, new LinearLayout.LayoutParams(0, dp(45), 1f));
-        hero.addView(heroActions);
-        page.addView(hero, lp(-1, -2));
-        space(page, 25);
-        sectionTitle(page, "Find your next play", "EXPLORE");
-        LinearLayout tiles = new LinearLayout(this);
-        tiles.setOrientation(LinearLayout.HORIZONTAL);
-        addFeatureTile(tiles, "▶", "Videos", mediaCount(true) + " titles", Color.rgb(32, 34, 36), 1f, () -> renderTab("Videos"));
-        tiles.addView(new View(this), new LinearLayout.LayoutParams(dp(10), 1));
-        addFeatureTile(tiles, "♫", "Music", mediaCount(false) + " tracks", Color.rgb(35, 32, 31), 1f, () -> renderTab("Music"));
-        page.addView(tiles, lp(-1, dp(126)));
-        space(page, 25);
-        sectionTitle(page, "Recently added", mediaItems.isEmpty() ? "EMPTY" : String.format(Locale.ROOT, "%02d ITEMS", mediaItems.size()));
-        if (mediaItems.isEmpty()) emptyState(page, "Your story starts here", "Bring in videos or music from your phone. Lumio keeps your library on-device.");
-        else {
-            int start = Math.max(0, mediaItems.size() - 5);
-            for (int i = mediaItems.size() - 1; i >= start; i--) addMediaRow(page, mediaItems.get(i), true);
+
+        sectionTitle(page, currentMediaUri != null ? "Pick up where you left off" : "Your featured space", "PLAY");
+        Uri featured = currentMediaUri != null ? currentMediaUri : latestMedia();
+        FrameLayout feature = mediaArtwork(featured, 242, featured == null || isVideo(featured), 22);
+        if (featured != null) {
+            View shade = new View(this);
+            shade.setBackground(new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xF0000000, 0x00000000}));
+            feature.addView(shade, new FrameLayout.LayoutParams(-1, -1));
+            LinearLayout overlay = new LinearLayout(this);
+            overlay.setOrientation(LinearLayout.VERTICAL);
+            overlay.setPadding(dp(17), 0, dp(17), dp(16));
+            overlay.setGravity(Gravity.BOTTOM);
+            TextView pill = text(isVideo(featured) ? "  VIDEO  /  CONTINUE  " : "  AUDIO  /  NOW PLAYING  ", 9, TEXT, true);
+            pill.setGravity(Gravity.CENTER);
+            pill.setBackground(shape(0x66333333, 12));
+            overlay.addView(pill, lp(-2, dp(25)));
+            space(overlay, 8);
+            TextView title = text(displayName(featured), 20, Color.WHITE, true);
+            title.setMaxLines(2);
+            title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            overlay.addView(title);
+            space(overlay, 5);
+            LinearLayout actions = new LinearLayout(this);
+            actions.setGravity(Gravity.CENTER_VERTICAL);
+            TextView meta = text(isVideo(featured) ? "Continue watching" : "Continue listening", 11, Color.rgb(225,225,225), false);
+            actions.addView(meta, new LinearLayout.LayoutParams(0, -2, 1));
+            TextView play = text("▶  PLAY", 10, BG, true);
+            play.setGravity(Gravity.CENTER);
+            play.setBackground(shape(LIME, 17));
+            play.setPadding(dp(13), 0, dp(13), 0);
+            actions.addView(play, lp(-2, dp(35)));
+            overlay.addView(actions);
+            feature.addView(overlay, new FrameLayout.LayoutParams(-1, -1));
+            feature.setOnClickListener(v -> showPlayer(featured));
+        } else {
+            LinearLayout emptyOverlay = new LinearLayout(this);
+            emptyOverlay.setOrientation(LinearLayout.VERTICAL);
+            emptyOverlay.setGravity(Gravity.CENTER);
+            emptyOverlay.setPadding(dp(22), dp(20), dp(22), dp(20));
+            TextView badge = text("LUMIO ORIGINAL", 9, Color.rgb(255, 190, 168), true);
+            badge.setLetterSpacing(0.18f);
+            emptyOverlay.addView(badge);
+            space(emptyOverlay, 15);
+            TextView title = text("Your next favourite\nstarts here.", 24, Color.WHITE, true);
+            title.setGravity(Gravity.CENTER);
+            emptyOverlay.addView(title);
+            space(emptyOverlay, 16);
+            Button importButton = button("＋  Add your first media", true);
+            importButton.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
+            emptyOverlay.addView(importButton, lp(-2, dp(44)));
+            feature.addView(emptyOverlay, new FrameLayout.LayoutParams(-1, -1));
+            feature.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
         }
-        if (currentMediaUri != null) {
-            space(page, 15);
-            LinearLayout recent = card();
+        page.addView(feature, lp(-1, dp(242)));
+        space(page, 25);
+
+        LinearLayout libraryHeading = new LinearLayout(this);
+        libraryHeading.setGravity(Gravity.CENTER_VERTICAL);
+        libraryHeading.addView(text("Explore your library", 19, TEXT, true),
+            new LinearLayout.LayoutParams(0, -2, 1));
+        libraryHeading.addView(text("ALL MEDIA  ›", 9, LIME, true));
+        libraryHeading.setOnClickListener(v -> renderTab("Videos"));
+        page.addView(libraryHeading, lp(-1, dp(32)));
+        space(page, 12);
+
+        LinearLayout shelf = new LinearLayout(this);
+        shelf.setOrientation(LinearLayout.HORIZONTAL);
+        shelf.addView(createCollectionCard("MOVIES & CLIPS", mediaCount(true) + " videos", "▶", Color.rgb(32, 35, 47), () -> renderTab("Videos")),
+            new LinearLayout.LayoutParams(0, dp(112), 1));
+        shelf.addView(new View(this), lp(dp(10), 1));
+        shelf.addView(createCollectionCard("MUSIC & AUDIO", mediaCount(false) + " tracks", "♫", Color.rgb(48, 32, 34), () -> renderTab("Music")),
+            new LinearLayout.LayoutParams(0, dp(112), 1));
+        page.addView(shelf, lp(-1, dp(112)));
+        space(page, 25);
+
+        LinearLayout recentHead = new LinearLayout(this);
+        recentHead.setGravity(Gravity.CENTER_VERTICAL);
+        recentHead.addView(text("Recently added", 19, TEXT, true), new LinearLayout.LayoutParams(0, -2, 1));
+        recentHead.addView(text(String.format(Locale.ROOT, "%02d ITEMS", mediaItems.size()), 9, MUTED, true));
+        page.addView(recentHead, lp(-1, dp(30)));
+        space(page, 10);
+        if (mediaItems.isEmpty()) {
+            emptyState(page, "Your collection is waiting", "Add videos and music from your phone. Lumio plays them locally.");
+        } else {
+            LinearLayout recent = new LinearLayout(this);
             recent.setOrientation(LinearLayout.HORIZONTAL);
-            recent.setGravity(Gravity.CENTER_VERTICAL);
-            recent.setPadding(dp(13), dp(12), dp(13), dp(12));
-            TextView icon = text(isVideo(currentMediaUri) ? "▶" : "♫", 20, LIME, true);
-            icon.setGravity(Gravity.CENTER);
-            icon.setBackground(shape(Color.rgb(58, 36, 31), 12));
-            recent.addView(icon, lp(dp(42), dp(42)));
-            LinearLayout label = new LinearLayout(this);
-            label.setOrientation(LinearLayout.VERTICAL);
-            label.setPadding(dp(11), 0, dp(8), 0);
-            label.addView(text("PICK UP WHERE YOU LEFT OFF", 8, LIME, true));
-            label.addView(text(displayName(currentMediaUri), 12, TEXT, true));
-            recent.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
-            recent.addView(text("PLAY  ›", 9, TEXT, true));
-            recent.setOnClickListener(v -> showPlayer(currentMediaUri));
-            page.addView(recent, lp(-1, -2));
+            HorizontalScrollView shelfScroll = new HorizontalScrollView(this);
+            shelfScroll.setHorizontalScrollBarEnabled(false);
+            int start = Math.max(0, mediaItems.size() - 8);
+            for (int i = mediaItems.size() - 1; i >= start; i--) addPosterCard(recent, mediaItems.get(i), 150, 100);
+            shelfScroll.addView(recent);
+            page.addView(shelfScroll, lp(-1, dp(157)));
         }
     }
 
     private void buildLibrary(LinearLayout page, boolean videos) {
-        page.addView(text(videos ? "Videos" : "Music", 30, TEXT, true));
-        space(page, 5);
-        page.addView(text(videos ? "Your films, clips and recordings." : "Your songs, tracks and audio files.", 13, MUTED, false));
-        space(page, 18);
-        LinearLayout info = card();
-        info.setOrientation(LinearLayout.HORIZONTAL);
-        info.setGravity(Gravity.CENTER_VERTICAL);
-        info.setPadding(dp(15), dp(14), dp(15), dp(14));
-        TextView glyph = text(videos ? "▶" : "♫", 25, LIME, true);
-        info.addView(glyph, lp(dp(42), dp(42)));
-        LinearLayout labels = new LinearLayout(this);
-        labels.setOrientation(LinearLayout.VERTICAL);
-        labels.setPadding(dp(10), 0, 0, 0);
-        labels.addView(text(videos ? "VIDEO LIBRARY" : "AUDIO LIBRARY", 10, LIME, true));
-        labels.addView(text(mediaCount(videos) + (videos ? " videos" : " audio files"), 16, TEXT, true));
-        info.addView(labels);
-        page.addView(info, lp(-1, -2));
-        space(page, 17);
-        LinearLayout listHeader = new LinearLayout(this);
-        listHeader.setGravity(Gravity.CENTER_VERTICAL);
-        listHeader.addView(text("All " + (videos ? "videos" : "audio"), 18, TEXT, true),
-            new LinearLayout.LayoutParams(0, -2, 1));
-        TextView addAction = text("＋ Add", 11, LIME, true);
-        addAction.setOnClickListener(v -> openMedia.launch(new String[]{videos ? "video/*" : "audio/*"}));
-        listHeader.addView(addAction);
-        page.addView(listHeader, lp(-1, dp(32)));
-        space(page, 9);
-        int count = 0;
+        LinearLayout heading = new LinearLayout(this);
+        heading.setOrientation(LinearLayout.VERTICAL);
+        heading.addView(text(videos ? "CINEMA / LIBRARY" : "SOUND / LIBRARY", 9, LIME, true));
+        space(heading, 6);
+        heading.addView(text(videos ? "Your videos" : "Your music", 31, TEXT, true));
+        space(heading, 4);
+        heading.addView(text(videos ? "The big screen, wherever you are." : "Every track, all in one place.", 12, MUTED, false));
+        page.addView(heading);
+        space(page, 19);
+
+        LinearLayout summary = new LinearLayout(this);
+        summary.setGravity(Gravity.CENTER_VERTICAL);
+        summary.setPadding(dp(15), dp(13), dp(15), dp(13));
+        summary.setBackground(gradientShape(videos ? Color.rgb(31, 38, 52) : Color.rgb(53, 32, 38),
+            Color.rgb(24, 24, 29), 17));
+        LinearLayout counts = new LinearLayout(this);
+        counts.setOrientation(LinearLayout.VERTICAL);
+        counts.addView(text(videos ? "YOUR SCREENING ROOM" : "YOUR SOUNDTRACK", 9, videos ? Color.rgb(177, 195, 255) : Color.rgb(255, 176, 171), true));
+        space(counts, 5);
+        counts.addView(text(mediaCount(videos) + (videos ? (mediaCount(videos) == 1 ? " video" : " videos") :
+            (mediaCount(videos) == 1 ? " audio file" : " audio files")), 17, TEXT, true));
+        summary.addView(counts, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView plus = text("＋", 25, BG, true);
+        plus.setGravity(Gravity.CENTER);
+        plus.setBackground(shape(LIME, 12));
+        plus.setOnClickListener(v -> openMedia.launch(new String[]{videos ? "video/*" : "audio/*"}));
+        summary.addView(plus, lp(dp(42), dp(42)));
+        page.addView(summary, lp(-1, -2));
+        space(page, 23);
+
+        LinearLayout bar = new LinearLayout(this);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.addView(text(videos ? "All videos" : "All tracks", 19, TEXT, true), new LinearLayout.LayoutParams(0, -2, 1));
+        bar.addView(text("NEWEST FIRST  ⌄", 8, MUTED, true));
+        page.addView(bar, lp(-1, dp(30)));
+        space(page, 12);
+
+        ArrayList<Uri> filtered = new ArrayList<>();
         for (int i = mediaItems.size() - 1; i >= 0; i--) {
             Uri uri = mediaItems.get(i);
-            if (isVideo(uri) == videos) { addMediaRow(page, uri, false); count++; }
+            if (isVideo(uri) == videos) filtered.add(uri);
         }
-        if (count == 0) emptyState(page, videos ? "No videos yet" : "No audio yet",
-            videos ? "Add video files from your phone to see them here." : "Add music or other audio files from your phone to see them here.");
+        if (filtered.isEmpty()) {
+            emptyState(page, videos ? "Nothing on screen yet" : "It's quiet in here",
+                videos ? "Import movies, clips or recordings and their cover frames will appear here." :
+                "Import songs, albums or audio files to build your listening library.");
+            return;
+        }
+        if (videos) {
+            for (int i = 0; i < filtered.size(); i += 2) {
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.addView(createVideoTile(filtered.get(i)), new LinearLayout.LayoutParams(0, dp(190), 1));
+                row.addView(new View(this), lp(dp(11), 1));
+                if (i + 1 < filtered.size()) row.addView(createVideoTile(filtered.get(i + 1)), new LinearLayout.LayoutParams(0, dp(190), 1));
+                else row.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
+                LinearLayout.LayoutParams rp = lp(-1, dp(190)); rp.bottomMargin = dp(18);
+                page.addView(row, rp);
+            }
+        } else {
+            for (Uri uri : filtered) addMusicRow(page, uri);
+        }
     }
 
     private void buildSettings(LinearLayout page) {
@@ -296,6 +370,172 @@ public class MainActivity extends AppCompatActivity {
         row.addView(text(badge, 9, LIME, true));
         LinearLayout.LayoutParams p = lp(-1, -2); p.bottomMargin = dp(8);
         page.addView(row, p);
+    }
+
+    private Uri latestMedia() {
+        return mediaItems.isEmpty() ? null : mediaItems.get(mediaItems.size() - 1);
+    }
+
+    private void addModeChip(LinearLayout parent, String label, boolean selected, Runnable action) {
+        TextView chip = text(label, 11, selected ? BG : MUTED, true);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(14), 0, dp(14), 0);
+        chip.setBackground(shape(selected ? LIME : SURFACE, 16));
+        chip.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams p = lp(-2, dp(34));
+        p.rightMargin = dp(8);
+        parent.addView(chip, p);
+    }
+
+    private LinearLayout createCollectionCard(String title, String count, String glyph, int color, Runnable action) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(14), dp(12), dp(12), dp(10));
+        card.setBackground(gradientShape(color, SURFACE, 16));
+        TextView icon = text(glyph, 25, LIME, true);
+        card.addView(icon);
+        space(card, 8);
+        card.addView(text(title, 9, TEXT, true));
+        space(card, 3);
+        card.addView(text(count, 10, MUTED, false));
+        card.setOnClickListener(v -> action.run());
+        return card;
+    }
+
+    private FrameLayout mediaArtwork(Uri uri, int heightDp, boolean video, int radius) {
+        FrameLayout frame = new FrameLayout(this);
+        frame.setBackground(gradientShape(video ? Color.rgb(38, 47, 65) : Color.rgb(64, 34, 43),
+            Color.rgb(21, 22, 27), radius));
+        frame.setClipToOutline(true);
+        if (uri != null) {
+            Bitmap art = extractArtwork(uri, video);
+            if (art != null) {
+                ImageView image = new ImageView(this);
+                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                image.setImageBitmap(art);
+                frame.addView(image, new FrameLayout.LayoutParams(-1, -1));
+            } else {
+                addArtworkFallback(frame, video);
+            }
+        } else addArtworkFallback(frame, true);
+        if (heightDp > 0) frame.setMinimumHeight(dp(heightDp));
+        return frame;
+    }
+
+    private void addArtworkFallback(FrameLayout frame, boolean video) {
+        TextView monogram = text(video ? "L / FRAME" : "L / SOUND", 10, 0xAAFFFFFF, true);
+        monogram.setLetterSpacing(0.16f);
+        monogram.setRotation(-8f);
+        FrameLayout.LayoutParams mark = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
+        frame.addView(monogram, mark);
+        TextView big = text(video ? "PLAY" : "SIDE A", 37, 0x22FFFFFF, true);
+        big.setRotation(-8f);
+        FrameLayout.LayoutParams bg = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
+        frame.addView(big, bg);
+        View accent = new View(this);
+        accent.setBackground(shape(LIME, 3));
+        FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(dp(46), dp(4), Gravity.BOTTOM | Gravity.LEFT);
+        ap.leftMargin = dp(15); ap.bottomMargin = dp(17);
+        frame.addView(accent, ap);
+    }
+
+    private Bitmap extractArtwork(Uri uri, boolean video) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(this, uri);
+            if (video) return retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            byte[] bytes = retriever.getEmbeddedPicture();
+            if (bytes != null) return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception ignored) {
+        } finally {
+            try { retriever.release(); } catch (RuntimeException ignored) {}
+        }
+        return null;
+    }
+
+    private void addPosterCard(LinearLayout parent, Uri uri, int width, int height) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        FrameLayout art = mediaArtwork(uri, height, isVideo(uri), 13);
+        card.addView(art, lp(dp(width), dp(height)));
+        space(card, 7);
+        TextView name = text(displayName(uri), 11, TEXT, true);
+        name.setMaxLines(1);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        card.addView(name);
+        space(card, 2);
+        card.addView(text(isVideo(uri) ? "VIDEO" : "AUDIO", 8, MUTED, true));
+        card.setOnClickListener(v -> playUri(uri));
+        LinearLayout.LayoutParams p = lp(dp(width), -2);
+        p.rightMargin = dp(10);
+        parent.addView(card, p);
+    }
+
+    private LinearLayout createVideoTile(Uri uri) {
+        LinearLayout tile = new LinearLayout(this);
+        tile.setOrientation(LinearLayout.VERTICAL);
+        FrameLayout art = mediaArtwork(uri, 132, true, 14);
+        TextView play = text("▶", 15, Color.WHITE, true);
+        play.setGravity(Gravity.CENTER);
+        play.setBackground(shape(0x77000000, 18));
+        FrameLayout.LayoutParams playp = new FrameLayout.LayoutParams(dp(36), dp(36), Gravity.CENTER);
+        art.addView(play, playp);
+        tile.addView(art, lp(-1, dp(132)));
+        space(tile, 8);
+        TextView name = text(displayName(uri), 12, TEXT, true);
+        name.setMaxLines(2);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        tile.addView(name);
+        space(tile, 3);
+        tile.addView(text("TAP TO WATCH", 8, MUTED, true));
+        tile.setOnClickListener(v -> playUri(uri));
+        return tile;
+    }
+
+    private void addMusicRow(LinearLayout page, Uri uri) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(9), dp(9), dp(12), dp(9));
+        row.setBackground(shape(SURFACE, 15));
+        FrameLayout art = mediaArtwork(uri, 54, false, 11);
+        row.addView(art, lp(dp(54), dp(54)));
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(12), 0, dp(5), 0);
+        TextView name = text(displayName(uri), 12, TEXT, true);
+        name.setMaxLines(1);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        info.addView(name);
+        space(info, 4);
+        info.addView(text("LOCAL AUDIO  ·  READY TO PLAY", 8, MUTED, true));
+        row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        row.addView(text("▶", 13, LIME, true));
+        row.setOnClickListener(v -> playUri(uri));
+        LinearLayout.LayoutParams p = lp(-1, -2);
+        p.bottomMargin = dp(8);
+        page.addView(row, p);
+    }
+
+    private void showLibrarySearch() {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setSingleLine(true);
+        input.setHint("Search your media");
+        input.setTextColor(TEXT);
+        input.setHintTextColor(MUTED);
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Find something to play")
+            .setView(input)
+            .setPositiveButton("Search", (dialog, which) -> {
+                String query = input.getText().toString().trim().toLowerCase(Locale.ROOT);
+                if (query.isEmpty()) return;
+                Uri match = null;
+                for (Uri uri : mediaItems) if (displayName(uri).toLowerCase(Locale.ROOT).contains(query)) { match = uri; break; }
+                if (match != null) playUri(match);
+                else Toast.makeText(this, "No matching media found", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null).show();
     }
 
     private void addFeatureTile(LinearLayout parent, String icon, String title, String subtitle, int color, float weight, Runnable action) {
@@ -366,19 +606,27 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateBottomNav() {
         bottomNav.removeAllViews();
+        bottomNav.setPadding(dp(10), dp(8), dp(10), dp(8));
+        bottomNav.setBackgroundColor(BG);
         String[] tabs = {"Home", "Videos", "Music", "Settings"};
-        String[] icons = {"⌂", "▶", "♫", "⚙"};
+        String[] icons = {"⌂", "▣", "♫", "⚙"};
         for (int i = 0; i < tabs.length; i++) {
             final String tab = tabs[i];
-            LinearLayout item = new LinearLayout(this);
-            item.setOrientation(LinearLayout.VERTICAL);
-            item.setGravity(Gravity.CENTER);
             boolean selected = tab.equals(activeTab);
-            item.addView(text(icons[i], 20, selected ? LIME : MUTED, true));
-            TextView label = text(tab, 10, selected ? LIME : MUTED, selected);
-            item.addView(label);
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.HORIZONTAL);
+            item.setGravity(Gravity.CENTER);
+            item.setPadding(dp(5), 0, dp(5), 0);
+            if (selected) item.setBackground(shape(Color.rgb(39, 29, 29), 16));
+            TextView glyph = text(icons[i], 17, selected ? LIME : MUTED, true);
+            glyph.setGravity(Gravity.CENTER);
+            item.addView(glyph, lp(dp(27), dp(36)));
+            if (selected) {
+                TextView label = text(tab, 10, TEXT, true);
+                item.addView(label);
+            }
             item.setOnClickListener(v -> renderTab(tab));
-            bottomNav.addView(item, new LinearLayout.LayoutParams(0, -1, 1));
+            bottomNav.addView(item, new LinearLayout.LayoutParams(0, -1, selected ? 1.35f : 0.85f));
         }
         bottomNav.setVisibility(playerScreen || fullscreen ? View.GONE : View.VISIBLE);
     }
@@ -390,27 +638,28 @@ public class MainActivity extends AppCompatActivity {
         if (playerView != null) { playerView.setPlayer(null); playerView = null; }
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(16), dp(10), dp(16), dp(18));
+        page.setPadding(dp(17), dp(10), dp(17), dp(16));
         page.setBackgroundColor(BG);
         screenHost.addView(page, lp(-1, -1));
+
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView back = text("‹", 34, TEXT, false);
+        TextView back = text("‹", 31, TEXT, false);
         back.setGravity(Gravity.CENTER);
         back.setOnClickListener(v -> renderTab(isVideo(uri) ? "Videos" : "Music"));
-        top.addView(back, lp(dp(42), dp(46)));
-        LinearLayout titles = new LinearLayout(this);
-        titles.setOrientation(LinearLayout.VERTICAL);
-        titles.setGravity(Gravity.CENTER);
-        titles.addView(text(isVideo(uri) ? "VIDEO PLAYER" : "NOW PLAYING", 10, LIME, true));
-        titles.addView(text("LUMIO PLAYER", 9, MUTED, true));
-        top.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView more = text("•••", 20, TEXT, true);
+        top.addView(back, lp(dp(40), dp(42)));
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        titleBlock.setGravity(Gravity.CENTER);
+        titleBlock.addView(text(isVideo(uri) ? "NOW SHOWING" : "NOW PLAYING", 9, LIME, true));
+        titleBlock.addView(text("LUMIO", 8, MUTED, true));
+        top.addView(titleBlock, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView more = text("•••", 19, TEXT, true);
         more.setGravity(Gravity.CENTER);
         more.setOnClickListener(v -> showPlayerOptions());
-        top.addView(more, lp(dp(42), dp(46)));
-        page.addView(top, lp(-1, dp(48)));
-        space(page, 10);
+        top.addView(more, lp(dp(40), dp(42)));
+        page.addView(top, lp(-1, dp(42)));
+        space(page, 8);
 
         if (isVideo(uri)) {
             playerView = new PlayerView(this);
@@ -419,62 +668,81 @@ public class MainActivity extends AppCompatActivity {
             playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
             playerView.setShowNextButton(false);
             playerView.setShowPreviousButton(false);
-            playerView.setBackgroundColor(Color.BLACK);
-            LinearLayout.LayoutParams video = lp(-1, 0);
-            video.weight = 1f;
-            page.addView(playerView, video);
-            space(page, 14);
-            TextView title = text(displayName(uri), 17, TEXT, true);
-            title.setMaxLines(2);
-            title.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            page.addView(title);
-            space(page, 4);
-            page.addView(text("Local video • playback stays on your device", 11, MUTED, false));
-            space(page, 12);
+            playerView.setBackground(shape(Color.BLACK, 17));
+            playerView.setClipToOutline(true);
+            LinearLayout.LayoutParams vp = lp(-1, 0);
+            vp.weight = 1f;
+            page.addView(playerView, vp);
+            space(page, 15);
+            page.addView(text("YOUR VIDEO", 9, LIME, true));
+            space(page, 5);
+            TextView name = text(displayName(uri), 20, TEXT, true);
+            name.setMaxLines(2);
+            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            page.addView(name);
+            space(page, 6);
+            page.addView(text("Stored and played locally on this device.", 11, MUTED, false));
+            space(page, 13);
             LinearLayout actions = new LinearLayout(this);
-            actions.setOrientation(LinearLayout.HORIZONTAL);
             addAction(actions, "Subtitles", () -> openSubtitle.launch(new String[]{"text/*", "application/x-subrip", "application/octet-stream"}), 1f);
-            View gap = new View(this); actions.addView(gap, new LinearLayout.LayoutParams(dp(8), 1));
-            addAction(actions, "Fullscreen", this::toggleFullscreen, 1f);
+            actions.addView(new View(this), lp(dp(9), 1));
+            addAction(actions, "⛶  Fullscreen", this::toggleFullscreen, 1f);
             page.addView(actions, lp(-1, dp(46)));
         } else {
-            LinearLayout art = new LinearLayout(this);
-            art.setOrientation(LinearLayout.VERTICAL);
-            art.setGravity(Gravity.CENTER);
-            art.setBackground(shape(Color.rgb(43, 52, 35), 28));
-            TextView glyph = text("♫", 90, LIME, true);
-            glyph.setGravity(Gravity.CENTER);
-            art.addView(glyph, lp(-1, dp(190)));
-            art.addView(text("LUMIO  •  AUDIO", 10, Color.rgb(215, 227, 194), true));
+            FrameLayout art = mediaArtwork(uri, 0, false, 26);
             LinearLayout.LayoutParams artP = lp(-1, 0);
             artP.weight = 1f;
+            artP.topMargin = dp(4);
+            artP.bottomMargin = dp(18);
             page.addView(art, artP);
-            space(page, 22);
-            TextView title = text(displayName(uri), 21, TEXT, true);
+            TextView flag = text("LUMIO / AUDIO", 9, LIME, true);
+            flag.setLetterSpacing(0.12f);
+            page.addView(flag);
+            space(page, 7);
+            TextView title = text(displayName(uri), 22, TEXT, true);
             title.setMaxLines(2);
             title.setEllipsize(android.text.TextUtils.TruncateAt.END);
             page.addView(title);
             space(page, 5);
-            page.addView(text("Playing from your local library", 12, MUTED, false));
-            space(page, 22);
+            page.addView(text("Your own soundtrack.", 12, MUTED, false));
+            space(page, 15);
+            LinearLayout progressShell = new LinearLayout(this);
+            progressShell.setOrientation(LinearLayout.VERTICAL);
+            View track = new View(this);
+            track.setBackground(shape(Color.rgb(59, 60, 65), 4));
+            progressShell.addView(track, lp(-1, dp(3)));
+            page.addView(progressShell, lp(-1, dp(3)));
+            space(page, 17);
             LinearLayout transport = new LinearLayout(this);
             transport.setGravity(Gravity.CENTER);
-            addAction(transport, "‹ Previous", () -> playAdjacent(-1), 1f);
-            addAction(transport, player != null && player.isPlaying() ? "Ⅱ Pause" : "▶ Play", () -> {
+            addAction(transport, "◀|", () -> playAdjacent(-1), 0.85f);
+            Button play = button(player != null && player.isPlaying() ? "Ⅱ" : "▶", true);
+            play.setTextSize(20);
+            play.setOnClickListener(v -> {
                 if (player == null) return;
                 if (player.isPlaying()) player.pause(); else player.play();
                 showPlayer(currentMediaUri);
-            }, 1f);
-            addAction(transport, "Next ›", () -> playAdjacent(1), 1f);
-            page.addView(transport, lp(-1, dp(50)));
-            space(page, 8);
-            speedButton = button("Playback speed  " + playbackSpeed + "×", false);
-            speedButton.setOnClickListener(v -> { cyclePlaybackSpeed(); speedButton.setText("Playback speed  " + playbackSpeed + "×"); });
-            page.addView(speedButton, lp(-1, dp(44)));
-            space(page, 8);
-            Button queue = button("Open video library", false);
+            });
+            LinearLayout.LayoutParams playp = new LinearLayout.LayoutParams(0, dp(56), 1.2f);
+            playp.leftMargin = dp(8); playp.rightMargin = dp(8);
+            transport.addView(play, playp);
+            addAction(transport, "|▶", () -> playAdjacent(1), 0.85f);
+            page.addView(transport, lp(-1, dp(56)));
+            space(page, 14);
+            LinearLayout options = new LinearLayout(this);
+            options.setGravity(Gravity.CENTER_VERTICAL);
+            TextView speed = text("SPEED  " + playbackSpeed + "×", 10, TEXT, true);
+            speed.setGravity(Gravity.CENTER);
+            speed.setBackground(shape(SURFACE, 13));
+            speed.setOnClickListener(v -> { cyclePlaybackSpeed(); speed.setText("SPEED  " + playbackSpeed + "×"); });
+            options.addView(speed, new LinearLayout.LayoutParams(0, dp(42), 1));
+            options.addView(new View(this), lp(dp(8), 1));
+            TextView queue = text("OPEN MUSIC LIBRARY  ›", 9, TEXT, true);
+            queue.setGravity(Gravity.CENTER);
+            queue.setBackground(shape(SURFACE, 13));
             queue.setOnClickListener(v -> renderTab("Music"));
-            page.addView(queue, lp(-1, dp(44)));
+            options.addView(queue, new LinearLayout.LayoutParams(0, dp(42), 1.4f));
+            page.addView(options, lp(-1, dp(42)));
         }
         updateBottomNav();
     }
@@ -509,13 +777,13 @@ public class MainActivity extends AppCompatActivity {
         b.setMinHeight(dp(42));
         b.setMinimumHeight(dp(42));
         b.setPadding(dp(10), 0, dp(10), 0);
-        b.setBackground(shape(primary ? LIME : SURFACE_2, 14));
+        b.setBackground(shape(primary ? LIME : SURFACE_2, primary ? 14 : 12));
         return b;
     }
 
     private LinearLayout card() {
         LinearLayout box = new LinearLayout(this);
-        box.setBackground(shape(SURFACE, 14));
+        box.setBackground(shape(SURFACE, 15));
         return box;
     }
 
