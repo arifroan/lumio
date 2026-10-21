@@ -25,6 +25,15 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.SeekBar;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import android.media.AudioManager;
 import android.content.Context;
 
@@ -86,6 +95,7 @@ public final class PlayerActivity extends Activity {
     private float volumeFraction = 0.5f;
     private int subtitleTextSize = 22;
     private int subtitleStylePreset = 0;
+    private File generatedSubtitleFile;
     private float touchDownX;
     private float touchDownY;
     private boolean gestureHandled;
@@ -670,7 +680,7 @@ public final class PlayerActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/x-subrip", "text/vtt", "text/x-ssa", "application/octet-stream"});
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/x-subrip", "text/vtt", "text/x-ssa", "text/plain", "application/octet-stream"});
         try { startActivityForResult(intent, REQUEST_SUBTITLE); }
         catch (Exception e) { showHint("No document picker available"); }
     }
@@ -688,8 +698,58 @@ public final class PlayerActivity extends Activity {
         if ("srt".equals(ext)) mime = MimeTypes.APPLICATION_SUBRIP;
         else if ("vtt".equals(ext)) mime = MimeTypes.TEXT_VTT;
         else if ("ass".equals(ext) || "ssa".equals(ext)) mime = MimeTypes.TEXT_SSA;
-        else { showHint("Use an SRT, VTT, ASS or SSA file"); return; }
+        else if ("sub".equals(ext)) {
+            generatedSubtitleFile = convertMicroDvdSubtitle(uri, 25.0);
+            if (generatedSubtitleFile == null) { showHint("Could not read this SUB subtitle"); return; }
+            uri = Uri.fromFile(generatedSubtitleFile);
+            mime = MimeTypes.APPLICATION_SUBRIP;
+        } else { showHint("Use SRT, VTT, SUB, ASS or SSA subtitles"); return; }
         addSubtitle(uri, mime);
+    }
+
+    private File convertMicroDvdSubtitle(Uri uri, double framesPerSecond) {
+        if (framesPerSecond < 1.0 || framesPerSecond > 120.0) framesPerSecond = 25.0;
+        File output = new File(getCacheDir(), "lumio_sub_" + System.currentTimeMillis() + ".srt");
+        Pattern cuePattern = Pattern.compile("^\\s*\\{(\\d+)\\}\\{(\\d+)\\}(.*)$");
+        int index = 1;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                     getContentResolver().openInputStream(uri), StandardCharsets.UTF_8));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                     new FileOutputStream(output), StandardCharsets.UTF_8))) {
+            if (reader == null) return null;
+            String line;
+            boolean wrote = false;
+            while ((line = reader.readLine()) != null) {
+                Matcher matcher = cuePattern.matcher(line);
+                if (!matcher.matches()) continue;
+                long startFrame = Long.parseLong(matcher.group(1));
+                long endFrame = Long.parseLong(matcher.group(2));
+                if (endFrame <= startFrame) continue;
+                String text = matcher.group(3).replace("|", "\\n").trim();
+                if (text.isEmpty()) continue;
+                long startMs = Math.round(startFrame * 1000.0 / framesPerSecond);
+                long endMs = Math.round(endFrame * 1000.0 / framesPerSecond);
+                writer.write(Integer.toString(index++)); writer.newLine();
+                writer.write(srtTime(startMs) + " --> " + srtTime(endMs)); writer.newLine();
+                writer.write(text); writer.newLine(); writer.newLine();
+                wrote = true;
+            }
+            writer.flush();
+            if (!wrote) { output.delete(); return null; }
+            return output;
+        } catch (Exception e) {
+            output.delete();
+            return null;
+        }
+    }
+
+    private String srtTime(long milliseconds) {
+        long value = Math.max(0L, milliseconds);
+        long hours = value / 3600000L;
+        long minutes = (value / 60000L) % 60L;
+        long seconds = (value / 1000L) % 60L;
+        long millis = value % 1000L;
+        return String.format(Locale.US, "%02d:%02d:%02d,%03d", hours, minutes, seconds, millis);
     }
 
     private void addSubtitle(Uri uri, String mime) {
@@ -742,6 +802,7 @@ public final class PlayerActivity extends Activity {
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
             if (temporaryPath != null && !temporaryPath.trim().isEmpty()) new java.io.File(temporaryPath).delete();
+            if (generatedSubtitleFile != null) generatedSubtitleFile.delete();
         }
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (controllerFuture != null) {
