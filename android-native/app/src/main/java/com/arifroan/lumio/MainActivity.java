@@ -38,12 +38,12 @@ import java.util.Locale;
 
 @UnstableApi
 public class MainActivity extends AppCompatActivity {
-    private static final int BG = Color.rgb(12, 14, 20);
-    private static final int SURFACE = Color.rgb(24, 27, 36);
-    private static final int SURFACE_2 = Color.rgb(33, 37, 48);
-    private static final int TEXT = Color.rgb(246, 247, 250);
-    private static final int MUTED = Color.rgb(157, 164, 180);
-    private static final int LIME = Color.rgb(197, 245, 76);
+    private static final int BG = Color.rgb(15, 16, 18);
+    private static final int SURFACE = Color.rgb(28, 29, 31);
+    private static final int SURFACE_2 = Color.rgb(39, 40, 42);
+    private static final int TEXT = Color.rgb(247, 245, 241);
+    private static final int MUTED = Color.rgb(157, 157, 155);
+    private static final int LIME = Color.rgb(255, 91, 46);
 
     private ExoPlayer player;
     private PlayerView playerView;
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         bottomNav.setOrientation(LinearLayout.HORIZONTAL);
         bottomNav.setGravity(Gravity.CENTER);
         bottomNav.setPadding(dp(8), dp(7), dp(8), dp(7));
-        bottomNav.setBackgroundColor(Color.rgb(17, 19, 26));
+        bottomNav.setBackgroundColor(Color.rgb(21, 22, 23));
         appRoot.addView(bottomNav, new LinearLayout.LayoutParams(-1, dp(66)));
         setContentView(appRoot);
         renderTab("Home");
@@ -128,78 +128,100 @@ public class MainActivity extends AppCompatActivity {
     private void addBrandHeader(LinearLayout page) {
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        TextView logo = text("L", 22, BG, true);
-        logo.setGravity(Gravity.CENTER);
-        logo.setBackground(shape(LIME, 13));
-        bar.addView(logo, lp(dp(42), dp(42)));
+        TextView mark = text("L", 18, TEXT, true);
+        mark.setGravity(Gravity.CENTER);
+        mark.setBackground(shape(LIME, 10));
+        bar.addView(mark, lp(dp(34), dp(34)));
         LinearLayout names = new LinearLayout(this);
         names.setOrientation(LinearLayout.VERTICAL);
-        names.setPadding(dp(11), 0, 0, 0);
-        names.addView(text("lumio", 22, TEXT, true));
-        names.addView(text("VIDEO  •  AUDIO", 9, MUTED, true));
+        names.setPadding(dp(10), 0, 0, 0);
+        names.addView(text("lumio", 21, TEXT, true));
+        TextView sub = text("YOUR PERSONAL MEDIA SPACE", 8, MUTED, true);
+        sub.setLetterSpacing(0.08f);
+        names.addView(sub);
         bar.addView(names, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView add = text("+", 26, BG, true);
+        TextView add = text("＋  ADD MEDIA", 10, TEXT, true);
         add.setGravity(Gravity.CENTER);
-        add.setBackground(shape(LIME, 16));
+        add.setPadding(dp(13), 0, dp(13), 0);
+        add.setBackground(outlineShape(LIME, 18));
         add.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        bar.addView(add, lp(dp(42), dp(42)));
-        page.addView(bar, lp(-1, dp(48)));
-        space(page, 25);
+        bar.addView(add, lp(-2, dp(36)));
+        page.addView(bar, lp(-1, dp(42)));
+        View rule = new View(this);
+        rule.setBackgroundColor(Color.rgb(48, 48, 48));
+        LinearLayout.LayoutParams rp = lp(-1, dp(1)); rp.topMargin = dp(15);
+        page.addView(rule, rp);
+        space(page, 21);
     }
 
     private void buildHome(LinearLayout page) {
-        page.addView(text("YOUR MEDIA,\nYOUR WAY.", 31, TEXT, true));
-        space(page, 7);
-        page.addView(text("One home for everything you watch and hear.", 13, MUTED, false));
-        space(page, 22);
-
+        TextView eyebrow = text("YOUR LIBRARY, REIMAGINED", 10, LIME, true);
+        eyebrow.setLetterSpacing(0.12f);
+        page.addView(eyebrow);
+        space(page, 8);
+        page.addView(text("Press play.\nLeave the world behind.", 30, TEXT, true));
+        space(page, 8);
+        page.addView(text("Movies, memories and music — all on your device.", 12, MUTED, false));
+        space(page, 20);
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(18), dp(18), dp(18), dp(18));
-        hero.setBackground(shape(Color.rgb(39, 48, 32), 22));
-        hero.addView(text("YOUR COLLECTION", 10, LIME, true));
-        space(hero, 7);
-        hero.addView(text(mediaItems.size() + " files ready to play", 21, TEXT, true));
+        hero.setPadding(dp(19), dp(18), dp(19), dp(18));
+        hero.setBackground(gradientShape(Color.rgb(69, 34, 27), Color.rgb(31, 29, 29), 22));
+        LinearLayout heroTop = new LinearLayout(this);
+        heroTop.setGravity(Gravity.CENTER_VERTICAL);
+        TextView kicker = text("THE LUMIO EXPERIENCE", 9, Color.rgb(255, 177, 151), true);
+        kicker.setLetterSpacing(0.1f);
+        heroTop.addView(kicker, new LinearLayout.LayoutParams(0, -2, 1));
+        heroTop.addView(text("●  ON DEVICE", 8, Color.rgb(235, 207, 195), true));
+        hero.addView(heroTop);
+        space(hero, 18);
+        hero.addView(text(mediaItems.size() == 1 ? "1 title in your library" : mediaItems.size() + " titles in your library", 22, TEXT, true));
         space(hero, 5);
-        hero.addView(text("Local media. No account. No upload.", 12, Color.rgb(204, 211, 193), false));
-        space(hero, 17);
-        Button browse = button("＋   Add videos & music", true);
+        hero.addView(text("Private by design. Ready when you are.", 12, Color.rgb(208, 193, 187), false));
+        space(hero, 18);
+        LinearLayout heroActions = new LinearLayout(this);
+        heroActions.setGravity(Gravity.CENTER_VERTICAL);
+        Button browse = button("＋  Import media", true);
         browse.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        hero.addView(browse, lp(-1, dp(48)));
+        heroActions.addView(browse, new LinearLayout.LayoutParams(0, dp(45), 1.1f));
+        heroActions.addView(new View(this), lp(dp(9), 1));
+        Button explore = button("Explore library  ›", false);
+        explore.setOnClickListener(v -> renderTab("Videos"));
+        heroActions.addView(explore, new LinearLayout.LayoutParams(0, dp(45), 1f));
+        hero.addView(heroActions);
         page.addView(hero, lp(-1, -2));
         space(page, 25);
-
-        sectionTitle(page, "Continue exploring", "Browse");
+        sectionTitle(page, "Find your next play", "EXPLORE");
         LinearLayout tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
-        addFeatureTile(tiles, "▶", "Videos", mediaCount(true) + " videos", Color.rgb(38, 43, 57), 1f, () -> renderTab("Videos"));
-        View gap = new View(this);
-        tiles.addView(gap, new LinearLayout.LayoutParams(dp(10), 1));
-        addFeatureTile(tiles, "♫", "Music", mediaCount(false) + " audio files", Color.rgb(43, 48, 31), 1f, () -> renderTab("Music"));
-        page.addView(tiles, lp(-1, dp(130)));
+        addFeatureTile(tiles, "▶", "Videos", mediaCount(true) + " titles", Color.rgb(32, 34, 36), 1f, () -> renderTab("Videos"));
+        tiles.addView(new View(this), new LinearLayout.LayoutParams(dp(10), 1));
+        addFeatureTile(tiles, "♫", "Music", mediaCount(false) + " tracks", Color.rgb(35, 32, 31), 1f, () -> renderTab("Music"));
+        page.addView(tiles, lp(-1, dp(126)));
         space(page, 25);
-        sectionTitle(page, "Recently added", " " + mediaItems.size());
-        if (mediaItems.isEmpty()) {
-            emptyState(page, "Nothing here yet", "Tap Add videos & music to choose files from your phone.");
-        } else {
+        sectionTitle(page, "Recently added", mediaItems.isEmpty() ? "EMPTY" : String.format(Locale.ROOT, "%02d ITEMS", mediaItems.size()));
+        if (mediaItems.isEmpty()) emptyState(page, "Your story starts here", "Bring in videos or music from your phone. Lumio keeps your library on-device.");
+        else {
             int start = Math.max(0, mediaItems.size() - 5);
             for (int i = mediaItems.size() - 1; i >= start; i--) addMediaRow(page, mediaItems.get(i), true);
         }
         if (currentMediaUri != null) {
-            space(page, 20);
+            space(page, 15);
             LinearLayout recent = card();
             recent.setOrientation(LinearLayout.HORIZONTAL);
             recent.setGravity(Gravity.CENTER_VERTICAL);
-            recent.setPadding(dp(14), dp(12), dp(14), dp(12));
-            recent.addView(text(isVideo(currentMediaUri) ? "▶" : "♫", 22, LIME, true), lp(dp(36), dp(40)));
+            recent.setPadding(dp(13), dp(12), dp(13), dp(12));
+            TextView icon = text(isVideo(currentMediaUri) ? "▶" : "♫", 20, LIME, true);
+            icon.setGravity(Gravity.CENTER);
+            icon.setBackground(shape(Color.rgb(58, 36, 31), 12));
+            recent.addView(icon, lp(dp(42), dp(42)));
             LinearLayout label = new LinearLayout(this);
             label.setOrientation(LinearLayout.VERTICAL);
-            label.setPadding(dp(10), 0, 0, 0);
-            label.addView(text("LAST PLAYED", 9, LIME, true));
-            label.addView(text(displayName(currentMediaUri), 13, TEXT, true));
+            label.setPadding(dp(11), 0, dp(8), 0);
+            label.addView(text("PICK UP WHERE YOU LEFT OFF", 8, LIME, true));
+            label.addView(text(displayName(currentMediaUri), 12, TEXT, true));
             recent.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
-            TextView resume = text("RESUME  ›", 10, LIME, true);
-            recent.addView(resume);
+            recent.addView(text("PLAY  ›", 9, TEXT, true));
             recent.setOnClickListener(v -> showPlayer(currentMediaUri));
             page.addView(recent, lp(-1, -2));
         }
@@ -281,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
         tile.setOrientation(LinearLayout.VERTICAL);
         tile.setGravity(Gravity.CENTER_VERTICAL);
         tile.setPadding(dp(15), dp(13), dp(12), dp(13));
-        tile.setBackground(shape(color, 20));
+        tile.setBackground(shape(color, 15));
         tile.addView(text(icon, 25, LIME, true));
         space(tile, 7);
         tile.addView(text(title, 16, TEXT, true));
@@ -493,7 +515,7 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout card() {
         LinearLayout box = new LinearLayout(this);
-        box.setBackground(shape(SURFACE, 17));
+        box.setBackground(shape(SURFACE, 14));
         return box;
     }
 
@@ -614,6 +636,21 @@ public class MainActivity extends AppCompatActivity {
         t.setTextColor(color);
         t.setTypeface(Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL);
         return t;
+    }
+
+    private android.graphics.drawable.GradientDrawable outlineShape(int color, int radius) {
+        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
+        d.setColor(Color.TRANSPARENT);
+        d.setCornerRadius(dp(radius));
+        d.setStroke(dp(1), color);
+        return d;
+    }
+
+    private android.graphics.drawable.GradientDrawable gradientShape(int top, int bottom, int radius) {
+        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR, new int[]{top, bottom});
+        d.setCornerRadius(dp(radius));
+        return d;
     }
 
     private android.graphics.drawable.GradientDrawable shape(int color, int radius) {
