@@ -338,7 +338,11 @@ public class MainActivity extends AppCompatActivity {
         if (selectedSubtitleUri != null && isVideo(uri)) {
             String path = selectedSubtitleUri.getLastPathSegment();
             String lower = path == null ? "" : path.toLowerCase(java.util.Locale.ROOT);
-            String mime = lower.endsWith(".vtt") ? MimeTypes.TEXT_VTT : lower.endsWith(".ssa") || lower.endsWith(".ass") ? MimeTypes.TEXT_SSA : MimeTypes.APPLICATION_SUBRIP;
+            String detectedMime = getContentResolver().getType(selectedSubtitleUri);
+            String mime = MimeTypes.TEXT_VTT.equals(detectedMime) || lower.endsWith(".vtt")
+                ? MimeTypes.TEXT_VTT
+                : lower.endsWith(".ssa") || lower.endsWith(".ass")
+                    ? MimeTypes.TEXT_SSA : MimeTypes.APPLICATION_SUBRIP;
             SubtitleConfiguration subtitle = new SubtitleConfiguration.Builder(selectedSubtitleUri)
                 .setMimeType(mime).setLanguage("und").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build();
             item = new MediaItem.Builder().setUri(uri).setSubtitleConfigurations(Collections.singletonList(subtitle)).build();
