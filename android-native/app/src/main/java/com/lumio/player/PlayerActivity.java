@@ -725,7 +725,7 @@ public final class PlayerActivity extends Activity {
                 long startFrame = Long.parseLong(matcher.group(1));
                 long endFrame = Long.parseLong(matcher.group(2));
                 if (endFrame <= startFrame) continue;
-                String text = matcher.group(3).replace("|", "\\n").trim();
+                String text = matcher.group(3).replace("|", "\n").trim();
                 if (text.isEmpty()) continue;
                 long startMs = Math.round(startFrame * 1000.0 / framesPerSecond);
                 long endMs = Math.round(endFrame * 1000.0 / framesPerSecond);
