@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView libraryCount;
     private LinearLayout rootLayout;
     private LinearLayout playerCard;
+    private LinearLayout audioHero;
     private Uri currentMediaUri;
     private Uri selectedSubtitleUri;
     private boolean fullscreen = false;
@@ -157,9 +158,9 @@ public class MainActivity extends AppCompatActivity {
         eyebrow.setLetterSpacing(0.12f);
         collectionHeader.addView(eyebrow);
         addSpace(collectionHeader, 4);
-        collectionHeader.addView(text("Your media, ready to play.", 21, TEXT, true));
+        collectionHeader.addView(text("Pick up where you left off.", 20, TEXT, true));
         addSpace(collectionHeader, 3);
-        collectionHeader.addView(text("Audio and video stored on this device.", 12, MUTED, false));
+        collectionHeader.addView(text("Your collection stays on this device.", 12, MUTED, false));
         root.addView(collectionHeader);
         addSpace(root, 14);
 
@@ -169,6 +170,19 @@ public class MainActivity extends AppCompatActivity {
         playerCard.setPadding(dp(8), dp(8), dp(8), dp(8));
         playerCard.setBackground(roundRect(PANEL, 18));
         normalPlayerHeight = dp(196);
+        audioHero = new LinearLayout(this);
+        audioHero.setOrientation(LinearLayout.VERTICAL);
+        audioHero.setGravity(Gravity.CENTER);
+        audioHero.setBackground(roundRect(Color.rgb(24, 40, 49), 14));
+        TextView audioDisc = text("♫", 54, MINT, true);
+        audioDisc.setGravity(Gravity.CENTER);
+        audioHero.addView(audioDisc, params(-1, dp(112)));
+        TextView audioLabel = text("NOW PLAYING", 9, MUTED, true);
+        audioLabel.setLetterSpacing(0.18f);
+        audioHero.addView(audioLabel);
+        playerCard.addView(audioHero, new LinearLayout.LayoutParams(-1, dp(156)));
+        audioHero.setVisibility(View.GONE);
+
         playerView = new PlayerView(this);
         playerView.setVisibility(View.GONE);
         playerView.setUseController(true);
@@ -179,9 +193,9 @@ public class MainActivity extends AppCompatActivity {
         nowPlaying = text("Ready when you are", 15, TEXT, true);
         nowPlaying.setMaxLines(1);
         nowPlaying.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        nowPlaying.setPadding(dp(10), dp(14), dp(10), dp(3));
+        nowPlaying.setPadding(dp(10), dp(12), dp(10), dp(3));
         playerCard.addView(nowPlaying);
-        TextView helper = text("Select a track or video from your library", 12, MUTED, false);
+        TextView helper = text("Choose something from your collection", 12, MUTED, false);
         helper.setPadding(dp(10), 0, dp(10), dp(8));
         playerCard.addView(helper);
 
@@ -220,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         libraryHeader.addView(libraryCount);
         root.addView(libraryHeader, params(-1, dp(34)));
         addSpace(root, 4);
-        root.addView(text("Your files, in one place.", 12, MUTED, false));
+        root.addView(text("Tap any item to start playback.", 12, MUTED, false));
         addSpace(root, 13);
 
         libraryList = new LinearLayout(this);
@@ -304,9 +318,12 @@ public class MainActivity extends AppCompatActivity {
             empty.setGravity(Gravity.CENTER_VERTICAL);
             empty.setPadding(dp(16), dp(20), dp(16), dp(20));
             empty.setBackground(roundRect(PANEL, 14));
-            empty.addView(text("No media added yet", 15, TEXT, true));
+            TextView emptyIcon = text("♫  ▶", 23, MINT, true);
+            empty.addView(emptyIcon);
+            addSpace(empty, 10);
+            empty.addView(text("Your library starts here", 16, TEXT, true));
             addSpace(empty, 5);
-            empty.addView(text("Add audio or video files to build your library.", 12, MUTED, false));
+            empty.addView(text("Bring your music and videos together. Your files stay on your phone.", 12, MUTED, false));
             libraryList.addView(empty, params(-1, -2));
             return;
         }
@@ -316,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setPadding(dp(12), dp(10), dp(12), dp(10));
-            row.setBackground(roundRect(Color.rgb(17, 21, 31), 12));
+            row.setBackground(roundRect(Color.rgb(22, 27, 39), 14));
 
             TextView icon = text(isVideo(uri) ? "▶" : "♫", 17, MINT, true);
             icon.setGravity(Gravity.CENTER);
@@ -366,6 +383,7 @@ public class MainActivity extends AppCompatActivity {
         currentMediaUri = uri;
         boolean video = isVideo(uri);
         playerView.setVisibility(video ? View.VISIBLE : View.GONE);
+        audioHero.setVisibility(video ? View.GONE : View.VISIBLE);
         nowPlaying.setText(displayName(uri));
         MediaItem item;
         if (selectedSubtitleUri != null && isVideo(uri)) {
