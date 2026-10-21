@@ -514,8 +514,72 @@ public final class PlayerActivity extends Activity {
         }
         labels.add("Volume boost settings");
         actions.add(this::showVolumeBoost);
-        new AlertDialog.Builder(this).setTitle("Audio track and sound").setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
+        labels.add("Audio/video sync offset");
+        actions.add(this::showAvSyncDialog);
+        labels.add("Decoder preference");
+        actions.add(this::showDecoderMode);
+        new AlertDialog.Builder(this).setTitle("Audio and playback settings").setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
                 .setNegativeButton("Close", null).show();
+    }
+
+    private void showAvSyncDialog() {
+        int savedDelay = prefs.getInt("av_delay_ms", 0);
+        final SeekBar seek = new SeekBar(this);
+        seek.setMax(80);
+        seek.setProgress(Math.max(0, Math.min(80, Math.round(savedDelay / 50f) + 40)));
+        final TextView value = new TextView(this);
+        value.setTextColor(Color.WHITE);
+        value.setTextSize(15);
+        value.setPadding(0, 0, 0, dp(8));
+        Runnable updateLabel = () -> {
+            int milliseconds = (seek.getProgress() - 40) * 50;
+            String sign = milliseconds > 0 ? "+" : "";
+            String direction = milliseconds > 0 ? "later" : milliseconds < 0 ? "earlier" : "neutral";
+            value.setText("Audio offset: " + sign + milliseconds + " ms (" + direction + ")");
+        };
+        updateLabel.run();
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) { updateLabel.run(); }
+            @Override public void onStartTrackingTouch(SeekBar bar) { }
+            @Override public void onStopTrackingTouch(SeekBar bar) { }
+        });
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(24), dp(8), dp(24), dp(4));
+        content.addView(value, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(seek, new LinearLayout.LayoutParams(-1, -2));
+        new AlertDialog.Builder(this).setTitle("Audio/video synchronization")
+                .setMessage("Adjust audio timestamps in 50 ms steps. Positive values shift audio later; negative values shift it earlier. Device/codec behavior can vary.")
+                .setView(content)
+                .setNeutralButton("Reset", (dialog, which) -> {
+                    prefs.edit().putInt("av_delay_ms", 0).apply();
+                    PlaybackService.setAudioDelayMillis(0);
+                    showHint("Audio sync reset");
+                })
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply", (dialog, which) -> {
+                    int delay = (seek.getProgress() - 40) * 50;
+                    prefs.edit().putInt("av_delay_ms", delay).apply();
+                    PlaybackService.setAudioDelayMillis(delay);
+                    showHint("Audio offset " + (delay > 0 ? "+" : "") + delay + " ms");
+                }).show();
+    }
+
+    private void showDecoderMode() {
+        String[] choices = {"Automatic (recommended)", "Hardware preferred", "Software preferred"};
+        String saved = prefs.getString("decoder_mode", "auto");
+        int selected = "hardware".equals(saved) ? 1 : "software".equals(saved) ? 2 : 0;
+        new AlertDialog.Builder(this).setTitle("Decoder preference")
+                .setSingleChoiceItems(choices, selected, (dialog, which) -> {
+                    String mode = which == 1 ? "hardware" : which == 2 ? "software" : "auto";
+                    prefs.edit().putString("decoder_mode", mode).apply();
+                    PlaybackService.setDecoderMode(mode);
+                    dialog.dismiss();
+                    showHint("Decoder preference: " + choices[which]);
+                })
+                .setMessage("The player prefers the selected decoder type and keeps a fallback list for compatibility. HW+ is vendor-specific, so Lumio uses Android codec selection rather than copying another player's mode names.")
+                .setNegativeButton("Close", null)
+                .show();
     }
 
     private void showVolumeBoost() {
