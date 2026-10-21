@@ -7,6 +7,7 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.content.SharedPreferences;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
                         added++;
                     }
                 }
+                saveLibrary();
                 refreshLibrary();
                 if (added > 0) {
                     Toast.makeText(this, added + " file(s) added to your library", Toast.LENGTH_SHORT).show();
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
             }
         );
 
+        loadLibrary();
         buildNativeInterface();
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
@@ -193,6 +196,24 @@ public class MainActivity extends AppCompatActivity {
         version.setGravity(Gravity.CENTER);
         root.addView(version, params(-1, dp(32)));
         setContentView(scroll);
+    }
+
+    private void loadLibrary() {
+        SharedPreferences preferences = getSharedPreferences("lumio_library", MODE_PRIVATE);
+        for (String value : preferences.getStringSet("media_uris", new java.util.HashSet<>())) {
+            try {
+                Uri uri = Uri.parse(value);
+                getContentResolver().openFileDescriptor(uri, "r").close();
+                mediaItems.add(uri);
+            } catch (Exception ignored) { }
+        }
+    }
+
+    private void saveLibrary() {
+        java.util.HashSet<String> values = new java.util.HashSet<>();
+        for (Uri uri : mediaItems) values.add(uri.toString());
+        getSharedPreferences("lumio_library", MODE_PRIVATE)
+            .edit().putStringSet("media_uris", values).apply();
     }
 
     private void refreshLibrary() {
