@@ -273,8 +273,6 @@ public class MainActivity extends AppCompatActivity {
         button.setMinimumHeight(dp(40));
         button.setMinWidth(0);
         button.setPadding(dp(2), 0, dp(2), 0);
-        button.setInsetTop(0);
-        button.setInsetBottom(0);
         button.setBackground(roundRect(Color.rgb(31, 36, 48), 10));
     }
 
