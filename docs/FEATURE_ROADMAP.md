@@ -1,38 +1,40 @@
 # Lumio Android feature and release status
 
-Lumio is an offline-first Android media player with an original violet-and-lime interface. The native player is built on AndroidX Media3 ExoPlayer / MediaSession.
+Lumio is an offline-first Android media player with an original violet-and-lime interface. The native playback engine uses AndroidX Media3 ExoPlayer and MediaSession.
 
-## Implemented in the current draft branch
+## Implemented in the draft branch
 
-- Native Android Media3 video/audio playback with an on-device playback screen.
-- Android document picker for local files, including multi-select and persistent URI grants.
-- MediaStore scans for indexed videos and audio, grouped by folder, with a remembered list of files picked manually.
-- Folder/type playlist queue with next-item autoplay.
-- Playback speed selection from 0.25x to 4x.
-- Double-tap ±10-second seeking, horizontal swipe seeking, vertical brightness and volume gestures, pinch zoom/pan, and touch lock.
-- Saves and restores playback position per local URI.
-- MediaSessionService for background playback/lock-screen and Bluetooth media controls; pauses on audio becoming noisy (earphone disconnect).
-- Picture-in-Picture entry point with Android PiP manifest support.
-- Embedded audio-track selection and supported embedded subtitle-track selection.
-- External subtitle chooser for SRT, WebVTT, ASS and SSA MIME types, plus native subtitle size/style controls where the Media3 decoder supports the selected format.
-- Decoded PCM audio gain adjustment from 100% to 200%; it is not guaranteed for encoded passthrough formats or every codec.
-- Encrypted Private Vault: files copied in are AES-GCM encrypted at rest with an Android Keystore key, vault index is encrypted too, and access is gated by the device's secure lock. Private playback uses a temporary decrypted cache file which the player attempts to remove when playback closes.
-- GitHub Actions builds an installable debug APK artifact from this branch.
+- Native video/audio playback screen built on Media3.
+- Android document picker for local files, multi-select, persistent URI grants, and remembered picked-file library entries.
+- MediaStore scanning for indexed videos/audio, grouped by folder, with file type, size and duration summaries.
+- Same-folder/type playlist queue with next-item autoplay.
+- Speed selection from 0.25x to 4x.
+- Double-tap seeking by ±10 seconds, horizontal seek gesture, vertical brightness and volume gestures, pinch zoom/pan, and playback touch lock.
+- Resume last position per local content URI.
+- MediaSessionService for background playback and lock-screen/Bluetooth media controls; pause when audio becomes noisy, such as a headset disconnect.
+- Android Picture-in-Picture support and a manual PiP control for video.
+- Embedded audio-track selection and supported subtitle-track selection.
+- External SRT, WebVTT, SSA/ASS subtitles; MicroDVD SUB conversion with an assumed frame rate of 25 fps.
+- Subtitle font size and appearance controls (where supported by the selected subtitle renderer).
+- Audio timestamp offset slider from -2000 ms to +2000 ms in 50 ms steps. Actual sync behavior varies by codec/device and needs physical testing.
+- Decoder preference selector: Automatic, Hardware preferred, Software preferred. Media3 is allowed to use fallback codecs; these are preferences, not hard guarantees, and “HW+” is vendor-specific.
+- Decoded PCM gain control from 100% to 200%. This cannot guarantee amplification for every encoded passthrough format; samples may clip at high gain.
+- Private Vault that encrypts imported files and its index at rest using AES-GCM with a key stored in Android Keystore. Access requires Android's secure screen lock; vault playback decrypts a temporary app-private cache file, which the app attempts to delete after playback.
+- GitHub Actions CI builds an installable development/debug APK.
 
-## Not yet implemented or not fully verified
+## Still to finish or validate
 
-- A manual Hardware / Hardware+ / Software decoder-mode selector. Media3 selects device-supported codecs; decoder fallback is not the same as a complete user-selectable HW/SW mode.
-- Bidirectional audio/video delay adjustment in milliseconds.
-- Pitch-preserving variable speed across all codecs and devices; speed is selectable, but pitch behavior is renderer/device dependent.
-- Direct playback/scan of every microSD and USB-OTG filesystem. Files exposed by Android's media provider are scanned; the document picker can open provider-backed removable-storage files.
-- Subtitle pinch gestures independent from video zoom. MicroDVD `.sub` files are converted using a 25 fps assumption; files encoded at a different frame rate may need manual timing adjustment.
-- Fully featured library maintenance (sort/search, thumbnails, recursive custom SAF folder browser, robust duplicate handling).
-- Independent vault PIN, per-file key rotation, audit/recovery flow, and device-specific biometric prompt rather than requiring Android's configured secure screen lock.
-- Production-grade handling and testing for all headset buttons, Bluetooth profiles, corrupt media, uncommon codecs, subtitles, display cutouts, lifecycle edge cases, and all Android versions.
-- Release signing and physical-device acceptance tests.
+- Physical-device verification for gestures, brightness/volume controls, PiP, background audio/notification controls, audio sync, decoder preferences, subtitles, unusual media, and different Android versions.
+- Independent subtitle-pinching gesture without also zooming the video, and a selectable MicroDVD frame rate; current conversion assumes 25 fps.
+- A complete library UI with search, sorting, thumbnail previews, recursive custom-folder navigation, and more robust duplicate handling.
+- Direct browsing of every SD-card and USB-OTG filesystem. Lumio scans files exposed by Android's MediaStore and lets users choose provider-backed external-storage files through Android's document picker.
+- Fully reliable pitch preservation across all codecs/devices; the speed control is present but the renderer/device determines pitch behavior.
+- Exhaustive headphone/Bluetooth profile and media-button tests.
+- Production-grade vault recovery/key-management, dedicated in-app PIN or biometric prompt, and review of decrypted-cache behavior under process termination.
+- A signed release APK and release acceptance tests.
 
-## CI and installation notes
+## Build and branch notes
 
-The GitHub workflow builds the debug APK. A successful CI build proves Android compilation and packaging only; it does not prove playback behavior on a physical device. Test the APK on a real Android phone before treating it as a release.
+The current workflow compiles and packages the debug APK. A successful CI run verifies build/package success, not real-device playback of every feature. The main branch remains unchanged; this work is on `draft/android-player`.
 
-The APK artifact is retained by GitHub Actions for 14 days. The main branch is unchanged; work is on `draft/android-player`.
+GitHub retains each uploaded artifact for 14 days. Use the most recent successful workflow run to get the APK matching the latest source.
