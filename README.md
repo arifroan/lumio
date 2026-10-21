@@ -1,57 +1,37 @@
-# Lumio Media Player
+# Lumio — Native Android Media Player
 
-Lumio is a free, mobile-first media player prototype for the web and Android. This first version plays local audio and video files directly in your browser.
+Lumio is a free media-player project. **The primary development target is the native Android app** in `android-native/`; the repository also contains a browser-based player.
 
-## Features in this prototype
+The Android app uses AndroidX Media3 (ExoPlayer) and Android's document picker to let people choose local audio and video files. Selected media stays on the device; Lumio does not upload it.
 
-- Open one or multiple local audio/video files
-- Temporary playlist with All media, Videos, and Audio filters
-- Play/pause, seek, skip backward/forward, volume, and playback speed
-- Fullscreen and Picture-in-Picture when supported by the browser
-- Load sidecar subtitles in `.srt` or `.vtt` format
-- Responsive dark interface designed for phones
-- Installable/offline app shell on supported browsers
-- No account, API key, or upload server required
+## Current Android prototype
+- Native Android interface with Lumio branding
+- Launcher icon and animated splash screen
+- Choose local audio/video files through Android's document picker
+- In-app media list with persisted URI references when Android permissions remain valid
+- Media3 playback controls
+- External subtitle selection for video
+- Fullscreen toggle
+- Automated APK builds through GitHub Actions
 
-## Run it
+**Status:** early prototype, version 0.5.0 in preparation. CI success does not replace testing on a physical Android phone. File/container/codec support varies by device and Android/Media3 decoder support.
 
-Open `index.html` in a browser for a basic local preview. For the best experience, use a local static server or host it with GitHub Pages. Browser codec support varies by device; some formats (including some MKV/AVI files and certain audio codecs) may not play in every browser.
+## Download a test APK
+- [Latest Android APK release](../../releases/tag/android-latest)
+- [Android APK build workflow](../../actions/workflows/android-apk.yml)
 
-## Download the Android APK
+Download `app-debug.apk` from the release page. This is a debug/test build, not a signed production release. Android may ask you to allow installation from your browser or file manager.
 
-The **Build Lumio Android APK** GitHub Actions workflow builds an Android debug APK automatically when relevant code is pushed to `main`, or when manually started from the Actions page.
+## Build
+Open the repository's **Actions** tab and select **Build Lumio Native Android APK**. The workflow builds the native project in `android-native/` and publishes the APK when the workflow completes successfully.
 
-1. Open the repository's [Actions page](../../actions/workflows/android-apk.yml).
-2. Select **Build Lumio Android APK** and open the latest run.
-3. When the run succeeds, download the **Lumio-Android-APK** artifact. A public prerelease is also published at [Lumio Android APK releases](../../releases/tag/android-latest).
-4. On your Android phone, download `app-debug.apk), open it, and follow Android's install prompts. Android may ask you to allow your browser or file manager to install apps from that source.
+## Roadmap to v1.0.0
+See [ROADMAP.md](ROADMAP.md) for the milestone plan from v0.5.0 through the first stable public release.
 
-The APK is an early prototype. It packages Lumio's web player in an Android shell; it is not yet a full native VLC replacement. Browser codec support still applies. Do not install the APK until the build has completed successfully.
+## Privacy and permissions
+Lumio uses Android's file picker so users choose which media it can access. The library stores selected content URI references locally; access can become invalid if a file is moved, deleted, or permission is revoked. No account or API key is required.
 
-## Publish free with GitHub Pages
-
-1. Open this repository's **Settings → Pages**.
-2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
-3. Open **Actions**, allow workflows if prompted, and run the **Deploy Lumio to GitHub Pages** workflow (or push another commit to `main`).
-4. After the workflow succeeds, GitHub will show the public site URL under **Settings → Pages**.
-
-The static site and APK build are designed to use free GitHub-hosted workflows; no paid backend or API key is required.
-
-## Privacy
-
-Media files are read locally using browser file access and object URLs. Lumio does not upload selected media. The current playlist is temporary and clears when the page is closed or refreshed.
-
-## Roadmap
-
-- [x] First mobile-friendly web player prototype
-- [x] Local audio/video selection and playlist
-- [x] Playback controls and sidecar subtitles
-- [x] Installable web app shell
-- [x] Android APK build workflow
-- [ ] Verify the first APK build and test on an Android phone
-- [ ] Native Android playback engine with broader codec support
-- [ ] Public stable APK release
-
-## Project status
-
-Early prototype (v0.1). Features and browser compatibility may change as development continues.
+## Project structure
+- `android-native/` — native Android app
+- `index.html`, `app.js`, `styles.css` — browser player
+- `.github/workflows/android-apk.yml` — automated Android APK build
