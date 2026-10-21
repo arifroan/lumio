@@ -126,118 +126,94 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         rootLayout = root;
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(12), dp(20), dp(28));
+        root.setPadding(dp(18), dp(10), dp(18), dp(26));
         scroll.addView(root);
 
+        // Quiet, compact brand header: typography and alignment do the work.
         LinearLayout appBar = new LinearLayout(this);
         appBar.setGravity(Gravity.CENTER_VERTICAL);
         appBar.setOrientation(LinearLayout.HORIZONTAL);
-        TextView logo = new TextView(this);
-        logo.setText("▶");
-        logo.setTextColor(BG);
-        logo.setTextSize(22);
-        logo.setGravity(Gravity.CENTER);
-        logo.setTypeface(Typeface.DEFAULT_BOLD);
-        logo.setBackground(roundRect(MINT, 15));
-        appBar.addView(logo, new LinearLayout.LayoutParams(dp(46), dp(46)));
-
+        TextView mark = text("L", 23, BG, true);
+        mark.setGravity(Gravity.CENTER);
+        mark.setBackground(roundRect(MINT, 10));
+        appBar.addView(mark, new LinearLayout.LayoutParams(dp(38), dp(38)));
         LinearLayout brand = new LinearLayout(this);
         brand.setOrientation(LinearLayout.VERTICAL);
-        brand.setPadding(dp(12), 0, 0, 0);
-        TextView title = text("Lumio", 22, TEXT, true);
-        TextView subtitle = text("MEDIA PLAYER", 10, MUTED, true);
-        subtitle.setLetterSpacing(0.16f);
-        brand.addView(title);
-        brand.addView(subtitle);
+        brand.setPadding(dp(10), 0, 0, 0);
+        brand.addView(text("lumio", 20, TEXT, true));
+        TextView descriptor = text("YOUR PERSONAL MEDIA PLAYER", 9, MUTED, true);
+        descriptor.setLetterSpacing(0.10f);
+        brand.addView(descriptor);
         appBar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
-        appBar.addView(text("●  PRIVATE", 10, MINT, true));
-        root.addView(appBar, params(-1, dp(58)));
-        addSpace(root, 26);
+        TextView local = text("LOCAL LIBRARY", 9, MINT, true);
+        local.setLetterSpacing(0.08f);
+        appBar.addView(local);
+        root.addView(appBar, params(-1, dp(48)));
+        addSpace(root, 24);
 
-        TextView eyebrow = text("YOUR MEDIA, YOUR SPACE", 11, MINT, true);
-        eyebrow.setLetterSpacing(0.12f);
+        TextView eyebrow = text("YOUR COLLECTION", 10, MINT, true);
+        eyebrow.setLetterSpacing(0.14f);
         root.addView(eyebrow);
-        addSpace(root, 8);
-        TextView heading = text("Press play on\nyour world.", 34, TEXT, true);
-        heading.setLineSpacing(dp(1), 1.0f);
-        root.addView(heading);
-        addSpace(root, 8);
-        root.addView(text("A beautiful home for your videos and music.", 14, MUTED, false));
-        addSpace(root, 22);
+        addSpace(root, 5);
+        root.addView(text("Everything you love.\nReady when you are.", 27, TEXT, true));
+        addSpace(root, 7);
+        root.addView(text("Private playback for the media on your device.", 13, MUTED, false));
+        addSpace(root, 20);
 
+        // Playback stays central; the library and controls remain immediately available.
         playerCard = new LinearLayout(this);
         playerCard.setOrientation(LinearLayout.VERTICAL);
-        playerCard.setPadding(dp(8), dp(8), dp(8), dp(12));
-        playerCard.setBackground(roundRect(PANEL, 24));
-        normalPlayerHeight = dp(245);
+        playerCard.setPadding(dp(8), dp(8), dp(8), dp(10));
+        playerCard.setBackground(roundRect(PANEL, 18));
+        normalPlayerHeight = dp(220);
         playerView = new PlayerView(this);
         playerView.setUseController(true);
         playerView.setShowNextButton(false);
         playerView.setShowPreviousButton(false);
         playerView.setBackgroundColor(Color.BLACK);
         playerCard.addView(playerView, new LinearLayout.LayoutParams(-1, normalPlayerHeight));
-        nowPlaying = text("Nothing playing yet", 15, TEXT, true);
+        nowPlaying = text("Nothing playing", 15, TEXT, true);
         nowPlaying.setMaxLines(1);
         nowPlaying.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        nowPlaying.setPadding(dp(8), dp(16), dp(8), dp(4));
+        nowPlaying.setPadding(dp(10), dp(14), dp(10), dp(3));
         playerCard.addView(nowPlaying);
-        TextView helper = text("Select files below to start playback", 12, MUTED, false);
-        helper.setPadding(dp(8), 0, dp(8), dp(8));
+        TextView helper = text("Choose a file below to begin", 12, MUTED, false);
+        helper.setPadding(dp(10), 0, dp(10), dp(8));
         playerCard.addView(helper);
 
         LinearLayout trackActions = new LinearLayout(this);
         trackActions.setOrientation(LinearLayout.HORIZONTAL);
         trackActions.setGravity(Gravity.CENTER_VERTICAL);
-        Button previousButton = new Button(this);
-        previousButton.setText("|◀  Previous");
-        previousButton.setAllCaps(false);
-        previousButton.setTextColor(TEXT);
-        previousButton.setOnClickListener(v -> playAdjacent(-1));
-        trackActions.addView(previousButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        addAction(trackActions, "Previous", () -> playAdjacent(-1), 1f);
         speedButton = new Button(this);
-        speedButton.setText("Speed 1×");
-        speedButton.setAllCaps(false);
-        speedButton.setTextColor(TEXT);
+        speedButton.setText("1× speed");
+        styleActionButton(speedButton);
         speedButton.setOnClickListener(v -> cyclePlaybackSpeed());
-        trackActions.addView(speedButton, new LinearLayout.LayoutParams(0, dp(48), 1));
-        Button nextButton = new Button(this);
-        nextButton.setText("Next ▶|");
-        nextButton.setAllCaps(false);
-        nextButton.setTextColor(TEXT);
-        nextButton.setOnClickListener(v -> playAdjacent(1));
-        trackActions.addView(nextButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        trackActions.addView(speedButton, new LinearLayout.LayoutParams(0, dp(44), 1));
+        addAction(trackActions, "Next", () -> playAdjacent(1), 1f);
         playerCard.addView(trackActions);
 
         LinearLayout playbackActions = new LinearLayout(this);
         playbackActions.setOrientation(LinearLayout.HORIZONTAL);
         playbackActions.setGravity(Gravity.CENTER_VERTICAL);
-        Button subtitleButton = new Button(this);
-        subtitleButton.setText("Subtitles");
-        subtitleButton.setAllCaps(false);
-        subtitleButton.setTextColor(TEXT);
-        subtitleButton.setOnClickListener(v -> openSubtitle.launch(new String[]{"text/*", "application/x-subrip", "application/octet-stream"}));
-        playbackActions.addView(subtitleButton, new LinearLayout.LayoutParams(0, dp(48), 1));
-        Button fullscreenButton = new Button(this);
-        fullscreenButton.setText("Fullscreen");
-        fullscreenButton.setAllCaps(false);
-        fullscreenButton.setTextColor(TEXT);
-        fullscreenButton.setOnClickListener(v -> toggleFullscreen());
-        playbackActions.addView(fullscreenButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        addAction(playbackActions, "Subtitles", () -> openSubtitle.launch(
+            new String[]{"text/*", "application/x-subrip", "application/octet-stream"}), 1f);
+        addAction(playbackActions, "Fullscreen", this::toggleFullscreen, 1f);
         playerCard.addView(playbackActions);
         root.addView(playerCard, params(-1, -2));
 
-        addSpace(root, 24);
+        addSpace(root, 25);
         LinearLayout libraryHeader = new LinearLayout(this);
         libraryHeader.setGravity(Gravity.CENTER_VERTICAL);
         libraryHeader.setOrientation(LinearLayout.HORIZONTAL);
-        libraryHeader.addView(text("Your library", 22, TEXT, true),
-            new LinearLayout.LayoutParams(0, -2, 1));
+        TextView libraryTitle = text("Library", 21, TEXT, true);
+        libraryHeader.addView(libraryTitle, new LinearLayout.LayoutParams(0, -2, 1));
         libraryCount = text("0 files", 12, MUTED, true);
         libraryHeader.addView(libraryCount);
         root.addView(libraryHeader, params(-1, dp(34)));
-        addSpace(root, 6);
-        root.addView(text("Choose files once, then tap any item to play it.", 13, MUTED, false));
-        addSpace(root, 12);
+        addSpace(root, 4);
+        root.addView(text("Your files, in one place.", 12, MUTED, false));
+        addSpace(root, 13);
 
         libraryList = new LinearLayout(this);
         libraryList.setOrientation(LinearLayout.VERTICAL);
@@ -246,29 +222,48 @@ public class MainActivity extends AppCompatActivity {
 
         addSpace(root, 12);
         Button open = new Button(this);
-        open.setText("＋   Add videos or music");
-        open.setTextSize(15);
+        open.setText("+   Add media");
+        open.setTextSize(14);
         open.setAllCaps(false);
         open.setTextColor(BG);
         open.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        open.setBackground(roundRect(MINT, 16));
+        open.setBackground(roundRect(MINT, 12));
         open.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        root.addView(open, params(-1, dp(58)));
+        root.addView(open, params(-1, dp(52)));
 
-        addSpace(root, 20);
-        LinearLayout tipCard = new LinearLayout(this);
-        tipCard.setOrientation(LinearLayout.VERTICAL);
-        tipCard.setPadding(dp(16), dp(16), dp(16), dp(16));
-        tipCard.setBackground(roundRect(Color.rgb(17, 25, 32), 18));
-        tipCard.addView(text("YOUR PRIVACY MATTERS", 10, MINT, true));
-        addSpace(tipCard, 7);
-        tipCard.addView(text("Your files stay on your device. Android lets you choose exactly which media Lumio can access.", 13, MUTED, false));
-        root.addView(tipCard, params(-1, -2));
-        addSpace(root, 16);
-        TextView version = text("LUMIO  •  NATIVE ANDROID", 10, MUTED, true);
-        version.setGravity(Gravity.CENTER);
-        root.addView(version, params(-1, dp(32)));
+        addSpace(root, 18);
+        LinearLayout footer = new LinearLayout(this);
+        footer.setOrientation(LinearLayout.HORIZONTAL);
+        footer.setGravity(Gravity.CENTER_VERTICAL);
+        footer.setPadding(dp(12), dp(12), dp(12), dp(12));
+        footer.setBackground(roundRect(Color.rgb(16, 28, 31), 12));
+        TextView privacyMark = text("●", 11, MINT, true);
+        footer.addView(privacyMark);
+        TextView privacyText = text("  ON-DEVICE BY DESIGN", 10, TEXT, true);
+        privacyText.setLetterSpacing(0.06f);
+        footer.addView(privacyText);
+        View spacer = new View(this);
+        footer.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1));
+        footer.addView(text("LUMIO 0.7", 9, MUTED, true));
+        root.addView(footer, params(-1, -2));
         setContentView(scroll);
+    }
+
+    private void addAction(LinearLayout parent, String label, Runnable action, float weight) {
+        Button button = new Button(this);
+        button.setText(label);
+        styleActionButton(button);
+        button.setOnClickListener(v -> action.run());
+        parent.addView(button, new LinearLayout.LayoutParams(0, dp(44), weight));
+    }
+
+    private void styleActionButton(Button button) {
+        button.setAllCaps(false);
+        button.setTextSize(12);
+        button.setTextColor(TEXT);
+        button.setMinHeight(dp(44));
+        button.setPadding(dp(4), 0, dp(4), 0);
+        button.setBackground(roundRect(Color.rgb(31, 36, 48), 10));
     }
 
     private void loadLibrary() {
@@ -292,55 +287,48 @@ public class MainActivity extends AppCompatActivity {
     private void refreshLibrary() {
         if (libraryList == null || libraryCount == null) return;
         libraryList.removeAllViews();
-        libraryCount.setText(mediaItems.size() + (mediaItems.size() == 1 ? " file" : " files"));
+        libraryCount.setText(mediaItems.size() + (mediaItems.size() == 1 ? " item" : " items"));
         if (mediaItems.isEmpty()) {
             LinearLayout empty = new LinearLayout(this);
             empty.setOrientation(LinearLayout.VERTICAL);
-            empty.setGravity(Gravity.CENTER);
-            empty.setPadding(dp(16), dp(22), dp(16), dp(22));
-            empty.setBackground(roundRect(PANEL, 18));
-            TextView icon = text("♫", 28, MINT, true);
-            icon.setGravity(Gravity.CENTER);
-            empty.addView(icon, params(-1, dp(42)));
-            TextView message = text("Your library is empty", 15, TEXT, true);
-            message.setGravity(Gravity.CENTER);
-            empty.addView(message);
-            TextView hint = text("Add videos or music to get started.", 12, MUTED, false);
-            hint.setGravity(Gravity.CENTER);
-            empty.addView(hint);
+            empty.setGravity(Gravity.CENTER_VERTICAL);
+            empty.setPadding(dp(16), dp(20), dp(16), dp(20));
+            empty.setBackground(roundRect(PANEL, 14));
+            empty.addView(text("No media added yet", 15, TEXT, true));
+            addSpace(empty, 5);
+            empty.addView(text("Add audio or video files to build your library.", 12, MUTED, false));
             libraryList.addView(empty, params(-1, -2));
             return;
         }
-
         for (int i = 0; i < mediaItems.size(); i++) {
             final Uri uri = mediaItems.get(i);
             LinearLayout row = new LinearLayout(this);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setPadding(dp(12), dp(10), dp(12), dp(10));
-            row.setBackground(roundRect(PANEL, 16));
+            row.setBackground(roundRect(Color.rgb(17, 21, 31), 12));
 
-            TextView icon = text(isVideo(uri) ? "▶" : "♫", 18, MINT, true);
+            TextView icon = text(isVideo(uri) ? "▶" : "♫", 17, MINT, true);
             icon.setGravity(Gravity.CENTER);
-            row.addView(icon, params(dp(42), dp(42)));
+            row.addView(icon, params(dp(38), dp(38)));
 
             LinearLayout labels = new LinearLayout(this);
             labels.setOrientation(LinearLayout.VERTICAL);
             labels.setPadding(dp(10), 0, dp(8), 0);
-            TextView name = text(displayName(uri), 14, TEXT, true);
+            TextView name = text(displayName(uri), 13, TEXT, true);
             name.setMaxLines(1);
             name.setEllipsize(android.text.TextUtils.TruncateAt.END);
             labels.addView(name);
-            TextView type = text(isVideo(uri) ? "VIDEO  •  Tap to play" : "AUDIO  •  Tap to play", 10, MUTED, true);
-            type.setLetterSpacing(0.04f);
+            TextView type = text(isVideo(uri) ? "VIDEO FILE" : "AUDIO FILE", 9, MUTED, true);
+            type.setLetterSpacing(0.10f);
             labels.addView(type);
             row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
-
-            TextView play = text("▶", 16, MINT, true);
+            TextView play = text("PLAY  ›", 10, MINT, true);
+            play.setLetterSpacing(0.03f);
             row.addView(play);
             row.setOnClickListener(v -> playUri(uri));
             libraryList.addView(row, params(-1, -2));
-            if (i < mediaItems.size() - 1) addSpace(libraryList, 8);
+            if (i < mediaItems.size() - 1) addSpace(libraryList, 6);
         }
     }
 
