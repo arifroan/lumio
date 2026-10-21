@@ -366,8 +366,6 @@ public class MainActivity extends AppCompatActivity {
     private void playUri(Uri uri) {
         if (player == null) return;
         currentMediaUri = uri;
-        getSharedPreferences("lumio_playback", MODE_PRIVATE).edit()
-            .putString("last_uri", uri.toString()).apply();
         MediaItem item;
         if (selectedSubtitleUri != null && isVideo(uri)) {
             String path = selectedSubtitleUri.getLastPathSegment();
@@ -386,6 +384,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences playbackPrefs = getSharedPreferences("lumio_playback", MODE_PRIVATE);
         long startPosition = uri.toString().equals(playbackPrefs.getString("last_uri", ""))
             ? Math.max(0L, playbackPrefs.getLong("position_ms", 0L)) : 0L;
+        playbackPrefs.edit().putString("last_uri", uri.toString()).apply();
         player.setMediaItem(item, startPosition);
         player.setPlaybackParameters(new PlaybackParameters(playbackSpeed));
         player.prepare();
