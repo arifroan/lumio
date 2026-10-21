@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.UUID;
@@ -320,10 +319,12 @@ public final class VaultActivity extends Activity {
     }
 
     private void encryptToFile(InputStream input, File outputFile) throws Exception {
-        byte[] iv = new byte[IV_BYTES];
-        new SecureRandom().nextBytes(iv);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(128, iv));
+        // Let Android Keystore generate the GCM IV; randomized-encryption-required keys reject
+        // caller-supplied IVs for encryption. Store the generated IV before the ciphertext.
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+        byte[] iv = cipher.getIV();
+        if (iv == null || iv.length != IV_BYTES) throw new IllegalStateException("Keystore returned an invalid GCM IV");
         try (OutputStream file = new FileOutputStream(outputFile, false)) {
             file.write(iv);
             try (CipherOutputStream encrypted = new CipherOutputStream(file, cipher)) {
@@ -335,10 +336,10 @@ public final class VaultActivity extends Activity {
     }
 
     private byte[] encryptBytes(byte[] plaintext) throws Exception {
-        byte[] iv = new byte[IV_BYTES];
-        new SecureRandom().nextBytes(iv);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(128, iv));
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+        byte[] iv = cipher.getIV();
+        if (iv == null || iv.length != IV_BYTES) throw new IllegalStateException("Keystore returned an invalid GCM IV");
         byte[] encrypted = cipher.doFinal(plaintext);
         byte[] output = new byte[iv.length + encrypted.length];
         System.arraycopy(iv, 0, output, 0, iv.length);
