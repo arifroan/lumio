@@ -112,17 +112,22 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private boolean hasMediaReadPermission() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            return checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
-                    && checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
-        }
-        return Build.VERSION.SDK_INT < 23
-                || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    private boolean canReadVideo() {
+        if (Build.VERSION.SDK_INT >= 33) return checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED;
+        return Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean canReadAudio() {
+        if (Build.VERSION.SDK_INT >= 33) return checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        return Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasAnyMediaReadPermission() {
+        return canReadVideo() || canReadAudio();
     }
 
     private void beginMediaScan() {
-        if (hasMediaReadPermission()) {
+        if (hasAnyMediaReadPermission()) {
             publishScannedMedia();
             return;
         }
@@ -141,7 +146,7 @@ public final class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_SCAN_PERMISSION && pendingScan) {
             pendingScan = false;
-            if (hasMediaReadPermission()) publishScannedMedia();
+            if (hasAnyMediaReadPermission()) publishScannedMedia();
             else {
                 callJs("window.onNativeMediaScan && window.onNativeMediaScan([], 'Storage permission was not granted. Use Add media to choose files manually.')");
             }
@@ -150,8 +155,8 @@ public final class MainActivity extends Activity {
 
     private void publishScannedMedia() {
         JSONArray array = new JSONArray();
-        appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
-        appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+        if (canReadVideo()) appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
+        if (canReadAudio()) appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
         callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + array.toString() + ", null)");
     }
 
