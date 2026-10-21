@@ -25,8 +25,8 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 - Bidirectional audio/video delay adjustment in milliseconds.
 - Pitch-preserving variable speed across all codecs and devices; speed is selectable, but pitch behavior is renderer/device dependent.
 - Direct playback/scan of every microSD and USB-OTG filesystem. Files exposed by Android's media provider are scanned; the document picker can open provider-backed removable-storage files.
-- MicroDVD `.sub` conversion and subtitle pinch gestures independent from video zoom.
-- Fullly featured library maintenance (sort/search, thumbnails, recursive custom SAF folder browser, robust duplicate handling).
+- Subtitle pinch gestures independent from video zoom. MicroDVD `.sub` files are converted using a 25 fps assumption; files encoded at a different frame rate may need manual timing adjustment.
+- Fully featured library maintenance (sort/search, thumbnails, recursive custom SAF folder browser, robust duplicate handling).
 - Independent vault PIN, per-file key rotation, audit/recovery flow, and device-specific biometric prompt rather than requiring Android's configured secure screen lock.
 - Production-grade handling and testing for all headset buttons, Bluetooth profiles, corrupt media, uncommon codecs, subtitles, display cutouts, lifecycle edge cases, and all Android versions.
 - Release signing and physical-device acceptance tests.
