@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(button, new LinearLayout.LayoutParams(0, dp(44), weight));
     }
 
-    private void styleActionButton(Button button) {
+    private void styleActionButton(TextView button) {
         button.setAllCaps(false);
         button.setTextSize(12);
         button.setTextColor(TEXT);
