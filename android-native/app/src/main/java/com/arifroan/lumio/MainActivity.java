@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         rootLayout = root;
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(10), dp(18), dp(26));
+        root.setPadding(dp(16), dp(8), dp(16), dp(22));
         scroll.addView(root);
 
         // Quiet, compact brand header: typography and alignment do the work.
@@ -148,50 +148,56 @@ public class MainActivity extends AppCompatActivity {
         TextView local = text("LOCAL LIBRARY", 9, MINT, true);
         local.setLetterSpacing(0.08f);
         appBar.addView(local);
-        root.addView(appBar, params(-1, dp(48)));
-        addSpace(root, 24);
+        root.addView(appBar, params(-1, dp(44)));
+        addSpace(root, 12);
 
-        TextView eyebrow = text("YOUR COLLECTION", 10, MINT, true);
-        eyebrow.setLetterSpacing(0.14f);
-        root.addView(eyebrow);
-        addSpace(root, 5);
-        root.addView(text("Everything you love.\nReady when you are.", 27, TEXT, true));
-        addSpace(root, 7);
-        root.addView(text("Private playback for the media on your device.", 13, MUTED, false));
-        addSpace(root, 20);
+        LinearLayout collectionHeader = new LinearLayout(this);
+        collectionHeader.setOrientation(LinearLayout.VERTICAL);
+        TextView eyebrow = text("YOUR LIBRARY", 10, MINT, true);
+        eyebrow.setLetterSpacing(0.12f);
+        collectionHeader.addView(eyebrow);
+        addSpace(collectionHeader, 4);
+        collectionHeader.addView(text("Your media, ready to play.", 21, TEXT, true));
+        addSpace(collectionHeader, 3);
+        collectionHeader.addView(text("Audio and video stored on this device.", 12, MUTED, false));
+        root.addView(collectionHeader);
+        addSpace(root, 14);
 
         // Playback stays central; the library and controls remain immediately available.
         playerCard = new LinearLayout(this);
         playerCard.setOrientation(LinearLayout.VERTICAL);
-        playerCard.setPadding(dp(8), dp(8), dp(8), dp(10));
+        playerCard.setPadding(dp(8), dp(8), dp(8), dp(8));
         playerCard.setBackground(roundRect(PANEL, 18));
-        normalPlayerHeight = dp(220);
+        normalPlayerHeight = dp(196);
         playerView = new PlayerView(this);
+        playerView.setVisibility(View.GONE);
         playerView.setUseController(true);
         playerView.setShowNextButton(false);
         playerView.setShowPreviousButton(false);
         playerView.setBackgroundColor(Color.BLACK);
         playerCard.addView(playerView, new LinearLayout.LayoutParams(-1, normalPlayerHeight));
-        nowPlaying = text("Nothing playing", 15, TEXT, true);
+        nowPlaying = text("Ready when you are", 15, TEXT, true);
         nowPlaying.setMaxLines(1);
         nowPlaying.setEllipsize(android.text.TextUtils.TruncateAt.END);
         nowPlaying.setPadding(dp(10), dp(14), dp(10), dp(3));
         playerCard.addView(nowPlaying);
-        TextView helper = text("Choose a file below to begin", 12, MUTED, false);
+        TextView helper = text("Select a track or video from your library", 12, MUTED, false);
         helper.setPadding(dp(10), 0, dp(10), dp(8));
         playerCard.addView(helper);
 
         LinearLayout trackActions = new LinearLayout(this);
         trackActions.setOrientation(LinearLayout.HORIZONTAL);
         trackActions.setGravity(Gravity.CENTER_VERTICAL);
-        addAction(trackActions, "Previous", () -> playAdjacent(-1), 1f);
+        addAction(trackActions, "‹  Previous", () -> playAdjacent(-1), 1f);
         speedButton = new Button(this);
         speedButton.setText("1× speed");
         styleActionButton(speedButton);
         speedButton.setOnClickListener(v -> cyclePlaybackSpeed());
         trackActions.addView(speedButton, new LinearLayout.LayoutParams(0, dp(44), 1));
-        addAction(trackActions, "Next", () -> playAdjacent(1), 1f);
-        playerCard.addView(trackActions);
+        addAction(trackActions, "Next  ›", () -> playAdjacent(1), 1f);
+        LinearLayout.LayoutParams trackParams = params(-1, dp(42));
+        trackParams.topMargin = dp(6);
+        playerCard.addView(trackActions, trackParams);
 
         LinearLayout playbackActions = new LinearLayout(this);
         playbackActions.setOrientation(LinearLayout.HORIZONTAL);
@@ -199,10 +205,12 @@ public class MainActivity extends AppCompatActivity {
         addAction(playbackActions, "Subtitles", () -> openSubtitle.launch(
             new String[]{"text/*", "application/x-subrip", "application/octet-stream"}), 1f);
         addAction(playbackActions, "Fullscreen", this::toggleFullscreen, 1f);
-        playerCard.addView(playbackActions);
+        LinearLayout.LayoutParams playbackParams = params(-1, dp(42));
+        playbackParams.topMargin = dp(5);
+        playerCard.addView(playbackActions, playbackParams);
         root.addView(playerCard, params(-1, -2));
 
-        addSpace(root, 25);
+        addSpace(root, 20);
         LinearLayout libraryHeader = new LinearLayout(this);
         libraryHeader.setGravity(Gravity.CENTER_VERTICAL);
         libraryHeader.setOrientation(LinearLayout.HORIZONTAL);
@@ -229,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
         open.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         open.setBackground(roundRect(MINT, 12));
         open.setOnClickListener(v -> openMedia.launch(new String[]{"video/*", "audio/*"}));
-        root.addView(open, params(-1, dp(52)));
+        root.addView(open, params(-1, dp(48)));
 
         addSpace(root, 18);
         LinearLayout footer = new LinearLayout(this);
@@ -259,10 +267,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void styleActionButton(TextView button) {
         button.setAllCaps(false);
-        button.setTextSize(12);
+        button.setTextSize(11);
         button.setTextColor(TEXT);
-        button.setMinHeight(dp(44));
-        button.setPadding(dp(4), 0, dp(4), 0);
+        button.setMinHeight(dp(40));
+        button.setMinimumHeight(dp(40));
+        button.setMinWidth(0);
+        button.setPadding(dp(2), 0, dp(2), 0);
+        button.setInsetTop(0);
+        button.setInsetBottom(0);
         button.setBackground(roundRect(Color.rgb(31, 36, 48), 10));
     }
 
@@ -354,6 +366,9 @@ public class MainActivity extends AppCompatActivity {
     private void playUri(Uri uri) {
         if (player == null) return;
         currentMediaUri = uri;
+        boolean video = isVideo(uri);
+        playerView.setVisibility(video ? View.VISIBLE : View.GONE);
+        nowPlaying.setText(displayName(uri));
         MediaItem item;
         if (selectedSubtitleUri != null && isVideo(uri)) {
             String path = selectedSubtitleUri.getLastPathSegment();
