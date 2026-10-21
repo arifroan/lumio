@@ -27,7 +27,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 
 public final class MainActivity extends Activity {
@@ -148,7 +150,9 @@ public final class MainActivity extends Activity {
             pendingScan = false;
             if (hasAnyMediaReadPermission()) publishScannedMedia();
             else {
-                callJs("window.onNativeMediaScan && window.onNativeMediaScan([], 'Storage permission was not granted. Use Add media to choose files manually.')");
+                JSONArray saved = getSavedPicks();
+                callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + saved.toString()
+                        + ", 'Storage access was not granted. You can still open chosen files or grant access to scan the device.')");
             }
         }
     }
@@ -157,6 +161,8 @@ public final class MainActivity extends Activity {
         JSONArray array = new JSONArray();
         if (canReadVideo()) appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
         if (canReadAudio()) appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+        JSONArray saved = getSavedPicks();
+        for (int i = 0; i < saved.length(); i++) array.put(saved.optJSONObject(i));
         callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + array.toString() + ", null)");
     }
 
@@ -204,6 +210,24 @@ public final class MainActivity extends Activity {
         } catch (Exception ignored) {
             // Leave other file types/results available when a manufacturer-specific media provider fails.
         }
+    }
+
+    private JSONArray getSavedPicks() {
+        JSONArray results = new JSONArray();
+        Set<String> saved = getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getStringSet("picked_uris", new HashSet<>());
+        for (String value : new HashSet<>(saved)) {
+            if (value == null || value.trim().isEmpty()) continue;
+            try { results.put(readDocument(Uri.parse(value))); } catch (Exception ignored) { }
+        }
+        return results;
+    }
+
+    private void rememberPickedUri(Uri uri) {
+        Set<String> saved = new HashSet<>(getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getStringSet("picked_uris", new HashSet<>()));
+        saved.add(uri.toString());
+        getSharedPreferences("lumio_library", MODE_PRIVATE).edit().putStringSet("picked_uris", saved).apply();
     }
 
     private JSONObject readDocument(Uri uri) {
@@ -254,11 +278,13 @@ public final class MainActivity extends Activity {
                 for (int i = 0; i < data.getClipData().getItemCount(); i++) {
                     Uri uri = data.getClipData().getItemAt(i).getUri();
                     try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
+                    rememberPickedUri(uri);
                     results.put(readDocument(uri));
                 }
             } else if (data.getData() != null) {
                 Uri uri = data.getData();
                 try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
+                rememberPickedUri(uri);
                 results.put(readDocument(uri));
             }
         } catch (Exception ignored) { }
