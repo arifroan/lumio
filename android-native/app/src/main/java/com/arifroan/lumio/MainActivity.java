@@ -224,8 +224,15 @@ public class MainActivity extends AppCompatActivity {
         info.addView(labels);
         page.addView(info, lp(-1, -2));
         space(page, 17);
-        sectionTitle(page, "All " + (videos ? "videos" : "audio"), "＋ Add");
-        page.getChildAt(page.getChildCount() - 1).setOnClickListener(v -> openMedia.launch(new String[]{videos ? "video/*" : "audio/*"}));
+        LinearLayout listHeader = new LinearLayout(this);
+        listHeader.setGravity(Gravity.CENTER_VERTICAL);
+        listHeader.addView(text("All " + (videos ? "videos" : "audio"), 18, TEXT, true),
+            new LinearLayout.LayoutParams(0, -2, 1));
+        TextView addAction = text("＋ Add", 11, LIME, true);
+        addAction.setOnClickListener(v -> openMedia.launch(new String[]{videos ? "video/*" : "audio/*"}));
+        listHeader.addView(addAction);
+        page.addView(listHeader, lp(-1, dp(32)));
+        space(page, 9);
         int count = 0;
         for (int i = mediaItems.size() - 1; i >= 0; i--) {
             Uri uri = mediaItems.get(i);
