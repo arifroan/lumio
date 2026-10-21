@@ -26,7 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.CipherInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,6 +63,8 @@ public final class VaultActivity extends Activity {
     private LinearLayout rows;
     private TextView status;
     private boolean authenticated;
+    private boolean importing;
+    private boolean authenticating;
 
     private static final class Entry {
         String id;
@@ -171,15 +172,17 @@ public final class VaultActivity extends Activity {
                     .show();
             return;
         }
+        authenticating = true;
         Intent confirm = manager.createConfirmDeviceCredentialIntent(
                 "Unlock Lumio Private Vault", "Confirm your screen lock to access encrypted files");
-        if (confirm == null) {
+        if (confirm == null) { authenticating = false;
             showFatal("Android could not start device authentication.");
             return;
         }
         try {
             startActivityForResult(confirm, REQUEST_UNLOCK);
         } catch (Exception e) {
+            authenticating = false;
             showFatal("Android could not open the secure authentication screen.");
         }
     }
@@ -188,6 +191,7 @@ public final class VaultActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_UNLOCK) {
+            authenticating = false;
             if (resultCode == RESULT_OK) {
                 authenticated = true;
                 try {
@@ -201,6 +205,7 @@ public final class VaultActivity extends Activity {
             }
             return;
         }
+        if (requestCode == REQUEST_IMPORT) importing = false;
         if (requestCode == REQUEST_IMPORT && resultCode == RESULT_OK && data != null) {
             try {
                 if (data.getClipData() != null) {
@@ -252,8 +257,9 @@ public final class VaultActivity extends Activity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        importing = true;
         try { startActivityForResult(intent, REQUEST_IMPORT); }
-        catch (Exception e) { toast("No file picker is available on this device"); }
+        catch (Exception e) { importing = false; toast("No file picker is available on this device"); }
     }
 
     private String displayName(Uri uri) {
@@ -512,11 +518,13 @@ public final class VaultActivity extends Activity {
     }
 
     @Override
-    protected void onPause() {
-        // The vault screen should not remain open as a usable file list behind another app.
-        if (authenticated) {
+    protected void onStop() {
+        // Keep the native document picker/authentication flow working, but lock the vault when
+        // the user backgrounds the app or switches to another activity.
+        if (!importing && !authenticating && authenticated && !isFinishing()) {
             authenticated = false;
+            finish();
         }
-        super.onPause();
+        super.onStop();
     }
 }
