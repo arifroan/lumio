@@ -26,6 +26,10 @@
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true" />
         <activity
+            android:name=".VaultActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
+        <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
