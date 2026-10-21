@@ -26,6 +26,8 @@ import androidx.media3.common.MimeTypes;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.common.MediaItem.SubtitleConfiguration;
 import androidx.media3.common.Player;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 
@@ -50,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
     private Uri currentMediaUri;
     private Uri selectedSubtitleUri;
     private boolean fullscreen = false;
+    private float playbackSpeed = 1.0f;
+    private TextView speedButton;
+    private static final float[] SPEEDS = {1.0f, 1.25f, 1.5f, 2.0f};
     private int normalPlayerHeight;
     private LinearLayout libraryList;
     private final ArrayList<Uri> mediaItems = new ArrayList<>();
@@ -105,6 +110,10 @@ public class MainActivity extends AppCompatActivity {
         player.addListener(new Player.Listener() {
             @Override public void onPlaybackStateChanged(int state) {
                 if (state == Player.STATE_ENDED) nowPlaying.setText("Finished playing");
+            }
+            @Override public void onPlayerError(PlaybackException error) {
+                nowPlaying.setText("Can't play this file");
+                Toast.makeText(MainActivity.this, "Playback failed. The file may be unsupported or unavailable.", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -175,6 +184,29 @@ public class MainActivity extends AppCompatActivity {
         TextView helper = text("Select files below to start playback", 12, MUTED, false);
         helper.setPadding(dp(8), 0, dp(8), dp(8));
         playerCard.addView(helper);
+
+        LinearLayout trackActions = new LinearLayout(this);
+        trackActions.setOrientation(LinearLayout.HORIZONTAL);
+        trackActions.setGravity(Gravity.CENTER_VERTICAL);
+        Button previousButton = new Button(this);
+        previousButton.setText("|◀  Previous");
+        previousButton.setAllCaps(false);
+        previousButton.setTextColor(TEXT);
+        previousButton.setOnClickListener(v -> playAdjacent(-1));
+        trackActions.addView(previousButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        speedButton = new Button(this);
+        speedButton.setText("Speed 1×");
+        speedButton.setAllCaps(false);
+        speedButton.setTextColor(TEXT);
+        speedButton.setOnClickListener(v -> cyclePlaybackSpeed());
+        trackActions.addView(speedButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        Button nextButton = new Button(this);
+        nextButton.setText("Next ▶|");
+        nextButton.setAllCaps(false);
+        nextButton.setTextColor(TEXT);
+        nextButton.setOnClickListener(v -> playAdjacent(1));
+        trackActions.addView(nextButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+        playerCard.addView(trackActions);
 
         LinearLayout playbackActions = new LinearLayout(this);
         playbackActions.setOrientation(LinearLayout.HORIZONTAL);
@@ -334,6 +366,8 @@ public class MainActivity extends AppCompatActivity {
     private void playUri(Uri uri) {
         if (player == null) return;
         currentMediaUri = uri;
+        getSharedPreferences("lumio_playback", MODE_PRIVATE).edit()
+            .putString("last_uri", uri.toString()).apply();
         MediaItem item;
         if (selectedSubtitleUri != null && isVideo(uri)) {
             String path = selectedSubtitleUri.getLastPathSegment();
@@ -349,12 +383,50 @@ public class MainActivity extends AppCompatActivity {
         } else {
             item = MediaItem.fromUri(uri);
         }
-        player.setMediaItem(item);
+        SharedPreferences playbackPrefs = getSharedPreferences("lumio_playback", MODE_PRIVATE);
+        long startPosition = uri.toString().equals(playbackPrefs.getString("last_uri", ""))
+            ? Math.max(0L, playbackPrefs.getLong("position_ms", 0L)) : 0L;
+        player.setMediaItem(item, startPosition);
+        player.setPlaybackParameters(new PlaybackParameters(playbackSpeed));
         player.prepare();
         player.play();
         nowPlaying.setText(displayName(uri));
     }
 
+    private void playAdjacent(int direction) {
+        if (mediaItems.isEmpty()) {
+            Toast.makeText(this, "Add media to your library first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int index = currentMediaUri == null ? -1 : mediaItems.indexOf(currentMediaUri);
+        int nextIndex = index < 0 ? (direction > 0 ? 0 : mediaItems.size() - 1) : index + direction;
+        if (nextIndex < 0 || nextIndex >= mediaItems.size()) {
+            Toast.makeText(this, direction < 0 ? "This is the first item" : "This is the last item", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        playUri(mediaItems.get(nextIndex));
+    }
+
+    private void cyclePlaybackSpeed() {
+        int next = 0;
+        for (int i = 0; i < SPEEDS.length; i++) {
+            if (Math.abs(SPEEDS[i] - playbackSpeed) < 0.01f) {
+                next = (i + 1) % SPEEDS.length;
+                break;
+            }
+        }
+        playbackSpeed = SPEEDS[next];
+        if (player != null) player.setPlaybackParameters(new PlaybackParameters(playbackSpeed));
+        if (speedButton != null) speedButton.setText("Speed " + (playbackSpeed == 1.0f ? "1" : playbackSpeed) + "×");
+    }
+
+    private void savePlaybackState() {
+        if (player == null || currentMediaUri == null) return;
+        getSharedPreferences("lumio_playback", MODE_PRIVATE).edit()
+            .putString("last_uri", currentMediaUri.toString())
+            .putLong("position_ms", Math.max(0L, player.getCurrentPosition()))
+            .apply();
+    }
 
     private void toggleFullscreen() {
         fullscreen = !fullscreen;
@@ -413,7 +485,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        savePlaybackState();
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        savePlaybackState();
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
+        savePlaybackState();
         if (fullscreen) toggleFullscreen();
         if (player != null) {
             player.release();
