@@ -82,7 +82,7 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void playMedia(String uri, String title, boolean isAudio) {
+        public void playMedia(String uri, String title, boolean isAudio, String playlistJson) {
             runOnUiThread(() -> {
                 if (uri == null || uri.trim().isEmpty()) {
                     Toast.makeText(MainActivity.this, "Choose a media file first", Toast.LENGTH_SHORT).show();
@@ -92,6 +92,7 @@ public final class MainActivity extends Activity {
                 intent.putExtra(PlayerActivity.EXTRA_URI, uri);
                 intent.putExtra(PlayerActivity.EXTRA_TITLE, title == null ? "Local media" : title);
                 intent.putExtra(PlayerActivity.EXTRA_AUDIO, isAudio);
+                intent.putExtra(PlayerActivity.EXTRA_PLAYLIST, playlistJson == null ? "[]" : playlistJson);
                 try {
                     startActivity(intent);
                 } catch (Exception e) {
