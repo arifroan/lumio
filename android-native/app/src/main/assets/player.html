@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c0e13">
+<title>Lumio Player</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0e13;--panel:#171a22;--muted:#9299aa;--accent:#ff7a18;--line:#292d38}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f7f8fb;font:15px system-ui,-apple-system,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{height:66px;display:flex;align-items:center;padding:0 18px;gap:12px;border-bottom:1px solid #20232d;position:sticky;top:0;background:#0c0e13;z-index:3}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#ff9c32,#ff5b17);display:grid;place-items:center;color:#17120d;font-size:22px;font-weight:900}
+.brand{font-size:21px;font-weight:800;letter-spacing:-.6px}.brand small{display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-top:-2px}
+.header-action{margin-left:auto;border:1px solid #343947;background:#1a1d26;color:white;border-radius:12px;padding:10px 13px;font-weight:700}
+main{padding:18px;max-width:760px;margin:auto}.eyebrow{font-size:11px;letter-spacing:1.7px;color:var(--muted);font-weight:800;margin:7px 0 14px}
+h1{font-size:28px;letter-spacing:-1px;margin:0 0 5px}.sub{color:var(--muted);margin:0 0 20px}
+.player{background:#050609;border:1px solid #282b35;border-radius:20px;overflow:hidden;box-shadow:0 16px 40px #0005}
+.screen{aspect-ratio:16/9;min-height:190px;display:grid;place-items:center;position:relative;background:radial-gradient(ellipse at 50% 40%,#25212b,#0a0b10 68%);overflow:hidden}
+video{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000}
+.placeholder{text-align:center;padding:20px;z-index:1}.playmark{width:66px;height:66px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:#ff7a18;color:#1c1209;font-size:27px;box-shadow:0 0 0 10px #ff7a181c}.placeholder h2{font-size:17px;margin:0 0 5px}.placeholder p{font-size:12px;color:#9da3b3;margin:0}
+.controls{padding:14px 15px 16px;background:#11131a}.timeline{width:100%;accent-color:var(--accent);height:4px}.time-row,.control-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.time-row{font-size:11px;color:#aeb4c2;margin-bottom:13px}.time-row input{flex:1}.control-row button{background:transparent;color:#f4f5f9;border:0;font-size:20px;padding:7px 10px}.control-row .big{background:var(--accent);color:#20150d;border-radius:50%;width:46px;height:46px;font-size:20px}.right{display:flex;gap:4px;align-items:center}.speed{font-size:12px!important;border:1px solid #363a46!important;border-radius:10px!important}
+.track{padding:15px;display:flex;gap:12px;align-items:center;border-top:1px solid #252833}.art{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#303444,#171a22);display:grid;place-items:center;font-size:22px}.track-info{min-width:0;flex:1}.track-info strong,.track-info span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.track-info span{font-size:12px;color:var(--muted);margin-top:3px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:25px 0 13px}.section-head h2{font-size:18px;margin:0}.section-head span{font-size:12px;color:var(--muted)}
+.filters{display:flex;gap:8px;margin-bottom:12px}.filter{border:1px solid var(--line);border-radius:20px;padding:9px 14px;color:#c5cad5;background:transparent}.filter.active{background:#ff7a18;color:#20150d;border-color:#ff7a18;font-weight:800}
+.library{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}.empty{padding:24px 18px;text-align:center;color:var(--muted);font-size:13px}.file{display:flex;gap:12px;align-items:center;padding:13px;border-bottom:1px solid var(--line)}.file:last-child{border-bottom:0}.file-icon{width:42px;height:42px;border-radius:12px;background:#252936;display:grid;place-items:center}.file-name{flex:1;min-width:0}.file-name strong,.file-name small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-name strong{font-size:13px}.file-name small{color:var(--muted);margin-top:4px;font-size:11px}
+.browse{width:100%;padding:15px;margin-top:14px;background:var(--accent);border:0;border-radius:14px;color:#21150d;font-size:15px;font-weight:850}
+.note{font-size:11px;color:#777f90;text-align:center;line-height:1.6;margin:18px 10px 8px}
+input[type=file]{display:none}
+</style></head>
+<body>
+<header><div class="logo">▶</div><div class="brand">Lumio<small>OFFLINE PLAYER</small></div><button class="header-action" id="pickTop">＋ Open</button></header>
+<main>
+<p class="eyebrow">YOUR DEVICE · YOUR MEDIA</p><h1>Play anything. Simply.</h1><p class="sub">A lightweight home for your videos and music.</p>
+<section class="player"><div class="screen" id="screen"><div class="placeholder" id="placeholder"><div class="playmark">▶</div><h2>Your next watch starts here</h2><p>Choose a local video or audio file</p></div><video id="video" playsinline controls hidden></video></div><div class="controls"><div class="time-row"><span id="current">0:00</span><input class="timeline" id="seek" type="range" min="0" max="1000" value="0"><span id="duration">0:00</span></div><div class="control-row"><div><button id="back">↶ 10</button><button class="big" id="play">▶</button><button id="forward">10 ↷</button></div><div class="right"><button class="speed" id="speed">1×</button><button id="full">⛶</button></div></div></div><div class="track"><div class="art">♫</div><div class="track-info"><strong id="title">Nothing playing</strong><span id="meta">Your files stay on your device</span></div></div></section>
+<div class="section-head"><h2>My media</h2><span id="count">0 files</span></div><div class="filters"><button class="filter active" data-filter="all">All</button><button class="filter" data-filter="video">Videos</button><button class="filter" data-filter="audio">Music</button></div>
+<section class="library" id="library"><div class="empty">Your library is empty.<br>Open media stored on your phone to begin.</div></section>
+<button class="browse" id="browse">＋ &nbsp; Browse media on device</button><input id="files" type="file" accept="video/*,audio/*,.mp4,.m4v,.webm,.mov,.mp3,.m4a,.aac,.wav,.ogg" multiple>
+<p class="note">PRIVATE BY DESIGN · NO ACCOUNT · NO UPLOADS<br>Draft build · Playback formats depend on Android system codecs.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id), video=$('video');let items=[],active='all',speedIndex=0;const speeds=[1,1.25,1.5,1.75,2,.5,.75];
+function fmt(n){if(!Number.isFinite(n))return'0:00';let m=Math.floor(n/60),s=Math.floor(n%60);return m+':'+String(s).padStart(2,'0')}
+function pick(){ $('files').click() }$('browse').onclick=pick;$('pickTop').onclick=pick;
+$('files').onchange=e=>{for(const f of e.target.files){if(!items.some(x=>x.name===f.name&&x.size===f.size))items.push({file:f,name:f.name,size:f.size,type:f.type.startsWith('audio/')?'audio':'video',url:URL.createObjectURL(f)})}render();if(items.length)openItem(items.length-1);e.target.value=''};
+function render(){let filtered=items.filter(x=>active==='all'||x.type===active);$('count').textContent=items.length+' file'+(items.length===1?'':'s');$('library').innerHTML=filtered.length?filtered.map(x=>'<div class="file" data-name="'+encodeURIComponent(x.name)+'"><div class="file-icon">'+(x.type==='audio'?'♫':'▶')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+x.type.toUpperCase()+' · '+(x.size/1048576).toFixed(1)+' MB</small></div><span>›</span></div>').join():'<div class="empty">No '+(active==='all'?'media':active)+' files in this list yet.</div>';[...$('library').querySelectorAll('.file')].forEach(el=>el.onclick=()=>openItem(items.findIndex(x=>x.name===decodeURIComponent(el.dataset.name))))}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function openItem(i){let x=items[i];if(!x)return;video.src=x.url;video.hidden=false;$('placeholder').hidden=true;$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+(x.size/1048576).toFixed(1)+' MB';video.play().catch(()=>{});$('play').textContent='Ⅱ'}
+document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{active=b.dataset.filter;document.querySelectorAll('.filter').forEach(z=>z.classList.toggle('active',z===b));render()});
+$('play').onclick=()=>{if(!video.src){pick();return}if(video.paused){video.play();$('play').textContent='Ⅱ'}else{video.pause();$('play').textContent='▶'}};
+$('back').onclick=()=>video.currentTime=Math.max(0,video.currentTime-10);$('forward').onclick=()=>video.currentTime=Math.min(video.duration||0,video.currentTime+10);
+$('speed').onclick=()=>{speedIndex=(speedIndex+1)%speeds.length;video.playbackRate=speeds[speedIndex];$('speed').textContent=speeds[speedIndex]+'×'};
+$('full').onclick=()=>{if(video.requestFullscreen)video.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen()};
+video.ontimeupdate=()=>{$('current').textContent=fmt(video.currentTime);$('duration').textContent=fmt(video.duration);if(video.duration)$('seek').value=video.currentTime/video.duration*1000};
+$('seek').oninput=()=>{if(video.duration)video.currentTime=Number($('seek').value)/1000*video.duration};video.onplay=()=>$('play').textContent='Ⅱ';video.onpause=()=>$('play').textContent='▶';
+</script></body></html>
