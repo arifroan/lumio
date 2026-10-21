@@ -1,0 +1,8 @@
+{
+  "appId": "com.arifroan.lumio",
+  "appName": "Lumio",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
