@@ -1,4 +1,4 @@
-name: Build Lumio Android APK
+name: Build Lumio Native Android APK
 
 on:
   push:
@@ -17,49 +17,37 @@ concurrency:
 
 jobs:
   build-apk:
-    name: Build installable APK
+    name: Build native Android media player
     runs-on: ubuntu-latest
     steps:
       - name: Check out Lumio
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
-      - name: Install JavaScript dependencies
-        run: npm install
-
-      - name: Prepare Lumio web assets
-        run: npm run build:web
-
-      - name: Generate Android project
-        run: npx cap add android
-
-      - name: Sync Capacitor
-        run: npx cap sync android
-
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
+      - name: Build native Lumio APK
+        working-directory: android-native
+        run: gradle assembleDebug
 
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lumio-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Lumio-Native-Android-APK
+          path: android-native/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -69,12 +57,10 @@ jobs:
           tag_name: android-latest
           name: Lumio Android APK (Latest Build)
           body: |
-            Latest automatically built Lumio Android test APK.
-
-            Download `app-debug.apk` and install it on your Android device. You may need to allow your browser or file manager to install apps from this source.
-
-            This is an early prototype. Browser codec support varies by device; not all formats supported by VLC are supported yet.
+            Lumio native Android prototype built with AndroidX Media3 (ExoPlayer).
+            Download app-debug.apk and install it on your Android device.
+            This is an early prototype; format support varies by device and codec.
           prerelease: true
           make_latest: false
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          files: android-native/app/build/outputs/apk/debug/app-debug.apk
           overwrite_files: true
