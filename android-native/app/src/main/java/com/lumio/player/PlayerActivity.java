@@ -34,7 +34,7 @@ import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.TrackSelectionParameters;
-import androidx.media3.common.util.MimeTypes;
+import androidx.media3.common.MimeTypes;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
 import androidx.media3.ui.AspectRatioFrameLayout;
