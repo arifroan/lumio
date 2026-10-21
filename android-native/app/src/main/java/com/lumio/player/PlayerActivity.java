@@ -57,6 +57,7 @@ public final class PlayerActivity extends Activity {
     public static final String EXTRA_TITLE = "media_title";
     public static final String EXTRA_AUDIO = "media_is_audio";
     public static final String EXTRA_PLAYLIST = "media_playlist";
+    public static final String EXTRA_TEMP_VAULT_FILE = "temporary_vault_file";
     private static final int REQUEST_SUBTITLE = 4301;
     private static final String PREFS = "lumio_playback";
     private static final float[] SPEEDS = {0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f};
@@ -738,6 +739,10 @@ public final class PlayerActivity extends Activity {
     @Override
     protected void onDestroy() {
         persistPosition();
+        if (isFinishing()) {
+            String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
+            if (temporaryPath != null && !temporaryPath.trim().isEmpty()) new java.io.File(temporaryPath).delete();
+        }
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (controllerFuture != null) {
             MediaController.releaseFuture(controllerFuture);
