@@ -174,7 +174,7 @@ public final class PlayerActivity extends Activity {
         playerView.setUseController(true);
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
         playerView.setControllerShowTimeoutMs(3200);
-        playerView.setControllerVisibilityListener(visibility -> {
+        playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
             if (requestedAudio || isInPictureInPicture()) return;
             setPlaybackControlsVisible(visibility == View.VISIBLE);
         });
