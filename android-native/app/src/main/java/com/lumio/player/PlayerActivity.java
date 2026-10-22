@@ -291,6 +291,7 @@ public final class PlayerActivity extends Activity {
                 controller = connectedController;
                 playerView.setPlayer(connectedController);
                 connectedController.addListener(playbackUiListener);
+                syncSpeedButton(connectedController.getPlaybackParameters().speed);
                 initializeMedia();
                 if (!requestedAudio) showPlaybackControlsTemporarily();
             } catch (Exception e) {
@@ -307,6 +308,10 @@ public final class PlayerActivity extends Activity {
         if (current != null && current.localConfiguration != null
                 && requestedUri.equals(current.localConfiguration.uri.toString())) {
             titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
+            // Reopening the currently loaded item should resume it. If it already ended,
+            // restart at the beginning rather than leaving the new PlayerActivity paused at EOF.
+            if (controller.getPlaybackState() == Player.STATE_ENDED) controller.seekTo(0L);
+            controller.play();
             return;
         }
 
@@ -387,6 +392,20 @@ public final class PlayerActivity extends Activity {
             controller = null;
         }
         super.onStop();
+    }
+
+    private void syncSpeedButton(float speed) {
+        int closestIndex = 0;
+        float closestDifference = Float.MAX_VALUE;
+        for (int i = 0; i < SPEEDS.length; i++) {
+            float difference = Math.abs(SPEEDS[i] - speed);
+            if (difference < closestDifference) {
+                closestDifference = difference;
+                closestIndex = i;
+            }
+        }
+        speedIndex = closestIndex;
+        if (speedButton != null) speedButton.setText(trimSpeed(speed) + "×");
     }
 
     private void cycleSpeed() {
