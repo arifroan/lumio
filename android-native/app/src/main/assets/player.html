@@ -70,6 +70,28 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;
 @media(max-width:380px){.history-card{flex-basis:160px}.video-toolbar-row{gap:6px}.sort-control{min-width:130px}.video-library-filters button{padding:8px 10px}}
 @media(min-width:620px){.library.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.video-toolbar-row{gap:10px}.sort-control{max-width:250px}.history-card{flex-basis:218px}}
 
+.folder-browse-bar{margin:0 0 12px;padding:11px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.folder-browse-bar p{margin:7px 0 0;color:var(--muted);font-size:11px}
+.folder-breadcrumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.folder-breadcrumb button{border:1px solid #514665;background:#242034;color:#e8dfff;border-radius:9px;padding:6px 9px;font-size:11px;font-weight:800}
+.folder-breadcrumb button.current{background:var(--violet);color:#1a1627;border-color:var(--violet)}
+.folder-breadcrumb .crumb-sep{color:#827b99}
+.folder-entry{display:flex;align-items:center;gap:11px;width:100%;padding:13px;border:0;border-bottom:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left}
+.folder-entry:last-child{border-bottom:0}
+.folder-entry .folder-entry-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:13px;background:#302842;color:var(--violet);font-size:20px}
+.folder-entry .folder-entry-copy{flex:1;min-width:0}
+.folder-entry .folder-entry-copy strong,.folder-entry .folder-entry-copy small{display:block;overflow-wrap:anywhere}
+.folder-entry .folder-entry-copy strong{font-size:13px}
+.folder-entry .folder-entry-copy small{margin-top:3px;color:var(--muted);font-size:10px}
+.folder-entry .folder-entry-arrow{color:var(--muted);font-size:23px}
+.video-grid .folder-entry{grid-column:1/-1;border:1px solid var(--line);border-radius:14px}
+.video-grid .folder-entry+.folder-entry{margin-top:-2px}
+.file.unavailable{opacity:.72}
+.file .availability-note{display:block;color:var(--pink);font-size:10px;margin-top:3px}
+.video-toolbar-row #browseFoldersButton[aria-pressed="true"]{border-color:#8b78b8;color:#e2d6ff;background:#302842}
+@media(max-width:380px){.video-toolbar-row #addFolderButton{flex:1}}
+
+
 .player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
 .screen{aspect-ratio:16/9;min-height:180px;position:relative;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#29213d,#09090f 70%);overflow:hidden;touch-action:none;user-select:none}.screen audio{position:absolute;bottom:0;width:100%;z-index:2}.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:center;transition:transform .12s linear}.placeholder{text-align:center;padding:20px}.placeholder .playdisc{width:57px;height:57px;border-radius:21px;background:var(--violet);color:#181322;display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.placeholder strong{font-size:14px}.placeholder p{color:var(--muted);font-size:11px;margin:4px 0}
 .gesture-hint{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);background:#171520d9;border:1px solid #ffffff22;border-radius:18px;padding:8px 12px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}.gesture-hint.show{opacity:1}.lockoverlay{display:none;position:absolute;z-index:5;inset:0;background:#08080d55;align-items:center;justify-content:center}.lockoverlay.show{display:flex}.lockoverlay button{background:#171520e8;color:white;border:1px solid #ffffff44;border-radius:18px;padding:13px 17px;font-weight:850}
@@ -121,7 +143,13 @@ input[type=file]{display:none}[hidden]{display:none!important}
       <button id="videoListView" type="button" aria-pressed="false">List</button>
     </div>
     <button class="folder-toggle" id="videoGroupToggle" type="button" aria-pressed="true">Folders: On</button>
+    <button class="folder-toggle" id="browseFoldersButton" type="button" aria-pressed="false">Browse folders</button>
+    <button class="folder-toggle" id="addFolderButton" type="button">＋ Add folder</button>
   </div>
+</div>
+<div class="folder-browse-bar" id="folderBrowseBar" hidden>
+  <div class="folder-breadcrumb" id="folderBreadcrumb"></div>
+  <p>Browse folder contents stored on your phone, SD card, or an authorized USB drive.</p>
 </div>
 <div class="video-library-filters" id="videoLibraryFilters" role="group" aria-label="Video library filter">
   <button id="showAllVideos" class="active" type="button" aria-pressed="true">All videos <span class="filter-count" id="allVideoCount">0</span></button>
@@ -163,6 +191,9 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </button>
   <button class="setting-row" id="settingsScan">
     <span class="setting-icon">↻</span><span class="setting-copy"><strong>Scan phone</strong><small>Refresh the local media library</small></span><span class="setting-arrow">›</span>
+  </button>
+  <button class="setting-row" id="settingsAddFolder">
+    <span class="setting-icon">📁</span><span class="setting-copy"><strong>Add storage folder</strong><small>Grant persistent read access to a folder, SD card, or supported USB location</small></span><span class="setting-arrow">›</span>
   </button>
   <div class="setting-card">
     <strong>Local by design</strong>
