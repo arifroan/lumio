@@ -797,8 +797,8 @@ public final class MainActivity extends Activity {
         columns.add(MediaStore.MediaColumns.SIZE);
         columns.add(MediaStore.MediaColumns.MIME_TYPE);
         columns.add(MediaStore.MediaColumns.DATE_MODIFIED);
+        columns.add(video ? MediaStore.Video.Media.DURATION : MediaStore.Audio.Media.DURATION);
         if (video) {
-            columns.add(MediaStore.Video.Media.DURATION);
             columns.add(MediaStore.MediaColumns.WIDTH);
             columns.add(MediaStore.MediaColumns.HEIGHT);
             columns.add(MediaStore.MediaColumns.CAPTURE_FRAMERATE);
@@ -817,7 +817,7 @@ public final class MainActivity extends Activity {
             int dateCol = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED);
             int pathCol = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH);
             int volumeCol = cursor.getColumnIndex(MediaStore.MediaColumns.VOLUME_NAME);
-            int durationCol = video ? cursor.getColumnIndex(MediaStore.Video.Media.DURATION) : -1;
+            int durationCol = cursor.getColumnIndex(video ? MediaStore.Video.Media.DURATION : MediaStore.Audio.Media.DURATION);
             int widthCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.WIDTH) : -1;
             int heightCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.HEIGHT) : -1;
             int frameRateCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.CAPTURE_FRAMERATE) : -1;
