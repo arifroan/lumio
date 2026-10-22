@@ -6,7 +6,7 @@ Lumio is an offline-first Android media player with its own visual identity. It 
 
 Development branch: `draft/android-player`
 
-The current draft includes local media selection/scanning, a folder-based library, queued playback, gesture seeking, brightness/volume controls, playback-speed options, subtitle/track menus, resume position, a background MediaSession, Picture-in-Picture support, decoder preferences, audio sync controls, a decoded-PCM gain control, and an encrypted private vault.
+The current draft includes local media selection/scanning, searchable and sortable video browsing with cached thumbnails, navigable storage folders, persistent SD-card/USB folder grants through Android's document picker, cross-URI deduplication for external-storage paths, queued playback, Continue Watching, Recently Played, Favorites, gesture seeking, brightness/volume controls, playback-speed options, subtitle/track menus, resume position, a background MediaSession, Picture-in-Picture support, decoder preferences, audio sync controls, a decoded-PCM gain control, and an encrypted private vault.
 
 Feature-by-feature status and known limitations: [docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md).
 
