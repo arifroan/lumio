@@ -277,16 +277,26 @@ public final class PlayerActivity extends Activity {
     protected void onStart() {
         super.onStart();
         SessionToken token = new SessionToken(this, new ComponentName(this, PlaybackService.class));
-        controllerFuture = new MediaController.Builder(this, token).buildAsync();
-        controllerFuture.addListener(() -> {
+        // Capture this connection's future. The Activity can stop and reconnect before
+        // MediaController finishes connecting; reading the mutable field in the callback
+        // could otherwise bind a stale callback to a newer connection attempt.
+        final ListenableFuture<MediaController> future =
+                new MediaController.Builder(this, token).buildAsync();
+        controllerFuture = future;
+        future.addListener(() -> {
+            if (controllerFuture != future || isFinishing() || isDestroyed()) return;
             try {
-                controller = controllerFuture.get();
-                playerView.setPlayer(controller);
-                controller.addListener(playbackUiListener);
+                MediaController connectedController = future.get();
+                if (controllerFuture != future || isFinishing() || isDestroyed()) return;
+                controller = connectedController;
+                playerView.setPlayer(connectedController);
+                connectedController.addListener(playbackUiListener);
                 initializeMedia();
                 if (!requestedAudio) showPlaybackControlsTemporarily();
             } catch (Exception e) {
-                showHint("Could not start the playback engine");
+                if (controllerFuture == future && !isFinishing() && !isDestroyed()) {
+                    showHint("Could not start the playback engine");
+                }
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -853,7 +863,19 @@ public final class PlayerActivity extends Activity {
         if (requestCode != REQUEST_SUBTITLE || resultCode != RESULT_OK || data == null || data.getData() == null) return;
         Uri uri = data.getData();
         try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
-        String name = uri.getLastPathSegment() == null ? "subtitle" : uri.getLastPathSegment();
+        // Document providers often return an opaque URI segment (for example
+        // "document:primary:Movies%2Fmovie.srt"). Prefer the actual display name
+        // so subtitle format detection works with Files, Drive, and other providers.
+        String name = uri.getLastPathSegment() == null ? "subtitle" : Uri.decode(uri.getLastPathSegment());
+        try (android.database.Cursor cursor = getContentResolver().query(uri,
+                new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameColumn = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (nameColumn >= 0 && cursor.getString(nameColumn) != null) {
+                    name = cursor.getString(nameColumn);
+                }
+            }
+        } catch (Exception ignored) { }
         int dot = name.lastIndexOf('.');
         String ext = dot >= 0 ? name.substring(dot + 1).toLowerCase(Locale.ROOT) : "";
         String mime;
