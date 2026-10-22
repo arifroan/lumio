@@ -135,14 +135,27 @@ public final class MainActivity extends Activity {
     }
 
     private void beginMediaScan() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            // Android 13+ grants video and audio access separately. Request any
+            // missing permission instead of treating one granted permission as full access.
+            List<String> missingPermissions = new ArrayList<>();
+            if (!canReadVideo()) missingPermissions.add(Manifest.permission.READ_MEDIA_VIDEO);
+            if (!canReadAudio()) missingPermissions.add(Manifest.permission.READ_MEDIA_AUDIO);
+            if (missingPermissions.isEmpty()) {
+                publishScannedMedia();
+                return;
+            }
+            pendingScan = true;
+            requestPermissions(missingPermissions.toArray(new String[0]), REQUEST_SCAN_PERMISSION);
+            return;
+        }
+
         if (hasAnyMediaReadPermission()) {
             publishScannedMedia();
             return;
         }
         pendingScan = true;
-        if (Build.VERSION.SDK_INT >= 33) {
-            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_SCAN_PERMISSION);
-        } else if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= 23) {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_SCAN_PERMISSION);
         } else {
             publishScannedMedia();
