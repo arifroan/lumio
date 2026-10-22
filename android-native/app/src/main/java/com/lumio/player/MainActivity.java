@@ -525,12 +525,257 @@ public final class MainActivity extends Activity {
     }
 
     private void publishScannedMedia() {
-        JSONArray array = new JSONArray();
-        if (canReadVideo()) appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
-        if (canReadAudio()) appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
-        JSONArray saved = getSavedPicks();
-        for (int i = 0; i < saved.length(); i++) array.put(saved.optJSONObject(i));
-        callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + array.toString() + ", null)");
+        final int generation = scanGeneration.incrementAndGet();
+        final boolean completeMediaStoreAccess = canReadVideo() && canReadAudio();
+        scanExecutor.execute(() -> {
+            JSONArray array = new JSONArray();
+            if (canReadVideo()) appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
+            if (canReadAudio()) appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+
+            int[] treeCount = new int[]{0};
+            boolean treesComplete = appendSavedTreeMedia(array, treeCount);
+            JSONArray saved = getSavedPicks();
+            for (int i = 0; i < saved.length(); i++) {
+                JSONObject item = saved.optJSONObject(i);
+                if (item != null) array.put(item);
+            }
+
+            String warning = null;
+            if (!completeMediaStoreAccess) {
+                warning = "Some storage permissions are unavailable. Existing library entries were preserved; grant access and scan again to fully refresh.";
+            }
+            if (!treesComplete) {
+                warning = warning == null
+                        ? "Some folder contents could not be read or exceeded the scan limit. Existing entries were preserved."
+                        : warning + " Some selected folders could not be read completely.";
+            }
+            if (generation != scanGeneration.get()) return;
+            String errorJson = warning == null ? "null" : JSONObject.quote(warning);
+            callJs("window.onNativeMediaScan && window.onNativeMediaScan("
+                    + array.toString() + ", " + errorJson + ")");
+        });
+    }
+
+    private static final class TreeFolder {
+        final DocumentFile directory;
+        final String folderPath;
+        final int depth;
+
+        TreeFolder(DocumentFile directory, String folderPath, int depth) {
+            this.directory = directory;
+            this.folderPath = folderPath;
+            this.depth = depth;
+        }
+    }
+
+    private boolean appendSavedTreeMedia(JSONArray results, int[] totalCount) {
+        Set<String> trees = new HashSet<>(getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getStringSet("picked_tree_uris", new HashSet<>()));
+        boolean complete = true;
+        for (String value : trees) {
+            if (value == null || value.trim().isEmpty()) continue;
+            if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
+            try {
+                Uri treeUri = Uri.parse(value);
+                DocumentFile root = DocumentFile.fromTreeUri(this, treeUri);
+                if (root == null || !root.isDirectory()) {
+                    complete = false;
+                    continue;
+                }
+                if (!appendTreeMedia(results, treeUri, root, totalCount)) complete = false;
+            } catch (SecurityException | IllegalArgumentException e) {
+                // A revoked or unavailable folder grant must not erase cached library items.
+                complete = false;
+            } catch (Exception e) {
+                complete = false;
+            }
+        }
+        return complete;
+    }
+
+    private boolean appendTreeMedia(JSONArray results, Uri treeUri, DocumentFile root, int[] totalCount) {
+        String initialPath = folderPathForTreeRoot(treeUri, root);
+        Deque<TreeFolder> pending = new ArrayDeque<>();
+        pending.push(new TreeFolder(root, initialPath, 0));
+        boolean complete = true;
+
+        while (!pending.isEmpty()) {
+            if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
+            TreeFolder current = pending.pop();
+            DocumentFile[] children;
+            try {
+                children = current.directory.listFiles();
+            } catch (Exception e) {
+                complete = false;
+                continue;
+            }
+            for (DocumentFile child : children) {
+                if (child == null) continue;
+                String name = child.getName();
+                if (name == null || name.trim().isEmpty() || name.startsWith(".")) continue;
+
+                if (child.isDirectory()) {
+                    if (current.depth >= MAX_TREE_DEPTH) {
+                        complete = false;
+                        continue;
+                    }
+                    pending.push(new TreeFolder(child, appendPath(current.folderPath, name, true), current.depth + 1));
+                    continue;
+                }
+                if (!child.isFile()) continue;
+
+                String mime = child.getType();
+                boolean audio = isAudioMedia(name, mime);
+                boolean video = isVideoMedia(name, mime);
+                if (!audio && !video) continue;
+
+                Uri mediaUri = child.getUri();
+                String identity = identityForDocumentUri(mediaUri);
+                JSONObject entry = new JSONObject();
+                try {
+                    entry.put("key", mediaUri.toString());
+                    entry.put("uri", mediaUri.toString());
+                    entry.put("name", name);
+                    entry.put("size", Math.max(0L, child.length()));
+                    entry.put("mime", mime == null || mime.trim().isEmpty()
+                            ? (audio ? "audio/*" : "video/*") : mime);
+                    entry.put("type", audio ? "audio" : "video");
+                    entry.put("folder", current.folderPath);
+                    entry.put("lastModified", Math.max(0L, child.lastModified()));
+                    entry.put("duration", 0L);
+                    entry.put("source", "folder");
+                    if (!identity.isEmpty()) {
+                        entry.put("identity", identity);
+                        rememberMediaIdentity(mediaUri, identity);
+                    }
+                    results.put(entry);
+                    totalCount[0]++;
+                } catch (JSONException ignored) { }
+                if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
+            }
+        }
+        return complete;
+    }
+
+    private String folderPathForTreeRoot(Uri treeUri, DocumentFile root) {
+        try {
+            if ("com.android.externalstorage.documents".equals(treeUri.getAuthority())) {
+                String documentId = DocumentsContract.getTreeDocumentId(treeUri);
+                int colon = documentId.indexOf(':');
+                if (colon > 0) {
+                    String volume = documentId.substring(0, colon);
+                    String relativePath = cleanRelativePath(documentId.substring(colon + 1));
+                    String prefix = storageLabel(volume);
+                    if (!relativePath.isEmpty()) prefix += "/" + relativePath;
+                    return prefix + "/";
+                }
+            }
+        } catch (Exception ignored) { }
+        String rootName = root.getName();
+        if (rootName == null || rootName.trim().isEmpty()) rootName = "Folder";
+        return "Selected folders/" + rootName.replace("/", "_").replace("\\", "_") + "/";
+    }
+
+    private String appendPath(String parent, String name, boolean directory) {
+        String base = parent == null ? "" : parent.replace("\\", "/");
+        while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+        String safeName = name == null ? "" : name.replace("/", "_").replace("\\", "_");
+        return base + (base.isEmpty() ? "" : "/") + safeName + (directory ? "/" : "");
+    }
+
+    private String cleanRelativePath(String path) {
+        if (path == null) return "";
+        String cleaned = path.replace("\\", "/");
+        while (cleaned.startsWith("/")) cleaned = cleaned.substring(1);
+        while (cleaned.endsWith("/")) cleaned = cleaned.substring(0, cleaned.length() - 1);
+        return cleaned;
+    }
+
+    private String normalizeVolumeName(String volume) {
+        if (volume == null || volume.trim().isEmpty()
+                || "primary".equalsIgnoreCase(volume)
+                || "external_primary".equalsIgnoreCase(volume)
+                || "external".equalsIgnoreCase(volume)) return "external_primary";
+        return volume.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String storageLabel(String volume) {
+        String normalized = normalizeVolumeName(volume);
+        if ("external_primary".equals(normalized)) return "Internal storage";
+        return "External storage (" + volume + ")";
+    }
+
+    private String buildMediaIdentity(String volume, String relativePathAndName) {
+        String path = cleanRelativePath(relativePathAndName);
+        if (path.isEmpty()) return "";
+        return normalizeVolumeName(volume) + ":" + path;
+    }
+
+    private String identityForDocumentUri(Uri uri) {
+        if (uri == null || !"com.android.externalstorage.documents".equals(uri.getAuthority())) return "";
+        try {
+            String documentId = DocumentsContract.getDocumentId(uri);
+            int colon = documentId.indexOf(':');
+            if (colon <= 0 || colon == documentId.length() - 1) return "";
+            return buildMediaIdentity(documentId.substring(0, colon), documentId.substring(colon + 1));
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private String folderForDocumentUri(Uri uri) {
+        if (uri == null || !"com.android.externalstorage.documents".equals(uri.getAuthority())) return "Chosen files";
+        try {
+            String documentId = DocumentsContract.getDocumentId(uri);
+            int colon = documentId.indexOf(':');
+            if (colon <= 0) return "Chosen files";
+            String volume = documentId.substring(0, colon);
+            String path = cleanRelativePath(documentId.substring(colon + 1));
+            int lastSlash = path.lastIndexOf('/');
+            String parentPath = lastSlash >= 0 ? path.substring(0, lastSlash) : "";
+            String folder = storageLabel(volume);
+            if (!parentPath.isEmpty()) folder += "/" + parentPath;
+            return folder + "/";
+        } catch (Exception ignored) {
+            return "Chosen files";
+        }
+    }
+
+    private void rememberMediaIdentity(Uri uri, String identity) {
+        if (uri == null || identity == null || identity.trim().isEmpty()) return;
+        getSharedPreferences("lumio_library", MODE_PRIVATE).edit()
+                .putString("identity:" + uri.toString(), identity).apply();
+    }
+
+    private String savedMediaIdentity(Uri uri) {
+        if (uri == null) return "";
+        String stored = getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getString("identity:" + uri.toString(), "");
+        return stored == null ? "" : stored;
+    }
+
+    private boolean isAudioMedia(String name, String mime) {
+        if (mime != null && mime.toLowerCase(Locale.ROOT).startsWith("audio/")) return true;
+        if (name == null) return false;
+        String n = name.toLowerCase(Locale.ROOT);
+        return n.endsWith(".mp3") || n.endsWith(".m4a") || n.endsWith(".aac")
+                || n.endsWith(".wav") || n.endsWith(".ogg") || n.endsWith(".oga")
+                || n.endsWith(".flac") || n.endsWith(".opus") || n.endsWith(".wma")
+                || n.endsWith(".mid") || n.endsWith(".midi") || n.endsWith(".aiff")
+                || n.endsWith(".aif") || n.endsWith(".amr") || n.endsWith(".ape")
+                || n.endsWith(".alac") || n.endsWith(".mka");
+    }
+
+    private boolean isVideoMedia(String name, String mime) {
+        if (mime != null && mime.toLowerCase(Locale.ROOT).startsWith("video/")) return true;
+        if (name == null) return false;
+        String n = name.toLowerCase(Locale.ROOT);
+        return n.endsWith(".mp4") || n.endsWith(".m4v") || n.endsWith(".mkv")
+                || n.endsWith(".webm") || n.endsWith(".mov") || n.endsWith(".avi")
+                || n.endsWith(".3gp") || n.endsWith(".3g2") || n.endsWith(".ts")
+                || n.endsWith(".mts") || n.endsWith(".m2ts") || n.endsWith(".mpeg")
+                || n.endsWith(".mpg") || n.endsWith(".ogv") || n.endsWith(".flv")
+                || n.endsWith(".wmv") || n.endsWith(".vob") || n.endsWith(".asf");
     }
 
     private void appendStore(JSONArray results, Uri collection, boolean video) {
@@ -541,7 +786,10 @@ public final class MainActivity extends Activity {
         columns.add(MediaStore.MediaColumns.MIME_TYPE);
         columns.add(MediaStore.MediaColumns.DATE_MODIFIED);
         if (video) columns.add(MediaStore.Video.Media.DURATION);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) columns.add(MediaStore.MediaColumns.RELATIVE_PATH);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            columns.add(MediaStore.MediaColumns.RELATIVE_PATH);
+            columns.add(MediaStore.MediaColumns.VOLUME_NAME);
+        }
         String sort = MediaStore.MediaColumns.DISPLAY_NAME + " COLLATE NOCASE ASC";
         try (Cursor cursor = getContentResolver().query(collection, columns.toArray(new String[0]), null, null, sort)) {
             if (cursor == null) return;
@@ -551,31 +799,48 @@ public final class MainActivity extends Activity {
             int mimeCol = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE);
             int dateCol = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED);
             int pathCol = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH);
+            int volumeCol = cursor.getColumnIndex(MediaStore.MediaColumns.VOLUME_NAME);
             int durationCol = video ? cursor.getColumnIndex(MediaStore.Video.Media.DURATION) : -1;
             while (cursor.moveToNext()) {
                 long id = idCol >= 0 ? cursor.getLong(idCol) : -1;
                 if (id < 0) continue;
                 Uri fileUri = ContentUris.withAppendedId(collection, id);
                 String name = nameCol >= 0 ? cursor.getString(nameCol) : (video ? "Video" : "Audio");
+                if (name == null || name.trim().isEmpty()) name = video ? "Video" : "Audio";
                 String mime = mimeCol >= 0 ? cursor.getString(mimeCol) : null;
+                String relativePath = pathCol >= 0 ? cursor.getString(pathCol) : null;
+                String volume = volumeCol >= 0 ? cursor.getString(volumeCol) : null;
+                String folder = "Device storage";
+                String identity = "";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && relativePath != null) {
+                    String label = storageLabel(volume);
+                    String cleanedPath = cleanRelativePath(relativePath);
+                    folder = label + (cleanedPath.isEmpty() ? "/" : "/" + cleanedPath + "/");
+                    identity = buildMediaIdentity(volume, appendPath(cleanedPath, name, false));
+                }
                 JSONObject entry = new JSONObject();
                 try {
                     entry.put("key", fileUri.toString());
                     entry.put("uri", fileUri.toString());
-                    entry.put("name", name == null ? "Local media" : name);
+                    entry.put("name", name);
                     entry.put("size", sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L);
                     entry.put("mime", mime == null ? (video ? "video/*" : "audio/*") : mime);
                     entry.put("type", video ? "video" : "audio");
-                    entry.put("folder", pathCol >= 0 && cursor.getString(pathCol) != null ? cursor.getString(pathCol) : "Device storage");
+                    entry.put("folder", folder);
                     entry.put("lastModified", dateCol >= 0 ? cursor.getLong(dateCol) * 1000L : 0L);
                     entry.put("duration", durationCol >= 0 ? cursor.getLong(durationCol) : 0L);
+                    entry.put("source", "mediastore");
+                    if (!identity.isEmpty()) {
+                        entry.put("identity", identity);
+                        rememberMediaIdentity(fileUri, identity);
+                    }
                     results.put(entry);
                 } catch (JSONException ignored) { }
             }
         } catch (SecurityException ignored) {
             // A permission may have been revoked while scanning; the picker remains available.
         } catch (Exception ignored) {
-            // Leave other file types/results available when a manufacturer-specific media provider fails.
+            // Other storage sources/results remain available when a media provider fails.
         }
     }
 
