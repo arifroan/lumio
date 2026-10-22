@@ -464,7 +464,7 @@ function setContentMode(mode){
  mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';
  if(active==='video')videoContentModePreference=mediaContentMode;
  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
- folderBrowseActive=mediaContentMode==='folders';currentFolderPath='';
+ folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').setAttribute('aria-pressed',String(groupByFolder));
@@ -484,7 +484,7 @@ function choosePage(page){
   $('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders';syncOptionsSelection();
  }else{
   mediaContentMode=videoContentModePreference||'folders';
-  folderBrowseActive=mediaContentMode==='folders';currentFolderPath='';
+  folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
   syncOptionsSelection();
  }
@@ -691,7 +691,7 @@ function render(){
  let filtered=items.filter(x=>x.type===active);
  if(videoSearchText)filtered=filtered.filter(x=>(String(x.name||'')+' '+String(x.folder||'')+' '+String(x.mime||'')+' '+String(x.type||'')).toLocaleLowerCase().includes(videoSearchText));
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
- $('mediaTitle').textContent=active==='audio'?'Music':(folderBrowseActive?'Folders':'Videos');
+ $('mediaTitle').textContent=active==='audio'?'Music':(folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos');
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=items.filter(x=>x.type==='video').length;
  $('audioCount').textContent=items.filter(x=>x.type==='audio').length;
@@ -708,8 +708,8 @@ function render(){
  const library=$('library');
  library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive&&mediaContentMode!=='folders');
  library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list'&&mediaContentMode!=='folders');
- library.classList.toggle('folder-overview',active==='video'&&folderBrowseActive&&mediaContentMode==='folders'&&!currentFolderPath);
- if(active==='video'&&folderBrowseActive&&mediaContentMode==='folders'){
+ library.classList.toggle('folder-overview',active==='video'&&folderBrowseActive&&(mediaContentMode==='all'||mediaContentMode==='folders')&&!currentFolderPath);
+ if(active==='video'&&folderBrowseActive&&(mediaContentMode==='all'||mediaContentMode==='folders')){
   if(currentFolderPath){renderFolderContents(filtered);return}
   if(filtered.length){renderFolderOverview(filtered);return}
  }
