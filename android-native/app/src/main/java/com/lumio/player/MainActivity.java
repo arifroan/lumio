@@ -243,7 +243,16 @@ public final class MainActivity extends Activity {
         boolean wasFavorite = saved.contains(uri) || (hasIdentity && savedIdentities.contains(identity));
         if (wasFavorite) {
             saved.remove(uri);
-            if (hasIdentity) savedIdentities.remove(identity);
+            if (hasIdentity) {
+                savedIdentities.remove(identity);
+                // A prior version may have stored this same physical file under a
+                // different provider URI. Remove those URI aliases too.
+                for (String savedUri : new HashSet<>(saved)) {
+                    try {
+                        if (identity.equals(savedMediaIdentity(Uri.parse(savedUri)))) saved.remove(savedUri);
+                    } catch (Exception ignored) { }
+                }
+            }
         } else {
             saved.add(uri);
             if (hasIdentity) savedIdentities.add(identity);
