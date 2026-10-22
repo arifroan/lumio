@@ -64,6 +64,7 @@ public final class MainActivity extends Activity {
     private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor();
     private final AtomicInteger scanGeneration = new AtomicInteger();
+    private volatile boolean incompleteSavedPicksScan;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -515,12 +516,9 @@ public final class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_SCAN_PERMISSION && pendingScan) {
             pendingScan = false;
-            if (hasAnyMediaReadPermission()) publishScannedMedia();
-            else {
-                JSONArray saved = getSavedPicks();
-                callJs("window.onNativeMediaScan && window.onNativeMediaScan(" + saved.toString()
-                        + ", 'Storage access was not granted. You can still open chosen files or grant access to scan the device.')");
-            }
+            // Even without broad media permissions, previously granted document and
+            // folder picks may remain readable. Scan those sources without erasing old rows.
+            publishScannedMedia();
         }
     }
 
@@ -548,6 +546,11 @@ public final class MainActivity extends Activity {
                 warning = warning == null
                         ? "Some folder contents could not be read or exceeded the scan limit. Existing entries were preserved."
                         : warning + " Some selected folders could not be read completely.";
+            }
+            if (incompleteSavedPicksScan) {
+                warning = warning == null
+                        ? "Some previously selected files are temporarily unavailable. Existing library entries were preserved."
+                        : warning + " Some selected files remain unavailable.";
             }
             if (generation != scanGeneration.get()) return;
             String errorJson = warning == null ? "null" : JSONObject.quote(warning);
@@ -846,11 +849,20 @@ public final class MainActivity extends Activity {
 
     private JSONArray getSavedPicks() {
         JSONArray results = new JSONArray();
-        Set<String> saved = getSharedPreferences("lumio_library", MODE_PRIVATE)
-                .getStringSet("picked_uris", new HashSet<>());
-        for (String value : new HashSet<>(saved)) {
+        incompleteSavedPicksScan = false;
+        Set<String> saved = new HashSet<>(getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getStringSet("picked_uris", new HashSet<>()));
+        for (String value : saved) {
             if (value == null || value.trim().isEmpty()) continue;
-            try { results.put(readDocument(Uri.parse(value))); } catch (Exception ignored) { }
+            try {
+                JSONObject item = readDocument(Uri.parse(value));
+                if (item != null) {
+                    if (!item.optBoolean("available", true)) incompleteSavedPicksScan = true;
+                    results.put(item);
+                }
+            } catch (Exception ignored) {
+                incompleteSavedPicksScan = true;
+            }
         }
         return results;
     }
@@ -863,32 +875,50 @@ public final class MainActivity extends Activity {
     }
 
     private JSONObject readDocument(Uri uri) {
+        if (uri == null) return null;
         JSONObject entry = new JSONObject();
-        String name = "Local media";
+        String name = uri.getLastPathSegment() == null ? "Local media" : Uri.decode(uri.getLastPathSegment());
         long size = 0L;
-        String mime = getContentResolver().getType(uri);
+        String mime = null;
+        boolean metadataRead = false;
+        try { mime = getContentResolver().getType(uri); } catch (Exception ignored) { }
         try (Cursor cursor = getContentResolver().query(uri,
                 new String[]{android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE},
                 null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
+                metadataRead = true;
                 int nameCol = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
                 int sizeCol = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE);
                 if (nameCol >= 0 && cursor.getString(nameCol) != null) name = cursor.getString(nameCol);
-                if (sizeCol >= 0) size = cursor.getLong(sizeCol);
+                if (sizeCol >= 0 && !cursor.isNull(sizeCol)) size = Math.max(0L, cursor.getLong(sizeCol));
             }
         } catch (Exception ignored) { }
-        boolean audio = (mime != null && mime.startsWith("audio/")) || looksLikeAudio(name);
+
+        boolean readable = false;
+        try (java.io.InputStream probe = getContentResolver().openInputStream(uri)) {
+            readable = probe != null;
+        } catch (Exception ignored) { }
+        // A saved picker URI whose grant was revoked or whose file disappeared is
+        // kept as unavailable metadata during incomplete scans, instead of causing a
+        // partial scan to erase unrelated library entries.
+        if (!metadataRead && !readable) return null;
+
+        boolean audio = isAudioMedia(name, mime);
+        String identity = identityForDocumentUri(uri);
+        if (identity.isEmpty()) identity = savedMediaIdentity(uri);
+        if (!identity.isEmpty()) rememberMediaIdentity(uri, identity);
         try {
             entry.put("key", uri.toString());
             entry.put("uri", uri.toString());
-            entry.put("name", name);
+            entry.put("name", name == null || name.trim().isEmpty() ? "Local media" : name);
             entry.put("size", size);
             entry.put("mime", mime == null ? (audio ? "audio/*" : "video/*") : mime);
             entry.put("type", audio ? "audio" : "video");
-            entry.put("folder", "Chosen files");
-            // A document provider's actual modification time is not always available.
-            // Keep it unknown instead of falsely presenting the pick time as file age.
+            entry.put("folder", folderForDocumentUri(uri));
             entry.put("lastModified", 0L);
+            entry.put("source", "document");
+            entry.put("available", readable);
+            if (!identity.isEmpty()) entry.put("identity", identity);
         } catch (JSONException ignored) { }
         return entry;
     }
