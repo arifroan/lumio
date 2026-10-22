@@ -137,7 +137,10 @@ $('openStream').onclick=()=>{
  try{url=new URL(raw);}catch(e){message.textContent='That does not look like a valid URL.';return;}
  if(url.protocol!=='https:'){message.textContent='For safety, Lumio accepts HTTPS stream URLs only.';return;}
  const resource=url.pathname.split('/').filter(Boolean).pop()||'Network stream';
- const title=decodeURIComponent(resource.replace(/\+/g,' '));
+ let title=resource.replace(/\+/g,' ');
+ // URLs can contain malformed percent escapes; keep the original segment rather
+ // than letting decodeURIComponent abort the stream button handler.
+ try{title=decodeURIComponent(title)}catch(e){}
  const audio=/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|wma)(?:$)/i.test(url.pathname);
  message.textContent='Opening stream in Lumio…';
  safeBridge('playMedia',url.href,title,audio,'[]');
