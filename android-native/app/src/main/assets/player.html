@@ -321,10 +321,6 @@ input[type=file]{display:none}[hidden]{display:none!important}
     </section>
   </section>
 </div>
-<div class="folder-browse-bar" id="folderBrowseBar" hidden>
-  <div class="folder-breadcrumb" id="folderBreadcrumb"></div>
-  <p>Browse folder contents stored on your phone, SD card, or an authorized USB drive.</p>
-</div>
 <div class="video-library-filters" id="videoLibraryFilters" role="group" aria-label="Video library filter">
   <button id="showAllVideos" class="active" type="button" aria-pressed="true">All videos <span class="filter-count" id="allVideoCount">0</span></button>
   <button id="showFavoriteVideos" type="button" aria-pressed="false">★ Favorites <span class="filter-count" id="favoriteVideoCount">0</span></button>
@@ -642,12 +638,8 @@ function renderFolderOverview(filtered){
  library.querySelectorAll('[data-open-folder]').forEach(button=>button.onclick=()=>setCurrentFolder(button.dataset.openFolder));
 }
 function renderFolderContents(filtered){
- const library=$('library'),current=normalizeFolder(currentFolderPath),parts=current?current.split('/').filter(Boolean):[];
+ const library=$('library'),current=normalizeFolder(currentFolderPath);
  currentFolderPath=current;
- let crumbs='<button type="button" class="'+(!parts.length?'current':'')+'" data-breadcrumb="">All folders</button>',accumulated='';
- parts.forEach((part,index)=>{accumulated+=(accumulated?'/':'')+part;crumbs+='<span class="crumb-sep">›</span><button type="button" class="'+(index===parts.length-1?'current':'')+'" data-breadcrumb="'+escapeHtml(accumulated)+'">'+escapeHtml(part)+'</button>'});
- $('folderBreadcrumb').innerHTML=crumbs;
- $('folderBreadcrumb').querySelectorAll('[data-breadcrumb]').forEach(button=>button.onclick=()=>setCurrentFolder(button.dataset.breadcrumb));
  const prefix=current?current+'/':'',folders=new Map();
  for(const item of filtered){
   const path=normalizeFolder(item.folder);
@@ -691,7 +683,15 @@ function render(){
  let filtered=items.filter(x=>x.type===active);
  if(videoSearchText)filtered=filtered.filter(x=>(String(x.name||'')+' '+String(x.folder||'')+' '+String(x.mime||'')+' '+String(x.type||'')).toLocaleLowerCase().includes(videoSearchText));
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
- $('mediaTitle').textContent=active==='audio'?'Music':(folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos');
+ const titleEl=$('mediaTitle'),currentParts=normalizeFolder(currentFolderPath).split('/').filter(Boolean),canGoUp=active==='video'&&folderBrowseActive&&currentParts.length>0;
+ const sectionTitle=active==='audio'?'Music':(folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos');
+ titleEl.textContent=active==='audio'?'Music':(canGoUp?'‹ '+currentParts[currentParts.length-1]:sectionTitle);
+ titleEl.style.cursor=canGoUp?'pointer':'';
+ titleEl.setAttribute('role',canGoUp?'button':'heading');
+ titleEl.setAttribute('aria-label',canGoUp?'Go to parent folder from '+currentParts[currentParts.length-1]:sectionTitle);
+ titleEl.tabIndex=canGoUp?0:-1;
+ titleEl.onclick=canGoUp?()=>setCurrentFolder(currentParts.slice(0,-1).join('/')):null;
+ titleEl.onkeydown=canGoUp?event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();setCurrentFolder(currentParts.slice(0,-1).join('/'))}}:null;
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=items.filter(x=>x.type==='video').length;
  $('audioCount').textContent=items.filter(x=>x.type==='audio').length;
@@ -700,7 +700,6 @@ function render(){
  $('favoriteVideoCount').textContent=items.filter(x=>x.type==='video'&&isFavorite(x)).length;
  $('videoLibraryFilters').hidden=active!=='video';
  $('videoToolbar').hidden=!((active==='video'||active==='audio')&&searchExpanded);
- $('folderBrowseBar').hidden=active!=='video'||!folderBrowseActive||!currentFolderPath;
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
