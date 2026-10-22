@@ -9,7 +9,7 @@ on:
       - ".github/workflows/android-apk.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 # Each source edit triggers CI; keep only the newest branch build running.
 concurrency:
@@ -46,10 +46,22 @@ jobs:
         run: |
           ls -lh android-native/app/build/outputs/apk/debug/app-debug.apk
           du -b android-native/app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Prepare direct APK download
+        run: cp android-native/app/build/outputs/apk/debug/app-debug.apk Lumio-Android-Preview.apk
+      - name: Publish direct APK download (no ZIP)
+        uses: softprops/action-gh-release@v2
         with:
-          name: lumio-android-debug-apk
-          path: android-native/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 14
+          tag_name: android-preview
+          name: Lumio Android Preview
+          target_commitish: ${{ github.sha }}
+          body: |
+            Direct APK download for the Lumio Android preview.
+            Download Lumio-Android-Preview.apk and install it on your Android device.
+            This is an early development preview; it has not been comprehensively device-tested.
+          prerelease: true
+          make_latest: false
+          files: Lumio-Android-Preview.apk
+          overwrite_files: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
