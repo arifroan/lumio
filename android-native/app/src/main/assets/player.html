@@ -314,7 +314,7 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </button>
 </nav>
 <script>const $=id=>document.getElementById(id);
-let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='name-asc',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=false,currentFolderPath='';
+let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=false,currentFolderPath='',mediaContentMode='all',sortDirection='asc',searchExpanded=false;
 function safeBridge(method,...args){try{if(window.LumioNative&&typeof window.LumioNative[method]==='function')return window.LumioNative[method](...args)}catch(e){}return null}
 function fmtSize(bytes){return bytes>=1073741824?(bytes/1073741824).toFixed(2)+' GB':bytes>=1048576?(bytes/1048576).toFixed(1)+' MB':bytes>=1024?(bytes/1024).toFixed(0)+' KB':(bytes||0)+' B'}
 function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll(String.fromCharCode(39),'&#39;')}
@@ -322,7 +322,7 @@ function mergeMedia(records,replaceExisting=false){
  if(replaceExisting)items=[];
  for(const raw of records||[]){
   if(!raw||!raw.uri)continue;
-  const item={key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false};
+  const item={key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,width:Number(raw.width)||0,height:Number(raw.height)||0,frameRate:Number(raw.frameRate)||0,resolution:String(raw.resolution||''),identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false};
   const ix=items.findIndex(x=>x.uri===item.uri||x.key===item.key||(item.identity&&x.identity===item.identity));
   if(ix>=0){
    const old=items[ix];
@@ -336,7 +336,7 @@ function mergeMedia(records,replaceExisting=false){
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records);if(records&&records.length){const record=records[0];choosePage(record.type==='audio'?'music':'videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}};
 window.onNativeMediaScan=function(records,error){mergeMedia(records,!error);refreshLibraryState();if(error)showMessage(error);else if(!records||!records.length)showMessage('No indexed media was found yet. Use Add media or Add folder to choose storage locations.')};
-window.onNativeFolderPicked=function(name,path){choosePage('videos');folderBrowseActive=true;currentFolderPath=normalizeFolder(path||'');$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
+window.onNativeFolderPicked=function(name,path){choosePage('videos');mediaContentMode='folders';folderBrowseActive=true;currentFolderPath=normalizeFolder(path||'');$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';syncOptionsSelection();render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
 function applyLibraryState(raw){try{const state=typeof raw==='string'?JSON.parse(raw):raw||{};favoriteUris=new Set(Array.isArray(state.favorites)?state.favorites.filter(Boolean):[]);favoriteIdentities=new Set(Array.isArray(state.favoriteIdentities)?state.favoriteIdentities.filter(Boolean):[]);watchHistory=Array.isArray(state.history)?state.history.filter(row=>row&&row.uri).sort((a,b)=>(Number(b.lastPlayedAt)||0)-(Number(a.lastPlayedAt)||0)):[]}catch(e){favoriteUris=new Set();favoriteIdentities=new Set();watchHistory=[]}render()}
 window.onNativeLibraryState=function(raw){applyLibraryState(raw)};
 function refreshLibraryState(){const state=safeBridge('getLibraryState');if(state)applyLibraryState(state)}
@@ -346,18 +346,49 @@ function requestThumbnail(img){if(!img||img.dataset.requested)return;img.dataset
 function observeThumbnails(){document.querySelectorAll('.video-thumb,.history-thumb').forEach(img=>{if(img.dataset.requested)return;if(thumbObserver)thumbObserver.observe(img);else requestThumbnail(img)})}
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function pickFolder(){safeBridge('pickFolder')} function openVault(){safeBridge('openVault')}
 $('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
-$('browseFoldersButton').onclick=()=>{folderBrowseActive=!folderBrowseActive;currentFolderPath='';$('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));$('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';render()};
+$('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 $('videoSearch').addEventListener('input',()=>{videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()});
-$('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;render()});
+$('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;syncOptionsSelection();render()});
 $('videoGridView').onclick=()=>setVideoView('grid');$('videoListView').onclick=()=>setVideoView('list');
-$('videoGroupToggle').onclick=()=>{groupByFolder=!groupByFolder;$('videoGroupToggle').setAttribute('aria-pressed',String(groupByFolder));$('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');render()};
+$('videoGroupToggle').onclick=()=>setContentMode(groupByFolder?'files':'all');
+$('searchToggle').onclick=()=>{searchExpanded=!searchExpanded;$('videoToolbar').hidden=!searchExpanded;$('searchToggle').setAttribute('aria-expanded',String(searchExpanded));if(searchExpanded){$('videoSearch').placeholder=active==='audio'?'Search music by name…':'Search videos by name…';$('videoSearch').focus()}else{videoSearchText='';$('videoSearch').value='';render()}};
+$('viewOptionsToggle').onclick=openOptions;$('optionsClose').onclick=closeOptions;
+$('optionsBackdrop').addEventListener('click',event=>{if(event.target===$('optionsBackdrop'))closeOptions()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('optionsBackdrop').hidden)closeOptions()});
+document.querySelectorAll('[data-content-mode]').forEach(button=>button.addEventListener('click',()=>setContentMode(button.dataset.contentMode)));
+document.querySelectorAll('[data-layout]').forEach(button=>button.addEventListener('click',()=>setVideoView(button.dataset.layout)));
+document.querySelectorAll('[data-sort]').forEach(button=>button.addEventListener('click',()=>setSortField(button.dataset.sort)));
+document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('click',()=>setSortDirection(button.dataset.direction)));
+$('browseFoldersAction').onclick=()=>{setContentMode('folders');closeOptions()};
+$('addFolderAction').onclick=()=>{closeOptions();pickFolder()};
 $('showAllVideos').onclick=()=>setVideoLibraryFilter('all');$('showFavoriteVideos').onclick=()=>setVideoLibraryFilter('favorites');
 function setVideoLibraryFilter(filter){videoLibraryFilter=filter;$('showAllVideos').classList.toggle('active',filter==='all');$('showFavoriteVideos').classList.toggle('active',filter==='favorites');$('showAllVideos').setAttribute('aria-pressed',String(filter==='all'));$('showFavoriteVideos').setAttribute('aria-pressed',String(filter==='favorites'));render()}
-function setVideoView(mode){videoViewMode=mode;$('videoGridView').classList.toggle('active',mode==='grid');$('videoListView').classList.toggle('active',mode==='list');$('videoGridView').setAttribute('aria-pressed',String(mode==='grid'));$('videoListView').setAttribute('aria-pressed',String(mode==='list'));render()}
+function syncOptionsSelection(){
+ document.querySelectorAll('[data-content-mode]').forEach(button=>button.classList.toggle('active',button.dataset.contentMode===mediaContentMode));
+ document.querySelectorAll('[data-layout]').forEach(button=>button.classList.toggle('active',button.dataset.layout===videoViewMode));
+ document.querySelectorAll('[data-sort]').forEach(button=>button.classList.toggle('active',button.dataset.sort===videoSort));
+ document.querySelectorAll('[data-direction]').forEach(button=>button.classList.toggle('active',button.dataset.direction===sortDirection));
+ $('videoSort').value=videoSort;
+}
+function openOptions(){syncOptionsSelection();$('optionsBackdrop').hidden=false;$('optionsClose').focus()}
+function closeOptions(){$('optionsBackdrop').hidden=true;$('viewOptionsToggle').focus()}
+function setContentMode(mode){
+ mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';
+ groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
+ folderBrowseActive=mediaContentMode==='folders';currentFolderPath='';
+ $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
+ $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
+ $('videoGroupToggle').setAttribute('aria-pressed',String(groupByFolder));
+ $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
+ syncOptionsSelection();render();
+}
+function setSortField(field){videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(field)?field:'title';syncOptionsSelection();render()}
+function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'asc';syncOptionsSelection();render()}
+function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
 function choosePage(page){
  currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';
- if(page!=='videos'){folderBrowseActive=false;currentFolderPath='';$('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders'}
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=page!=='videos';$('mediaTitle').textContent=page==='music'?'Music':'Videos';
+ if(page!=='videos'){folderBrowseActive=false;currentFolderPath='';if(mediaContentMode==='folders')mediaContentMode='all';groupByFolder=mediaContentMode==='all';$('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders';syncOptionsSelection()}
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':'Videos';$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
@@ -370,7 +401,26 @@ $('openStream').onclick=()=>{
 };
 function clearMessage(){const el=$('message');if(el)el.hidden=true}
 function showMessage(message){let el=$('message');if(!el){el=document.createElement('div');el.id='message';el.style.cssText='margin:10px 2px;padding:11px 13px;border:1px solid #49445d;border-radius:12px;color:#d5cdee;background:#1b1926;font-size:12px';$('library').before(el)}el.textContent=message;el.hidden=false}
-function videoComparator(a,b){let result=0;if(videoSort==='newest')result=(Number(b.lastModified)||0)-(Number(a.lastModified)||0);else if(videoSort==='largest')result=(Number(b.size)||0)-(Number(a.size)||0);else if(videoSort==='longest')result=(Number(b.duration)||0)-(Number(a.duration)||0);else result=a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});if(result===0)result=a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});return result}
+function historyFor(item){return watchHistory.find(row=>row&&(row.uri===item.uri||row.uri===item.key||(item.identity&&row.identity===item.identity)))||null}
+function mediaComparator(a,b){
+ const rowA=historyFor(a),rowB=historyFor(b);let va,vb,result=0;
+ switch(videoSort){
+  case 'date':va=Number(a.lastModified)||0;vb=Number(b.lastModified)||0;break;
+  case 'played':va=Number(rowA&&rowA.lastPlayedAt)||0;vb=Number(rowB&&rowB.lastPlayedAt)||0;break;
+  case 'status':va=rowA?(rowA.completed?2:(Number(rowA.positionMs)>0?1:0)):0;vb=rowB?(rowB.completed?2:(Number(rowB.positionMs)>0?1:0)):0;break;
+  case 'length':va=Number(a.duration)||0;vb=Number(b.duration)||0;break;
+  case 'size':va=Number(a.size)||0;vb=Number(b.size)||0;break;
+  case 'resolution':va=(Number(a.width)>0&&Number(a.height)>0)?Number(a.width)*Number(a.height):resolutionPixels(a.resolution);vb=(Number(b.width)>0&&Number(b.height)>0)?Number(b.width)*Number(b.height):resolutionPixels(b.resolution);break;
+  case 'path':va=String(a.folder||'').toLocaleLowerCase();vb=String(b.folder||'').toLocaleLowerCase();break;
+  case 'framerate':va=Number(a.frameRate)||0;vb=Number(b.frameRate)||0;break;
+  case 'type':va=String(a.mime||a.type||'').toLocaleLowerCase();vb=String(b.mime||b.type||'').toLocaleLowerCase();break;
+  case 'title':default:va=String(a.name||'').toLocaleLowerCase();vb=String(b.name||'').toLocaleLowerCase();
+ }
+ if(typeof va==='string')result=va.localeCompare(vb,undefined,{numeric:true,sensitivity:'base'});else result=va-vb;
+ if(result!==0)return result*(sortDirection==='asc'?1:-1);
+ return String(a.name||'').localeCompare(String(b.name||''),undefined,{numeric:true,sensitivity:'base'});
+}
+function resolutionPixels(value){const match=String(value||'').match(/(\\d{3,5})\\s*[x×]\\s*(\\d{3,5})/i);return match?Number(match[1])*Number(match[2]):0}
 function isLocalVideoHistory(row){const uri=String(row&&row.uri||'');return !!uri&&!row.isAudio&&(uri.startsWith('content://')||uri.startsWith('file://'))}
 function historyItem(row){const uri=String(row&&row.uri||''),identity=String(row&&row.identity||'');const found=items.find(x=>x.uri===uri||x.key===uri||(identity&&x.identity===identity));if(found)return found;const title=String(row&&row.title||'Video');return {key:uri,uri,name:title,size:0,mime:'video/*',type:'video',folder:'Recently Played',identity,lastModified:Number(row&&row.lastPlayedAt)||0,duration:Number(row&&row.durationMs)||0}}
 function isFavorite(item){return !!item&&(favoriteUris.has(item.uri)||favoriteUris.has(item.key)||(item.identity&&favoriteIdentities.has(item.identity)))}
@@ -382,7 +432,7 @@ function formatDuration(ms){const seconds=Math.max(0,Math.floor((Number(ms)||0)/
 function bindHistoryRail(rail){rail.querySelectorAll('.history-card').forEach(card=>{const row=watchHistory.find(x=>x.uri===card.dataset.historyUri);card.onclick=event=>{if(event.target.closest('.file-more'))return;if(row)playHistoryEntry(row)};const more=card.querySelector('.file-more');if(more)more.onclick=event=>{event.stopPropagation();if(row)showMediaActions(historyItem(row))}});observeThumbnails()}
 function renderWatchSections(){
  const sections=$('watchSections'),continueSection=$('continueSection'),recentSection=$('recentSection');
- const canShow=active==='video'&&!videoSearchText&&videoLibraryFilter==='all'&&!folderBrowseActive;
+ const canShow=active==='video'&&!videoSearchText&&videoLibraryFilter==='all'&&!folderBrowseActive&&mediaContentMode==='all';
  if(!canShow){sections.hidden=true;continueSection.hidden=true;recentSection.hidden=true;return}
  const videos=watchHistory.filter(isLocalVideoHistory).sort((a,b)=>(Number(b.lastPlayedAt)||0)-(Number(a.lastPlayedAt)||0));
  const continuing=videos.filter(row=>!row.completed&&Number(row.durationMs)>0&&Number(row.positionMs)>=5000&&Number(row.positionMs)<Number(row.durationMs)-5000).slice(0,12);
@@ -421,8 +471,9 @@ function renderFolderContents(filtered){
   for(const candidate of filtered){const candidatePath=normalizeFolder(candidate.folder);if(candidatePath===childPath||candidatePath.startsWith(childPath+'/'))count++}
   folders.set(childPath,{name:next,path:childPath,count});
  }
- const orderedFolders=[...folders.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
- const direct=filtered.filter(item=>normalizeFolder(item.folder)===current).sort(videoComparator);
+ const orderedFolders=[...folders.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'})*(sortDirection==='asc'?1:-1));
+ const rootFoldersOnly=mediaContentMode==='folders'&&!current;
+ const direct=(rootFoldersOnly?[]:filtered.filter(item=>normalizeFolder(item.folder)===current)).sort(mediaComparator);
  let out='';
  for(const folder of orderedFolders)out+='<button type="button" class="folder-entry" data-open-folder="'+escapeHtml(folder.path)+'"><span class="folder-entry-icon">📁</span><span class="folder-entry-copy"><strong>'+escapeHtml(folder.name)+'</strong><small>'+folder.count+' media item'+(folder.count===1?'':'s')+'</small></span><span class="folder-entry-arrow">›</span></button>';
  for(const item of direct)out+=mediaItemMarkup(item);
@@ -445,10 +496,8 @@ function bindMediaRows(library){
 }
 function render(){
  let filtered=items.filter(x=>x.type===active);
- if(active==='video'){
-  if(videoSearchText)filtered=filtered.filter(x=>x.name.toLocaleLowerCase().includes(videoSearchText));
-  if(videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
- }
+ if(videoSearchText)filtered=filtered.filter(x=>(String(x.name||'')+' '+String(x.folder||'')+' '+String(x.mime||'')+' '+String(x.type||'')).toLocaleLowerCase().includes(videoSearchText));
+ if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=items.filter(x=>x.type==='video').length;
  $('audioCount').textContent=items.filter(x=>x.type==='audio').length;
@@ -456,15 +505,15 @@ function render(){
  $('allVideoCount').textContent=items.filter(x=>x.type==='video').length;
  $('favoriteVideoCount').textContent=items.filter(x=>x.type==='video'&&isFavorite(x)).length;
  $('videoLibraryFilters').hidden=active!=='video';
- $('videoToolbar').hidden=active!=='video';
+ $('videoToolbar').hidden=!((active==='video'||active==='audio')&&searchExpanded);
  $('folderBrowseBar').hidden=active!=='video'||!folderBrowseActive;
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
  renderWatchSections();
  const library=$('library');
- library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive);
- library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list');
+ library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive&&mediaContentMode!=='folders');
+ library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list'&&mediaContentMode!=='folders');
  if(active==='video'&&folderBrowseActive){renderFolderContents(filtered);return}
  if(!items.length){
   library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone, choose media, or add a storage folder from your phone, SD card, or a supported USB drive.</p><button id="emptyBrowse">Browse this device</button></div>';
@@ -478,9 +527,8 @@ function render(){
   library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse">'+buttonLabel+'</button></div>';
   $('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else pick()};return
  }
- if(active==='video'&&groupByFolder)filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||videoComparator(a,b));
- else if(active==='video')filtered.sort(videoComparator);
- else filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+ if(active==='video'&&mediaContentMode==='all')filtered.sort((a,b)=>normalizeFolder(a.folder).localeCompare(normalizeFolder(b.folder),undefined,{numeric:true,sensitivity:'base'})||mediaComparator(a,b));
+ else filtered.sort(mediaComparator);
  let out='',lastFolder=null;
  for(const item of filtered){
   if((active!=='video'||groupByFolder)&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
