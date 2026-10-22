@@ -297,7 +297,7 @@ public final class MainActivity extends Activity {
         labels.add("Play now"); actions.add("play");
         boolean favorite = isFavoriteUri(uri, identity);
         labels.add(favorite ? "Remove from Favorites" : "Add to Favorites"); actions.add("favorite");
-        if (hasHistoryEntry(uri)) {
+        if (hasHistoryEntry(uri, identity)) {
             labels.add("Remove from Recently Played"); actions.add("remove_recent");
         }
         labels.add("File details"); actions.add("details");
