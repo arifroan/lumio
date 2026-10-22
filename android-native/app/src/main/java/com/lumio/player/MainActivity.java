@@ -2,6 +2,7 @@ package com.lumio.player;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -71,6 +72,12 @@ public final class MainActivity extends Activity {
                 String scheme = request.getUrl().getScheme();
                 return scheme != null && !(scheme.equals("file") || scheme.equals("content") || scheme.equals("about"));
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                publishLibraryState();
+            }
         });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -132,6 +139,21 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getLibraryState() {
+            return buildLibraryStateJson();
+        }
+
+        @JavascriptInterface
+        public boolean toggleFavorite(String uri) {
+            return toggleFavoriteUri(uri);
+        }
+
+        @JavascriptInterface
+        public void showMediaActions(String uri, String title, long sizeBytes, long durationMs, boolean isAudio) {
+            runOnUiThread(() -> showMediaActionsDialog(uri, title, sizeBytes, durationMs, isAudio));
+        }
+
+        @JavascriptInterface
         public void playMedia(String uri, String title, boolean isAudio, String playlistJson) {
             runOnUiThread(() -> {
                 if (uri == null || uri.trim().isEmpty()) {
@@ -150,6 +172,156 @@ public final class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private String buildLibraryStateJson() {
+        JSONObject state = new JSONObject();
+        JSONArray favorites = new JSONArray();
+        JSONArray history;
+        try {
+            Set<String> savedFavorites = new HashSet<>(getSharedPreferences("lumio_library", MODE_PRIVATE)
+                    .getStringSet("favorite_uris", new HashSet<>()));
+            List<String> orderedFavorites = new ArrayList<>(savedFavorites);
+            java.util.Collections.sort(orderedFavorites);
+            for (String uri : orderedFavorites) if (uri != null && !uri.trim().isEmpty()) favorites.put(uri);
+
+            String rawHistory = getSharedPreferences("lumio_playback", MODE_PRIVATE)
+                    .getString("watch_history", "[]");
+            history = new JSONArray(rawHistory);
+        } catch (Exception ignored) {
+            history = new JSONArray();
+        }
+        try {
+            state.put("favorites", favorites);
+            state.put("history", history);
+        } catch (JSONException ignored) { }
+        return state.toString();
+    }
+
+    private void publishLibraryState() {
+        String state = buildLibraryStateJson();
+        callJs("window.onNativeLibraryState && window.onNativeLibraryState("
+                + JSONObject.quote(state) + ")");
+    }
+
+    private boolean isFavoriteUri(String uri) {
+        if (uri == null || uri.trim().isEmpty()) return false;
+        Set<String> saved = getSharedPreferences("lumio_library", MODE_PRIVATE)
+                .getStringSet("favorite_uris", new HashSet<>());
+        return saved.contains(uri);
+    }
+
+    private boolean toggleFavoriteUri(String uri) {
+        if (uri == null || uri.trim().isEmpty()) return false;
+        android.content.SharedPreferences preferences = getSharedPreferences("lumio_library", MODE_PRIVATE);
+        Set<String> saved = new HashSet<>(preferences.getStringSet("favorite_uris", new HashSet<>()));
+        boolean nowFavorite;
+        if (saved.contains(uri)) {
+            saved.remove(uri);
+            nowFavorite = false;
+        } else {
+            saved.add(uri);
+            nowFavorite = true;
+        }
+        preferences.edit().putStringSet("favorite_uris", saved).apply();
+        return nowFavorite;
+    }
+
+    private boolean hasHistoryEntry(String uri) {
+        if (uri == null || uri.trim().isEmpty()) return false;
+        try {
+            JSONArray history = new JSONArray(getSharedPreferences("lumio_playback", MODE_PRIVATE)
+                    .getString("watch_history", "[]"));
+            for (int i = 0; i < history.length(); i++) {
+                JSONObject row = history.optJSONObject(i);
+                if (row != null && uri.equals(row.optString("uri", ""))) return true;
+            }
+        } catch (Exception ignored) { }
+        return false;
+    }
+
+    private void removeFromWatchHistory(String uri) {
+        if (uri == null || uri.trim().isEmpty()) return;
+        android.content.SharedPreferences preferences = getSharedPreferences("lumio_playback", MODE_PRIVATE);
+        JSONArray keep = new JSONArray();
+        try {
+            JSONArray history = new JSONArray(preferences.getString("watch_history", "[]"));
+            for (int i = 0; i < history.length(); i++) {
+                JSONObject row = history.optJSONObject(i);
+                if (row == null || !uri.equals(row.optString("uri", ""))) {
+                    if (row != null) keep.put(row);
+                }
+            }
+        } catch (Exception ignored) { }
+        android.content.SharedPreferences.Editor editor = preferences.edit()
+                .putString("watch_history", keep.toString())
+                .remove("position:" + uri);
+        if (uri.equals(preferences.getString("last_uri", ""))) editor.remove("last_uri");
+        editor.apply();
+    }
+
+    private void showMediaActionsDialog(String uri, String title, long sizeBytes, long durationMs, boolean isAudio) {
+        if (uri == null || uri.trim().isEmpty()) return;
+        String safeTitle = title == null || title.trim().isEmpty() ? "Media item" : title;
+        List<String> labels = new ArrayList<>();
+        List<String> actions = new ArrayList<>();
+        labels.add("Play now"); actions.add("play");
+        boolean favorite = isFavoriteUri(uri);
+        labels.add(favorite ? "Remove from Favorites" : "Add to Favorites"); actions.add("favorite");
+        if (hasHistoryEntry(uri)) {
+            labels.add("Remove from Recently Played"); actions.add("remove_recent");
+        }
+        labels.add("File details"); actions.add("details");
+        new AlertDialog.Builder(this)
+                .setTitle(safeTitle)
+                .setItems(labels.toArray(new String[0]), (dialog, which) -> {
+                    String action = actions.get(which);
+                    if ("play".equals(action)) {
+                        Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+                        intent.putExtra(PlayerActivity.EXTRA_URI, uri);
+                        intent.putExtra(PlayerActivity.EXTRA_TITLE, safeTitle);
+                        intent.putExtra(PlayerActivity.EXTRA_AUDIO, isAudio);
+                        intent.putExtra(PlayerActivity.EXTRA_PLAYLIST, "[]");
+                        try { startActivity(intent); }
+                        catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Could not open this media file", Toast.LENGTH_LONG).show();
+                        }
+                    } else if ("favorite".equals(action)) {
+                        boolean nowFavorite = toggleFavoriteUri(uri);
+                        Toast.makeText(MainActivity.this, nowFavorite ? "Added to Favorites" : "Removed from Favorites", Toast.LENGTH_SHORT).show();
+                        publishLibraryState();
+                    } else if ("remove_recent".equals(action)) {
+                        removeFromWatchHistory(uri);
+                        Toast.makeText(MainActivity.this, "Removed from Recently Played", Toast.LENGTH_SHORT).show();
+                        publishLibraryState();
+                    } else if ("details".equals(action)) {
+                        String size = formatFileSize(sizeBytes);
+                        String duration = durationMs > 0L
+                                ? String.format(Locale.US, "%d:%02d", durationMs / 60000L, (durationMs / 1000L) % 60L)
+                                : "Unknown";
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("File details")
+                                .setMessage(safeTitle + "\n\nType: " + (isAudio ? "Audio" : "Video")
+                                        + "\nSize: " + size + "\nDuration: " + duration)
+                                .setPositiveButton("Close", null)
+                                .show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes >= 1073741824L) return String.format(Locale.US, "%.2f GB", bytes / 1073741824d);
+        if (bytes >= 1048576L) return String.format(Locale.US, "%.1f MB", bytes / 1048576d);
+        if (bytes >= 1024L) return String.format(Locale.US, "%.0f KB", bytes / 1024d);
+        return Math.max(0L, bytes) + " B";
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        publishLibraryState();
     }
 
     private byte[] loadOrCreateThumbnail(Uri uri) throws Exception {
