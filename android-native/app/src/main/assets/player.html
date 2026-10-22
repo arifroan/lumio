@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="obsidian">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101018"><title>Lumio — Offline Media</title>
@@ -252,6 +252,92 @@ input[type=file]{display:none}[hidden]{display:none!important}
 .videos-fab:focus-visible{outline:2px solid #fff;outline-offset:3px}
 @media(max-width:380px){.folder-overview-row{gap:10px;min-height:73px;padding:9px 0}.folder-overview-row .folder-entry-icon{flex-basis:58px;width:58px;min-width:58px;height:50px}.folder-entry-icon svg{width:58px;height:50px}.folder-overview-row .folder-entry-copy strong{font-size:14px}.folder-entry-meta>span:first-child{font-size:11.5px}.folder-overview-row .folder-path{font-size:10px}.videos-fab{right:14px;width:50px;height:50px}}
 
+
+/* Lumio UI Refresh */
+:root{--bg:#0b1016;--surface:#111a22;--surface2:#192531;--line:#283846;--ink:#f1f6fb;--muted:#93a5b7;--accent:#69b4ff;--accent-soft:#1b3146;--accent-ink:#08131f;--violet:var(--accent);--lime:var(--accent);color-scheme:dark}
+:root[data-theme="obsidian"]{--bg:#0b1016;--surface:#111a22;--surface2:#192531;--line:#283846;--ink:#f1f6fb;--muted:#93a5b7;--accent:#69b4ff;--accent-soft:#1b3146;--accent-ink:#08131f;color-scheme:dark}
+:root[data-theme="midnight"]{--bg:#0a0b16;--surface:#121529;--surface2:#1b2040;--line:#2b3154;--ink:#f4f3ff;--muted:#a0a7ca;--accent:#a99bff;--accent-soft:#2c2550;--accent-ink:#160f36;color-scheme:dark}
+:root[data-theme="mint"]{--bg:#0b1512;--surface:#13201b;--surface2:#1b2d25;--line:#2c4337;--ink:#effcf3;--muted:#9bb6a7;--accent:#79e0b0;--accent-soft:#1c4233;--accent-ink:#092116;color-scheme:dark}
+:root[data-theme="ember"]{--bg:#17100d;--surface:#211713;--surface2:#30201a;--line:#4a3023;--ink:#fff4e9;--muted:#c0a493;--accent:#ffb66b;--accent-soft:#49301f;--accent-ink:#291506;color-scheme:dark}
+:root[data-theme="porcelain"]{--bg:#f3f5f8;--surface:#fff;--surface2:#e9eef4;--line:#dae1ea;--ink:#182331;--muted:#68778a;--accent:#276ef1;--accent-soft:#e2edff;--accent-ink:#fff;color-scheme:light}
+:root[data-theme="mono"]{--bg:#090909;--surface:#151515;--surface2:#242424;--line:#3a3a3a;--ink:#fafafa;--muted:#b0b0b0;--accent:#f2f2f2;--accent-soft:#292929;--accent-ink:#090909;color-scheme:dark}
+body{background:var(--bg)!important;color:var(--ink)!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:background-color .18s ease,color .18s ease}
+main{max-width:760px;padding:calc(12px + env(safe-area-inset-top)) 17px calc(124px + env(safe-area-inset-bottom))}
+h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong,.stream-card h3{font-family:"Space Grotesk",system-ui,sans-serif}
+.media-header{margin:8px 1px 12px;padding:7px 0 13px;border-bottom:1px solid var(--line)}
+.media-heading h2{font-size:29px;font-weight:700;letter-spacing:-1.15px;line-height:1.13}
+.media-heading span{font-size:11px;color:var(--muted);letter-spacing:.02em}
+.icon-button{width:42px;height:42px;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--ink)}
+.icon-button svg{width:22px;height:22px}
+.icon-button[aria-expanded="true"]{color:var(--accent);background:var(--accent-soft);border-color:var(--accent)}
+.sectionhead{margin:20px 2px 10px;align-items:center}.sectionhead h2{font-size:18px;letter-spacing:-.4px}
+.tab{border-color:var(--line);background:var(--surface);color:var(--muted);border-radius:12px;padding:9px 13px}.tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.video-library-filters{gap:7px;margin-bottom:13px}.video-library-filters button{border-color:var(--line);background:var(--surface);color:var(--muted);border-radius:13px;padding:10px 13px}
+.video-library-filters button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.video-library-filters .filter-count{background:var(--surface2);color:inherit}
+.library{border:1px solid var(--line);background:var(--surface);border-radius:19px}
+.library.folder-overview{gap:9px;border:0;background:transparent;overflow:visible}
+.folder-overview-row{gap:12px;min-height:86px;padding:12px;border:1px solid var(--line)!important;border-radius:18px;background:var(--surface);color:var(--ink);transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.folder-overview-row:active{background:var(--surface2);border-color:var(--accent)!important;transform:scale(.992)}
+.folder-overview-row .folder-entry-icon{flex:0 0 58px;width:58px;min-width:58px;height:54px;padding:8px;border-radius:15px;background:var(--accent-soft)!important;color:var(--accent)}
+.folder-entry-icon svg{width:100%;height:100%;fill:currentColor}
+.folder-overview-row .folder-entry-copy strong{font-family:"Space Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.3;font-weight:650;letter-spacing:-.2px}
+.folder-entry-meta{gap:7px}.folder-entry-meta>span:first-child{color:var(--muted);font-size:11.5px}
+.folder-size{padding:2px 7px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--ink);font-size:10px}
+.folder-overview-row .folder-path{color:var(--muted);font-size:10.5px;opacity:.9}
+.folder-heading{background:transparent;border:0;color:var(--muted);padding:13px 4px 7px;font-size:10px;letter-spacing:.11em;text-transform:uppercase}
+.folder-entry{background:var(--surface);color:var(--ink);border-color:var(--line)}.folder-entry .folder-entry-icon{background:var(--accent-soft);color:var(--accent)}
+.file{background:var(--surface);border-color:var(--line)}.file:active{background:var(--surface2)}.file-icon{background:var(--accent-soft);color:var(--accent)}
+.file-name strong{font-size:13px;font-weight:650}.file-name small{color:var(--muted)}
+.video-grid .file{border-color:var(--line);border-radius:17px;background:var(--surface)}
+.history-card{background:var(--surface);border-color:var(--line);border-radius:17px}.history-card-copy strong{font-family:"Space Grotesk",system-ui,sans-serif;font-weight:600}.watch-progress span{background:var(--accent)}
+.video-search,.video-sort,.stream-input{background:var(--surface);border-color:var(--line);border-radius:14px;color:var(--ink)}
+.video-search:focus,.video-sort:focus,.stream-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.view-toggle,.folder-toggle{background:var(--surface);border-color:var(--line)}.view-toggle button.active{background:var(--accent);color:var(--accent-ink)}
+.folder-toggle[aria-pressed="true"],.video-toolbar-row #browseFoldersButton[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.videos-fab{right:18px;bottom:calc(86px + env(safe-area-inset-bottom));width:54px;height:54px;border:1px solid var(--accent);border-radius:19px;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 25px #0003}
+.videos-fab:active{background:var(--accent);transform:scale(.95)}
+.options-backdrop{background:#05070bd9}.options-sheet{border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 28px 90px #0008}
+.options-close{background:var(--surface2);border-color:var(--line);color:var(--ink)}.option-tile{border-color:transparent;color:var(--ink)}
+.option-tile.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);box-shadow:none}
+.options-divider{background:var(--line)}.sort-direction-toggle{border-color:var(--line)}
+.sort-direction-toggle button{color:var(--muted)}.sort-direction-toggle button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.options-footer button{background:var(--surface2);border-color:var(--line);color:var(--ink)}
+.player{background:var(--surface);border-color:var(--line);border-radius:22px}.playerhead,.nowplaying{border-color:var(--line)}.screen{background:var(--bg)}
+.placeholder .playdisc{background:var(--accent);color:var(--accent-ink)}.timeline{accent-color:var(--accent)}
+.playrow button{color:var(--ink)}.playrow .primary{background:var(--accent);color:var(--accent-ink)}
+.speed,.tools button{background:var(--surface);border-color:var(--line)!important;color:var(--ink)}.lockoverlay button{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.stream-card,.setting-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px}
+.setting-row{background:var(--surface);border-color:var(--line);border-radius:17px;padding:13px}.setting-row:active{background:var(--surface2);border-color:var(--accent)}
+.setting-icon{background:var(--accent-soft);color:var(--accent)}.setting-copy strong{font-size:14px;letter-spacing:-.15px}.setting-copy small{color:var(--muted);line-height:1.45}
+.info-stats .stat{background:var(--surface2);border-color:var(--line);border-radius:13px}.form-label{color:var(--muted)}
+.primary-action{background:var(--accent);color:var(--accent-ink);border-radius:13px}
+.empty{padding:32px 18px 34px}.emptyicon{background:var(--accent-soft);color:var(--accent)}.empty button{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.footer{margin-top:22px;color:var(--muted);font-size:10px;letter-spacing:.08em}.privacydot{background:var(--accent)}
+.bottom-nav{padding:8px 9px calc(8px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -7px 28px #0002;backdrop-filter:blur(16px)}
+.nav-item{min-height:60px;gap:4px;border:1px solid transparent;border-radius:15px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.01em}
+.nav-item .nav-icon svg{width:24px;height:24px;stroke-width:1.85}
+.nav-item.active{color:var(--accent);background:var(--accent-soft);border-color:var(--line)}
+.appearance-card{padding:15px}.appearance-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 13px}
+.appearance-head strong{display:block;font:600 18px/1.25 "Space Grotesk",system-ui,sans-serif;letter-spacing:-.4px}
+.appearance-head small{display:block;max-width:255px;margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45}
+.appearance-status{flex:0 0 auto;padding:5px 8px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);color:var(--accent);font-size:10px;font-weight:800}
+.theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.theme-option{display:grid;grid-template-columns:minmax(0,1fr) 22px;grid-template-rows:auto auto;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:15px;background:var(--bg);color:var(--ink);text-align:left;min-width:0}
+.theme-option:active{transform:scale(.985)}.theme-option.active{background:var(--accent-soft);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.theme-palette{grid-column:1/-1;display:flex;height:31px;overflow:hidden;border-radius:9px;border:1px solid var(--line)}.theme-palette i{display:block;flex:1}
+.theme-option-copy{min-width:0}.theme-option-copy strong,.theme-option-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.theme-option-copy strong{font-size:11.5px;font-weight:800}.theme-option-copy small{margin-top:3px;color:var(--muted);font-size:9px}
+.theme-check{display:grid;place-items:center;width:21px;height:21px;border-radius:7px;border:1px solid var(--line);color:transparent;font-size:12px;font-weight:900}
+.theme-option.active .theme-check{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.appearance-footnote{margin:12px 1px 0;color:var(--muted);font-size:10px}
+:root[data-theme="porcelain"] .bottom-nav{background:#f3f5f8ed}
+:root[data-theme="porcelain"] .videos-fab{box-shadow:0 10px 26px #18396824}:root[data-theme="porcelain"] .options-backdrop{background:#18233150}
+:root[data-theme="porcelain"] .options-sheet{box-shadow:0 25px 70px #18233122}
+@media(max-width:380px){main{padding-left:13px;padding-right:13px}.media-heading h2{font-size:27px}.folder-overview-row{min-height:80px;padding:10px;gap:10px}.folder-overview-row .folder-entry-icon{flex-basis:51px;width:51px;min-width:51px;height:49px}.theme-grid{gap:7px}.theme-option{padding:7px}.theme-palette{height:27px}}
+@media(min-width:620px){.theme-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.media-heading h2{font-size:32px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
+
 </style></head>
 <body>
 <main>
@@ -358,6 +444,18 @@ input[type=file]{display:none}[hidden]{display:none!important}
 
 <section class="page-panel" id="settingsPage" hidden>
   <div class="sectionhead"><h2>Settings</h2><span>Manage Lumio</span></div>
+  <div class="setting-card appearance-card" id="appearanceSection">
+    <div class="appearance-head"><div><strong>Appearance</strong><small>Choose the colors used across your library and player.</small></div><span class="appearance-status" id="activeThemeName">Obsidian</span></div>
+    <div class="theme-grid" id="themeGrid" role="group" aria-label="Color theme">
+      <button class="theme-option active" type="button" data-theme-choice="obsidian" aria-pressed="true"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1016"></i><i style="background:#18232e"></i><i style="background:#69b4ff"></i></span><span class="theme-option-copy"><strong>Obsidian</strong><small>Graphite · Blue</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+      <button class="theme-option" type="button" data-theme-choice="midnight" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0a0b16"></i><i style="background:#1b2040"></i><i style="background:#a99bff"></i></span><span class="theme-option-copy"><strong>Midnight</strong><small>Navy · Violet</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+      <button class="theme-option" type="button" data-theme-choice="mint" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1512"></i><i style="background:#1b2d25"></i><i style="background:#79e0b0"></i></span><span class="theme-option-copy"><strong>Mint</strong><small>Forest · Mint</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+      <button class="theme-option" type="button" data-theme-choice="ember" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#17100d"></i><i style="background:#30201a"></i><i style="background:#ffb66b"></i></span><span class="theme-option-copy"><strong>Ember</strong><small>Espresso · Amber</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+      <button class="theme-option" type="button" data-theme-choice="porcelain" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#f3f5f8"></i><i style="background:#ffffff"></i><i style="background:#276ef1"></i></span><span class="theme-option-copy"><strong>Porcelain</strong><small>Soft light · Blue</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+      <button class="theme-option" type="button" data-theme-choice="mono" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#090909"></i><i style="background:#242424"></i><i style="background:#f2f2f2"></i></span><span class="theme-option-copy"><strong>Mono</strong><small>Black · White</small></span><span class="theme-check" aria-hidden="true">✓</span></button>
+    </div>
+    <p class="appearance-footnote">Saved on this device. Works offline.</p>
+  </div>
   <button class="setting-row" id="vaultSettings">
     <span class="setting-icon">🔒</span><span class="setting-copy"><strong>Private Vault</strong><small>Open your protected local media</small></span><span class="setting-arrow">›</span>
   </button>
@@ -402,6 +500,38 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </button>
 </nav>
 <script>const $=id=>document.getElementById(id);
+const LUMIO_THEME_META={
+ obsidian:{name:'Obsidian',scheme:'dark',color:'#0b1016'},
+ midnight:{name:'Midnight',scheme:'dark',color:'#0a0b16'},
+ mint:{name:'Mint',scheme:'dark',color:'#0b1512'},
+ ember:{name:'Ember',scheme:'dark',color:'#17100d'},
+ porcelain:{name:'Porcelain',scheme:'light',color:'#f3f5f8'},
+ mono:{name:'Mono',scheme:'dark',color:'#090909'}
+};
+function applyLumioTheme(themeName,save=true){
+ const selected=Object.prototype.hasOwnProperty.call(LUMIO_THEME_META,themeName)?themeName:'obsidian';
+ const meta=LUMIO_THEME_META[selected],root=document.documentElement;
+ root.setAttribute('data-theme',selected);
+ root.style.colorScheme=meta.scheme;
+ const themeColor=document.querySelector('meta[name="theme-color"]');
+ if(themeColor)themeColor.setAttribute('content',meta.color);
+ document.querySelectorAll('[data-theme-choice]').forEach(button=>{
+  const current=button.dataset.themeChoice===selected;
+  button.classList.toggle('active',current);
+  button.setAttribute('aria-pressed',String(current));
+ });
+ const label=$('activeThemeName');if(label)label.textContent=meta.name;
+ if(save){try{localStorage.setItem('lumio-theme-v1',selected)}catch(e){}}
+}
+function initLumioTheme(){
+ let selected='obsidian';try{selected=localStorage.getItem('lumio-theme-v1')||'obsidian'}catch(e){}
+ applyLumioTheme(selected,false);
+ const grid=$('themeGrid');
+ if(grid)grid.addEventListener('click',event=>{
+  const button=event.target.closest('[data-theme-choice]');
+  if(button)applyLumioTheme(button.dataset.themeChoice);
+ });
+}
 let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
 function safeBridge(method,...args){try{if(window.LumioNative&&typeof window.LumioNative[method]==='function')return window.LumioNative[method](...args)}catch(e){}return null}
 function fmtSize(bytes){return bytes>=1073741824?(bytes/1073741824).toFixed(2)+' GB':bytes>=1048576?(bytes/1048576).toFixed(1)+' MB':bytes>=1024?(bytes/1024).toFixed(0)+' KB':(bytes||0)+' B'}
@@ -738,4 +868,4 @@ function render(){
 }
 function openItem(key){const x=items.find(y=>y.key===key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=items.find(y=>y.key===key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
-choosePage('videos');refreshLibraryState();render();setTimeout(scan,350);</script></body></html>
+initLumioTheme();choosePage('videos');refreshLibraryState();render();setTimeout(scan,350);</script></body></html>
