@@ -73,6 +73,9 @@ public final class PlayerActivity extends Activity {
     public static final String EXTRA_TEMP_VAULT_FILE = "temporary_vault_file";
     private static final int REQUEST_SUBTITLE = 4301;
     private static final String PREFS = "lumio_playback";
+    private static final String WATCH_HISTORY_KEY = "watch_history";
+    private static final int MAX_WATCH_HISTORY = 100;
+    private static final long PROGRESS_SAVE_INTERVAL_MS = 5_000L;
     private static final float[] SPEEDS = {0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f};
 
     private static final long CONTROLS_AUTO_HIDE_MS = 2_000L;
@@ -81,12 +84,21 @@ public final class PlayerActivity extends Activity {
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
     private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
+    private final Runnable savePlaybackProgress = new Runnable() {
+        @Override public void run() {
+            if (controller != null && !isFinishing() && !isDestroyed()) {
+                persistPosition();
+                controlsHandler.postDelayed(this, PROGRESS_SAVE_INTERVAL_MS);
+            }
+        }
+    };
     private final Player.Listener playbackUiListener = new Player.Listener() {
         @Override public void onIsPlayingChanged(boolean isPlaying) {
             // Show controls on pause and resume; the shared timer hides them after two seconds.
             if (!requestedAudio) showPlaybackControlsTemporarily();
         }
         @Override public void onPlaybackStateChanged(int playbackState) {
+            if (playbackState == Player.STATE_ENDED) persistPosition();
             if (requestedAudio) return;
             if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
                 showPlaybackControlsUntilResumed();
@@ -293,6 +305,8 @@ public final class PlayerActivity extends Activity {
                 connectedController.addListener(playbackUiListener);
                 syncSpeedButton(connectedController.getPlaybackParameters().speed);
                 initializeMedia();
+                controlsHandler.removeCallbacks(savePlaybackProgress);
+                controlsHandler.postDelayed(savePlaybackProgress, PROGRESS_SAVE_INTERVAL_MS);
                 if (!requestedAudio) showPlaybackControlsTemporarily();
             } catch (Exception e) {
                 if (controllerFuture == future && !isFinishing() && !isDestroyed()) {
@@ -353,11 +367,9 @@ public final class PlayerActivity extends Activity {
             selectedIndex = 0;
         }
 
-        long startPosition = 0L;
-        String lastUri = prefs.getString("last_uri", "");
-        if (requestedUri.equals(lastUri)) {
-            startPosition = Math.max(0L, prefs.getLong("position:" + requestedUri, 0L));
-        }
+        // Resume each media item independently, not only the most recently opened URI.
+        // Completed items are saved at position zero so reopening them starts from the beginning.
+        long startPosition = Math.max(0L, prefs.getLong("position:" + requestedUri, 0L));
         controller.setMediaItems(playlist, selectedIndex, startPosition);
         controller.prepare();
         controller.play();
@@ -366,11 +378,53 @@ public final class PlayerActivity extends Activity {
 
     private void persistPosition() {
         if (controller == null || controller.getCurrentMediaItem() == null) return;
+        // Private Vault playback uses an ephemeral decrypted cache file. Do not keep a
+        // dangling resume-history entry after that temporary file is deleted.
+        String temporaryVaultPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
+        if (temporaryVaultPath != null && !temporaryVaultPath.trim().isEmpty()) return;
+
         MediaItem current = controller.getCurrentMediaItem();
         String uri = current.localConfiguration == null ? "" : current.localConfiguration.uri.toString();
         if (uri.isEmpty()) return;
-        prefs.edit().putString("last_uri", uri)
-                .putLong("position:" + uri, Math.max(0L, controller.getCurrentPosition()))
+
+        long position = Math.max(0L, controller.getCurrentPosition());
+        long duration = controller.getDuration();
+        if (duration < 0L) duration = 0L;
+        boolean completed = controller.getPlaybackState() == Player.STATE_ENDED
+                || (duration > 0L && position >= Math.max(0L, duration - Math.min(10_000L, duration / 50L)));
+        long savedPosition = completed ? 0L : position;
+
+        CharSequence mediaTitle = current.mediaMetadata == null ? null : current.mediaMetadata.title;
+        String title = mediaTitle == null || mediaTitle.toString().trim().isEmpty()
+                ? (requestedTitle == null || requestedTitle.trim().isEmpty() ? "Local media" : requestedTitle)
+                : mediaTitle.toString();
+
+        JSONArray history = new JSONArray();
+        try {
+            JSONArray previous = new JSONArray(prefs.getString(WATCH_HISTORY_KEY, "[]"));
+            JSONObject entry = new JSONObject();
+            entry.put("uri", uri);
+            entry.put("title", title);
+            entry.put("isAudio", requestedAudio);
+            entry.put("positionMs", savedPosition);
+            entry.put("durationMs", duration);
+            entry.put("lastPlayedAt", System.currentTimeMillis());
+            entry.put("completed", completed);
+            history.put(entry);
+
+            for (int i = 0; i < previous.length() && history.length() < MAX_WATCH_HISTORY; i++) {
+                JSONObject old = previous.optJSONObject(i);
+                if (old == null || uri.equals(old.optString("uri", ""))) continue;
+                history.put(old);
+            }
+        } catch (Exception ignored) {
+            // If old history is malformed, retain the current entry rather than breaking playback.
+        }
+
+        prefs.edit()
+                .putString("last_uri", uri)
+                .putLong("position:" + uri, savedPosition)
+                .putString(WATCH_HISTORY_KEY, history.toString())
                 .apply();
     }
 
@@ -384,6 +438,7 @@ public final class PlayerActivity extends Activity {
     protected void onStop() {
         persistPosition();
         controlsHandler.removeCallbacks(hidePlaybackControls);
+        controlsHandler.removeCallbacks(savePlaybackProgress);
         if (controller != null) controller.removeListener(playbackUiListener);
         if (playerView != null) playerView.setPlayer(null);
         if (controllerFuture != null) {
@@ -1004,6 +1059,7 @@ public final class PlayerActivity extends Activity {
     @Override
     protected void onDestroy() {
         controlsHandler.removeCallbacks(hidePlaybackControls);
+        controlsHandler.removeCallbacks(savePlaybackProgress);
         persistPosition();
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
