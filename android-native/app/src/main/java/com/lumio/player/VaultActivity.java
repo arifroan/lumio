@@ -296,9 +296,16 @@ public final class VaultActivity extends Activity {
         String name = displayName(uri);
         String mime = mimeFor(uri, name);
         File target = new File(vaultDir, id + ".enc");
+        File temp = new File(vaultDir, id + ".enc.tmp");
         try (InputStream in = getContentResolver().openInputStream(uri)) {
             if (in == null) throw new IllegalStateException("Could not read selected file");
-            encryptToFile(in, target);
+            encryptToFile(in, temp);
+            // Publish the encrypted file only after encryption completed successfully.
+            if (!temp.renameTo(target)) throw new IllegalStateException("Could not finish saving encrypted file");
+        } catch (Exception e) {
+            temp.delete();
+            target.delete();
+            throw e;
         }
         entries.add(new Entry(id, name, mime, contentSize(uri)));
     }
@@ -395,10 +402,23 @@ public final class VaultActivity extends Activity {
         }
         byte[] encrypted = encryptBytes(array.toString().getBytes(StandardCharsets.UTF_8));
         File temp = new File(vaultDir, INDEX_NAME + ".tmp");
-        try (OutputStream out = new FileOutputStream(temp)) { out.write(encrypted); out.flush(); }
+        try (FileOutputStream out = new FileOutputStream(temp, false)) {
+            out.write(encrypted);
+            out.flush();
+            out.getFD().sync();
+        } catch (Exception e) {
+            temp.delete();
+            throw e;
+        }
         File index = new File(vaultDir, INDEX_NAME);
-        if (index.exists() && !index.delete()) throw new IllegalStateException("Could not replace encrypted index");
-        if (!temp.renameTo(index)) throw new IllegalStateException("Could not finish encrypted index write");
+        try {
+            // Atomic same-directory replacement keeps the previous valid index intact
+            // if writing the new index fails or the process is interrupted.
+            android.system.Os.rename(temp.getAbsolutePath(), index.getAbsolutePath());
+        } catch (android.system.ErrnoException e) {
+            temp.delete();
+            throw new java.io.IOException("Could not atomically replace encrypted vault index", e);
+        }
     }
 
     private File decryptToTemp(Entry entry) throws Exception {
