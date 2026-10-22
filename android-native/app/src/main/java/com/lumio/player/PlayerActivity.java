@@ -541,15 +541,17 @@ public final class PlayerActivity extends Activity {
                     }
                 });
         View gestureSurface = contentFrame == null ? playerView : contentFrame;
+        // Consume the complete gesture stream so single taps, double taps, and swipes
+        // are all delivered reliably even when the video surface itself is not clickable.
+        gestureSurface.setClickable(true);
         gestureSurface.setOnTouchListener((v, event) -> {
             if (locked) return true;
             scaleDetector.onTouchEvent(event);
-            boolean handled = gestureDetector.onTouchEvent(event);
+            gestureDetector.onTouchEvent(event);
             if (event.getActionMasked() == MotionEvent.ACTION_UP && gestureHandled) {
                 v.performClick();
-                return true;
             }
-            return handled && event.getActionMasked() != MotionEvent.ACTION_DOWN;
+            return true;
         });
     }
 
