@@ -448,6 +448,26 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void launchFolderPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        try {
+            startActivityForResult(intent, REQUEST_PICK_FOLDER);
+        } catch (Exception e) {
+            Toast.makeText(this, "This device has no folder picker", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void rememberTreeUri(Uri uri) {
+        if (uri == null) return;
+        android.content.SharedPreferences preferences = getSharedPreferences("lumio_library", MODE_PRIVATE);
+        Set<String> saved = new HashSet<>(preferences.getStringSet("picked_tree_uris", new HashSet<>()));
+        saved.add(uri.toString());
+        preferences.edit().putStringSet("picked_tree_uris", saved).apply();
+    }
+
     private boolean canReadVideo() {
         if (Build.VERSION.SDK_INT >= 33) return checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED;
         return Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
@@ -619,7 +639,28 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_PICK_MEDIA || resultCode != RESULT_OK || data == null) return;
+        if (resultCode != RESULT_OK || data == null) return;
+
+        if (requestCode == REQUEST_PICK_FOLDER) {
+            Uri treeUri = data.getData();
+            if (treeUri == null) return;
+            int grantFlags = data.getFlags()
+                    & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            try {
+                if ((grantFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) {
+                    getContentResolver().takePersistableUriPermission(treeUri, grantFlags);
+                }
+            } catch (Exception ignored) { }
+            rememberTreeUri(treeUri);
+            DocumentFile root = DocumentFile.fromTreeUri(this, treeUri);
+            String name = root == null || root.getName() == null ? "selected folder" : root.getName();
+            callJs("window.onNativeFolderPicked && window.onNativeFolderPicked("
+                    + JSONObject.quote(name) + ")");
+            publishScannedMedia();
+            return;
+        }
+
+        if (requestCode != REQUEST_PICK_MEDIA) return;
         JSONArray results = new JSONArray();
         int flags = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
         try {
@@ -628,13 +669,15 @@ public final class MainActivity extends Activity {
                     Uri uri = data.getClipData().getItemAt(i).getUri();
                     try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
                     rememberPickedUri(uri);
-                    results.put(readDocument(uri));
+                    JSONObject item = readDocument(uri);
+                    if (item != null) results.put(item);
                 }
             } else if (data.getData() != null) {
                 Uri uri = data.getData();
                 try { getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) { }
                 rememberPickedUri(uri);
-                results.put(readDocument(uri));
+                JSONObject item = readDocument(uri);
+                if (item != null) results.put(item);
             }
         } catch (Exception ignored) { }
         callJs("window.onNativeMediaPicked && window.onNativeMediaPicked(" + results.toString() + ")");
@@ -648,6 +691,8 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        scanGeneration.incrementAndGet();
+        scanExecutor.shutdownNow();
         thumbnailExecutor.shutdownNow();
         if (webView != null) {
             webView.removeJavascriptInterface("LumioNative");
