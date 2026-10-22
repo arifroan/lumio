@@ -157,6 +157,29 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .setting-copy{flex:1;min-width:0}.setting-copy strong,.setting-copy small{display:block}.setting-copy strong{font-size:13px}.setting-copy small{color:var(--muted);font-size:11px;margin-top:3px}.setting-arrow{font-size:23px;color:var(--muted);padding:0 4px}
 input[type=file]{display:none}[hidden]{display:none!important}
 @media(min-width:620px){main{padding-left:24px;padding-right:24px}.stat{padding:16px}}@media(min-width:760px){.info-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Compact, low-weight view-and-sort sheet */
+.options-backdrop{background:#05060bd9;backdrop-filter:blur(2px)}
+.options-sheet{max-height:74dvh;padding:0 14px calc(10px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:linear-gradient(155deg,#24242c 0%,#1c1c23 72%);border-color:#353541;box-shadow:0 -10px 30px #0004}
+.sheet-grabber{padding:6px 0 8px}.sheet-grabber span{width:38px;height:4px;background:#737282}
+.options-head{gap:10px;margin:0 0 9px}.options-head h2{font-size:18px;letter-spacing:-.35px}.options-head p{font-size:10px;margin-top:2px}.options-close{width:30px;height:30px;flex-basis:30px;font-size:20px;background:#2a2a34;border-color:#3b3b49}
+.options-top-grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:9px}
+.option-section h3{margin:0 0 5px;font-size:14px;letter-spacing:-.15px}
+.option-mode-grid{gap:3px}.option-layout-grid{gap:3px}
+.option-tile{min-height:54px;padding:5px 1px;gap:3px;border-radius:9px}
+.option-tile span:last-child{font-size:10px;line-height:1.1;letter-spacing:-.1px}
+.option-symbol{min-height:23px;font-size:22px}
+.option-symbol svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.option-symbol svg text{fill:currentColor;stroke:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.option-tile.active{background:#293444;border-color:#408dff;color:#65a5ff;box-shadow:inset 0 0 0 1px #408dff1a}
+.options-divider{margin:7px 0 9px;background:#3d3d47}
+.sort-option-section h3{margin-bottom:6px}.option-sort-grid{gap:2px}
+.option-sort-grid .option-tile{min-height:55px;padding:4px 0;border-radius:9px}
+.option-sort-grid .option-symbol{min-height:22px}.option-sort-grid .option-symbol svg{width:21px;height:21px}
+.sort-direction-toggle{margin-top:8px;border-radius:9px}.sort-direction-toggle button{min-height:34px;font-size:11px}.sort-direction-toggle button.active{background:#283547;color:#65a5ff;box-shadow:inset 0 0 0 1px #408dff}
+.options-footer{gap:7px}.options-footer button{min-height:36px;border-radius:10px;font-size:11px;background:#292932;border-color:#3a3a48}.options-footer button:active{background:#303846;border-color:#408dff}
+@media(max-width:360px){.options-sheet{padding-left:9px;padding-right:9px}.options-top-grid{gap:5px}.option-tile span:last-child{font-size:9px}.option-symbol,.option-symbol svg{width:20px;height:20px}.option-sort-grid .option-tile{min-height:51px}}
+@media(min-height:760px){.options-sheet{max-height:70dvh}}
 </style></head>
 <body>
 <main>
@@ -194,16 +217,16 @@ input[type=file]{display:none}[hidden]{display:none!important}
       <section class="option-section">
         <h3>View Mode</h3>
         <div class="option-mode-grid">
-          <button class="option-tile" data-content-mode="all" type="button"><span class="option-symbol">▣</span><span>All folders</span></button>
-          <button class="option-tile" data-content-mode="files" type="button"><span class="option-symbol">▤</span><span>Files</span></button>
-          <button class="option-tile" data-content-mode="folders" type="button"><span class="option-symbol">▱</span><span>Folders</span></button>
+          <button class="option-tile" data-content-mode="all" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"></path><path d="M3 10h18"></path><path d="M7 4h5l2 2"></path></svg></span><span>All folders</span></button>
+          <button class="option-tile" data-content-mode="files" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V21H6z"></path><path d="M14 3.5V8h4"></path><path d="M9 12h6M9 15.5h6M9 19h4"></path></svg></span><span>Files</span></button>
+          <button class="option-tile" data-content-mode="folders" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 6.5h7l2.1 2H21v10.2H2.8z"></path><path d="M3 9h18"></path></svg></span><span>Folders</span></button>
         </div>
       </section>
       <section class="option-section">
         <h3>Layout</h3>
         <div class="option-mode-grid option-layout-grid">
-          <button class="option-tile" data-layout="list" type="button"><span class="option-symbol">☰</span><span>List</span></button>
-          <button class="option-tile" data-layout="grid" type="button"><span class="option-symbol">▦</span><span>Grid</span></button>
+          <button class="option-tile" data-layout="list" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"></path><path d="M3.5 6h.1M3.5 12h.1M3.5 18h.1" stroke-width="3"></path></svg></span><span>List</span></button>
+          <button class="option-tile" data-layout="grid" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg></span><span>Grid</span></button>
         </div>
       </section>
     </div>
@@ -211,16 +234,16 @@ input[type=file]{display:none}[hidden]{display:none!important}
     <section class="option-section sort-option-section">
       <h3>Sort</h3>
       <div class="option-sort-grid">
-        <button class="option-tile" data-sort="title" type="button"><span class="option-symbol">A↓Z</span><span>Title</span></button>
-        <button class="option-tile" data-sort="date" type="button"><span class="option-symbol">▦</span><span>Date</span></button>
-        <button class="option-tile" data-sort="played" type="button"><span class="option-symbol">◷</span><span>Played time</span></button>
-        <button class="option-tile" data-sort="status" type="button"><span class="option-symbol">◉</span><span>Status</span></button>
-        <button class="option-tile" data-sort="length" type="button"><span class="option-symbol">▷</span><span>Length</span></button>
-        <button class="option-tile" data-sort="size" type="button"><span class="option-symbol">▤</span><span>Size</span></button>
-        <button class="option-tile" data-sort="resolution" type="button"><span class="option-symbol">HD</span><span>Resolution</span></button>
-        <button class="option-tile" data-sort="path" type="button"><span class="option-symbol">⌖</span><span>Path</span></button>
-        <button class="option-tile" data-sort="framerate" type="button"><span class="option-symbol option-framerate">60<br>▥</span><span>Frame rate</span></button>
-        <button class="option-tile" data-sort="type" type="button"><span class="option-symbol">▷</span><span>Type</span></button>
+        <button class="option-tile" data-sort="title" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19 8 5l5 14M5 14h6M16 8h5M18.5 5.5v14M16 17l2.5 2.5L21 17"></path></svg></span><span>Title</span></button>
+        <button class="option-tile" data-sort="date" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18M8 14h3"></path></svg></span><span>Date</span></button>
+        <button class="option-tile" data-sort="played" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="12" r="8.5"></circle><path d="M11 7v5l3 2M17.5 17.5l3 3"></path></svg></span><span>Played time</span></button>
+        <button class="option-tile" data-sort="status" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m10 8 6 4-6 4z" fill="currentColor" stroke="none"></path></svg></span><span>Status</span></button>
+        <button class="option-tile" data-sort="length" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="14" rx="2"></rect><path d="m10 8 5 3-5 3z"></path><path d="M7 21h10M12 18v3"></path></svg></span><span>Length</span></button>
+        <button class="option-tile" data-sort="size" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h4M8 12h8M8 15.5h8M8 19h5"></path></svg></span><span>Size</span></button>
+        <button class="option-tile" data-sort="resolution" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="15" rx="2"></rect><path d="M8 22h8M12 19v3"></path><text x="12" y="14" text-anchor="middle" font-size="7" font-weight="800">HD</text></svg></span><span>Resolution</span></button>
+        <button class="option-tile" data-sort="path" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h9l4 4V13"></path><path d="M14 3.5V8h4M8 12h4M8 15h4"></path><path d="M18 14.5a3.3 3.3 0 0 0-3.3 3.3c0 2.3 3.3 4.7 3.3 4.7s3.3-2.4 3.3-4.7a3.3 3.3 0 0 0-3.3-3.3Z"></path><circle cx="18" cy="17.8" r="1"></circle></svg></span><span>Path</span></button>
+        <button class="option-tile" data-sort="framerate" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="9.5" text-anchor="middle" font-size="8" font-weight="800">60</text><path d="M5 13v7M9 13v7M13 13v7M17 13v7M21 13v7" stroke-width="2.5"></path></svg></span><span>Frame rate</span></button>
+        <button class="option-tile" data-sort="type" type="button"><span class="option-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h4M9 11v6l6-3z"></path></svg></span><span>Type</span></button>
       </div>
       <div class="sort-direction-toggle" role="group" aria-label="Sort direction">
         <button data-direction="asc" type="button">↑ &nbsp; A to Z</button>
