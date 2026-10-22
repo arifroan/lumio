@@ -797,7 +797,12 @@ public final class MainActivity extends Activity {
         columns.add(MediaStore.MediaColumns.SIZE);
         columns.add(MediaStore.MediaColumns.MIME_TYPE);
         columns.add(MediaStore.MediaColumns.DATE_MODIFIED);
-        if (video) columns.add(MediaStore.Video.Media.DURATION);
+        if (video) {
+            columns.add(MediaStore.Video.Media.DURATION);
+            columns.add(MediaStore.MediaColumns.WIDTH);
+            columns.add(MediaStore.MediaColumns.HEIGHT);
+            columns.add(MediaStore.MediaColumns.CAPTURE_FRAMERATE);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             columns.add(MediaStore.MediaColumns.RELATIVE_PATH);
             columns.add(MediaStore.MediaColumns.VOLUME_NAME);
@@ -813,6 +818,9 @@ public final class MainActivity extends Activity {
             int pathCol = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH);
             int volumeCol = cursor.getColumnIndex(MediaStore.MediaColumns.VOLUME_NAME);
             int durationCol = video ? cursor.getColumnIndex(MediaStore.Video.Media.DURATION) : -1;
+            int widthCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.WIDTH) : -1;
+            int heightCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.HEIGHT) : -1;
+            int frameRateCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.CAPTURE_FRAMERATE) : -1;
             while (cursor.moveToNext()) {
                 long id = idCol >= 0 ? cursor.getLong(idCol) : -1;
                 if (id < 0) continue;
@@ -840,7 +848,23 @@ public final class MainActivity extends Activity {
                     entry.put("type", video ? "video" : "audio");
                     entry.put("folder", folder);
                     entry.put("lastModified", dateCol >= 0 ? cursor.getLong(dateCol) * 1000L : 0L);
-                    entry.put("duration", durationCol >= 0 ? cursor.getLong(durationCol) : 0L);
+                    entry.put("duration", durationCol >= 0 && !cursor.isNull(durationCol) ? cursor.getLong(durationCol) : 0L);
+                    long width = widthCol >= 0 && !cursor.isNull(widthCol) ? Math.max(0L, cursor.getLong(widthCol)) : 0L;
+                    long height = heightCol >= 0 && !cursor.isNull(heightCol) ? Math.max(0L, cursor.getLong(heightCol)) : 0L;
+                    double frameRate = 0d;
+                    if (frameRateCol >= 0) {
+                        try {
+                            String value = cursor.getString(frameRateCol);
+                            if (value != null) {
+                                double candidate = Double.parseDouble(value);
+                                if (Double.isFinite(candidate) && candidate > 0d) frameRate = candidate;
+                            }
+                        } catch (Exception ignored) { }
+                    }
+                    entry.put("width", width);
+                    entry.put("height", height);
+                    entry.put("frameRate", frameRate);
+                    entry.put("resolution", width > 0L && height > 0L ? width + "x" + height : "");
                     entry.put("source", "mediastore");
                     if (!identity.isEmpty()) {
                         entry.put("identity", identity);
@@ -928,8 +952,46 @@ public final class MainActivity extends Activity {
             entry.put("source", "document");
             entry.put("available", readable);
             if (!identity.isEmpty()) entry.put("identity", identity);
+            if (!audio && readable) addVideoMetadata(entry, uri);
+            else {
+                entry.put("width", 0L);
+                entry.put("height", 0L);
+                entry.put("frameRate", 0d);
+                entry.put("resolution", "");
+            }
         } catch (JSONException ignored) { }
         return entry;
+    }
+
+    private void addVideoMetadata(JSONObject entry, Uri uri) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        long width = 0L;
+        long height = 0L;
+        double frameRate = 0d;
+        try {
+            retriever.setDataSource(this, uri);
+            String widthValue = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String heightValue = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            String frameRateValue = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
+            try { if (widthValue != null) width = Math.max(0L, Long.parseLong(widthValue)); } catch (NumberFormatException ignored) { }
+            try { if (heightValue != null) height = Math.max(0L, Long.parseLong(heightValue)); } catch (NumberFormatException ignored) { }
+            try {
+                if (frameRateValue != null) {
+                    double candidate = Double.parseDouble(frameRateValue);
+                    if (Double.isFinite(candidate) && candidate > 0d) frameRate = candidate;
+                }
+            } catch (NumberFormatException ignored) { }
+        } catch (Exception ignored) {
+            // Some document providers do not expose container metadata to MediaMetadataRetriever.
+        } finally {
+            try { retriever.release(); } catch (Exception ignored) { }
+        }
+        try {
+            entry.put("width", width);
+            entry.put("height", height);
+            entry.put("frameRate", frameRate);
+            entry.put("resolution", width > 0L && height > 0L ? width + "x" + height : "");
+        } catch (JSONException ignored) { }
     }
 
     private boolean looksLikeAudio(String name) {
