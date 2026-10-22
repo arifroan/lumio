@@ -169,7 +169,7 @@ input[type=file]{display:none}[hidden]{display:none!important}
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
     </button>
     <button class="icon-button" id="viewOptionsToggle" type="button" aria-label="View and sort options" aria-haspopup="dialog">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="15" width="7" height="6" rx="1"></rect></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="18" rx="1"></rect><rect x="13" y="3" width="8" height="7" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>
     </button>
   </div>
 </div>
@@ -327,7 +327,7 @@ function mergeMedia(records,replaceExisting=false){
   if(ix>=0){
    const old=items[ix];
    const preferred=old.source==='mediastore'||item.source!=='mediastore'?old:item;
-   items[ix]={...old,...item,key:preferred.key,uri:preferred.uri,source:preferred.source,identity:item.identity||old.identity,folder:preferred.folder||item.folder,name:preferred.name||item.name,available:old.uri===item.uri?item.available:preferred.available!==false};
+   items[ix]={...old,...item,key:preferred.key,uri:preferred.uri,source:preferred.source,identity:item.identity||old.identity,folder:preferred.folder||item.folder,name:preferred.name||item.name,width:item.width||old.width,height:item.height||old.height,frameRate:item.frameRate||old.frameRate,resolution:item.resolution||old.resolution,available:old.uri===item.uri?item.available:preferred.available!==false};
   }else items.push(item);
  }
  items.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name));
