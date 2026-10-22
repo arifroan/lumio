@@ -12,12 +12,9 @@ Feature-by-feature status and known limitations: [docs/FEATURE_ROADMAP.md](docs/
 
 ## Get the APK
 
-1. Open [Android APK workflow runs](https://github.com/arifroan/lumio/actions/workflows/android-apk.yml).
-2. Open the newest **successful** run on `draft/android-player`.
-3. Under **Artifacts**, download `lumio-android-debug-apk`.
-4. Extract the ZIP and install the APK on an Android phone. Android may ask you to allow installation from the app used to open the APK.
+Download the latest direct APK from the [Lumio Android Preview release](https://github.com/arifroan/lumio/releases/download/android-preview/Lumio-Android-Preview.apk). No ZIP extraction is required. On Android, open the downloaded APK and follow the installer prompts.
 
-GitHub Actions keeps each uploaded artifact for 14 days. The debug APK is intended for testing and is not the signed production release.
+Check the [Android APK workflow run](https://github.com/arifroan/lumio/actions/workflows/android-apk.yml) if you want to verify that the latest build succeeded. Lumio's preview APK is signed with the persistent preview signing key configured in the repository's GitHub Actions secrets. It is a development preview, not a production Play Store release.
 
 ## Build
 
