@@ -10,6 +10,9 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 - Videos library search by filename; sorting by name, newest, size, and duration; grid/list layout switching; and an on/off folder-grouping control.
 - On-demand native video thumbnails generated asynchronously, resized, cached in app cache, and loaded as visible list/grid rows approach the viewport.
 - Exact-URI duplicate merging and replacement of stale scan results after a successful refresh; unknown timestamps for picked files remain unknown instead of being guessed.
+- Persistent Continue Watching and Recently Played sections for local videos, with playback position, duration, completion state, and last-played time stored locally.
+- Persistent video Favorites with an All Videos/Favorites filter, per-video favorite controls, and a native actions menu for play, favorite, remove from recent history, and file details.
+- Periodic per-item playback progress saving and resume from each URI's saved position; completed items restart at the beginning.
 - Same-folder/type playlist queue with next-item autoplay.
 - Speed selection from 0.25x to 4x.
 - Double-tap seeking by ±10 seconds, horizontal seek gesture, vertical brightness and volume gestures, pinch zoom/pan, and playback touch lock.
