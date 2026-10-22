@@ -13,8 +13,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Rational;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -77,14 +75,12 @@ public final class PlayerActivity extends Activity {
 
     private PlayerView playerView;
     private LinearLayout topBar;
-    private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
-    private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
     private final Player.Listener playbackUiListener = new Player.Listener() {
         @Override public void onIsPlayingChanged(boolean isPlaying) {
-            if (requestedAudio) return;
-            if (isPlaying) showPlaybackControlsTemporarily();
-            else showPlaybackControlsUntilResumed();
+            // Let Media3 own the timer and pause/resume rules. The custom header
+            // mirrors its controller visibility instead of maintaining a second timer.
+            if (!requestedAudio && playerView != null) playerView.showController();
         }
         @Override public void onPlaybackStateChanged(int playbackState) {
             if (requestedAudio) return;
@@ -177,6 +173,11 @@ public final class PlayerActivity extends Activity {
         playerView = new PlayerView(this);
         playerView.setUseController(true);
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
+        playerView.setControllerShowTimeoutMs(3200);
+        playerView.setControllerVisibilityListener(visibility -> {
+            if (requestedAudio || isInPictureInPicture()) return;
+            setPlaybackControlsVisible(visibility == View.VISIBLE);
+        });
         playerView.setKeepContentOnPlayerReset(true);
         playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         playerView.setBackgroundColor(Color.BLACK);
@@ -364,7 +365,6 @@ public final class PlayerActivity extends Activity {
     @Override
     protected void onStop() {
         persistPosition();
-        controlsHandler.removeCallbacks(hidePlaybackControls);
         if (controller != null) controller.removeListener(playbackUiListener);
         if (playerView != null) playerView.setPlayer(null);
         if (controllerFuture != null) {
@@ -408,7 +408,6 @@ public final class PlayerActivity extends Activity {
         playerView.setUseController(!locked);
         lockButton.setText(locked ? "Locked" : "Lock");
         if (locked) {
-            controlsHandler.removeCallbacks(hidePlaybackControls);
             if (!requestedAudio) setPlaybackControlsVisible(false);
         } else if (!requestedAudio) {
             showPlaybackControlsTemporarily();
@@ -418,11 +417,6 @@ public final class PlayerActivity extends Activity {
 
     private boolean isInPictureInPicture() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode();
-    }
-
-    private void hidePlaybackControlsIfNeeded() {
-        if (requestedAudio || locked || controller == null || !controller.isPlaying() || isInPictureInPicture()) return;
-        setPlaybackControlsVisible(false);
     }
 
     private void setPlaybackControlsVisible(boolean visible) {
@@ -441,17 +435,12 @@ public final class PlayerActivity extends Activity {
 
     private void showPlaybackControlsTemporarily() {
         if (requestedAudio || isInPictureInPicture() || locked) return;
-        controlsHandler.removeCallbacks(hidePlaybackControls);
         setPlaybackControlsVisible(true);
         if (playerView != null) playerView.showController();
-        if (controller != null && controller.isPlaying()) {
-            controlsHandler.postDelayed(hidePlaybackControls, 3200L);
-        }
     }
 
     private void showPlaybackControlsUntilResumed() {
         if (requestedAudio || isInPictureInPicture()) return;
-        controlsHandler.removeCallbacks(hidePlaybackControls);
         setPlaybackControlsVisible(true);
         if (playerView != null) playerView.showController();
     }
@@ -936,7 +925,6 @@ public final class PlayerActivity extends Activity {
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
-        controlsHandler.removeCallbacks(hidePlaybackControls);
         if (isInPictureInPictureMode) {
             if (playerView != null) playerView.setUseController(true);
             setPlaybackControlsVisible(false);
@@ -950,7 +938,6 @@ public final class PlayerActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        controlsHandler.removeCallbacks(hidePlaybackControls);
         persistPosition();
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
