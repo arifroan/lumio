@@ -22,6 +22,18 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+      - name: Check embedded player JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("android-native/app/src/main/assets/player.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected one inline player script, found {len(scripts)}")
+          Path("/tmp/lumio-player-inline.js").write_text(scripts[0], encoding="utf-8")
+          PY
+          node --check /tmp/lumio-player-inline.js
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
