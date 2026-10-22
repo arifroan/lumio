@@ -180,6 +180,25 @@ input[type=file]{display:none}[hidden]{display:none!important}
 .options-footer{gap:7px}.options-footer button{min-height:36px;border-radius:10px;font-size:11px;background:#292932;border-color:#3a3a48}.options-footer button:active{background:#303846;border-color:#408dff}
 @media(max-width:360px){.options-sheet{padding-left:9px;padding-right:9px}.options-top-grid{gap:5px}.option-tile span:last-child{font-size:9px}.option-symbol,.option-symbol svg{width:20px;height:20px}.option-sort-grid .option-tile{min-height:51px}}
 @media(min-height:760px){.options-sheet{max-height:70dvh}}
+
+/* Floating, centered dialog inspired by native media-player controls. */
+.options-backdrop{display:grid;place-items:center;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));background:#05060bd9;backdrop-filter:blur(3px)}
+.options-sheet{width:min(100%,560px);max-width:560px;max-height:min(78dvh,760px);overflow:auto;overscroll-behavior:contain;margin:auto;padding:12px 14px 12px;border:1px solid #3c3c49;border-bottom:1px solid #3c3c49;border-radius:22px;background:linear-gradient(155deg,#292930 0%,#202027 72%);color:var(--ink);box-shadow:0 24px 70px #0009}
+.sheet-grabber{display:none}
+.options-head{margin:0 0 9px;min-height:30px}
+.options-head h2{font-size:18px}
+.options-close{width:30px;height:30px;flex-basis:30px}
+.options-top-grid{gap:8px}
+.option-section h3{font-size:14px;margin-bottom:4px}
+.option-tile{min-height:52px;padding:4px 1px;gap:3px}
+.option-sort-grid .option-tile{min-height:53px}
+.options-divider{margin:7px 0 8px}
+.sort-option-section h3{margin-bottom:5px}
+.sort-direction-toggle{margin-top:7px}
+.sort-direction-toggle button{min-height:34px}
+@media(max-width:360px){.options-backdrop{padding-left:9px;padding-right:9px}.options-sheet{padding:10px 9px;border-radius:18px}.options-top-grid{gap:5px}.option-tile span:last-child{font-size:9px}.option-sort-grid .option-tile{min-height:49px}}
+@media(min-height:760px){.options-sheet{max-height:min(76dvh,760px);border-radius:22px}}
+
 </style></head>
 <body>
 <main>
@@ -208,9 +227,8 @@ input[type=file]{display:none}[hidden]{display:none!important}
 </div>
 <div class="options-backdrop" id="optionsBackdrop" hidden>
   <section class="options-sheet" id="optionsSheet" role="dialog" aria-modal="true" aria-labelledby="optionsTitle">
-    <div class="sheet-grabber" aria-hidden="true"><span></span></div>
     <div class="options-head">
-      <div><h2 id="optionsTitle">View &amp; sort</h2><p>Customize how your media is displayed.</p></div>
+      <div><h2 id="optionsTitle">View &amp; sort</h2></div>
       <button class="options-close" id="optionsClose" type="button" aria-label="Close options">×</button>
     </div>
     <div class="options-top-grid">
@@ -250,11 +268,6 @@ input[type=file]{display:none}[hidden]{display:none!important}
         <button data-direction="desc" type="button">↓ &nbsp; Z to A</button>
       </div>
     </section>
-    <div class="options-divider"></div>
-    <div class="options-footer">
-      <button id="browseFoldersAction" type="button">📁 &nbsp; Browse folders</button>
-      <button id="addFolderAction" type="button">＋ &nbsp; Add folder</button>
-    </div>
   </section>
 </div>
 <div class="folder-browse-bar" id="folderBrowseBar" hidden>
@@ -382,8 +395,6 @@ document.querySelectorAll('[data-content-mode]').forEach(button=>button.addEvent
 document.querySelectorAll('[data-layout]').forEach(button=>button.addEventListener('click',()=>setVideoView(button.dataset.layout)));
 document.querySelectorAll('[data-sort]').forEach(button=>button.addEventListener('click',()=>setSortField(button.dataset.sort)));
 document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('click',()=>setSortDirection(button.dataset.direction)));
-$('browseFoldersAction').onclick=()=>{setContentMode('folders');closeOptions()};
-$('addFolderAction').onclick=()=>{closeOptions();pickFolder()};
 $('showAllVideos').onclick=()=>setVideoLibraryFilter('all');$('showFavoriteVideos').onclick=()=>setVideoLibraryFilter('favorites');
 function setVideoLibraryFilter(filter){videoLibraryFilter=filter;$('showAllVideos').classList.toggle('active',filter==='all');$('showFavoriteVideos').classList.toggle('active',filter==='favorites');$('showAllVideos').setAttribute('aria-pressed',String(filter==='all'));$('showFavoriteVideos').setAttribute('aria-pressed',String(filter==='favorites'));render()}
 function syncOptionsSelection(){
