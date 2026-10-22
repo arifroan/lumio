@@ -227,6 +227,29 @@ input[type=file]{display:none}[hidden]{display:none!important}
 }
 @media(min-height:760px){.options-sheet{max-height:min(82dvh,800px)}}
 
+
+/* Folder-first Videos view inspired by a native media file manager */
+.library.folder-overview{display:flex;flex-direction:column;gap:0;padding:0;border:0;border-radius:0;background:transparent;overflow:visible}
+.folder-overview-row{display:flex;align-items:center;gap:13px;width:100%;min-height:79px;padding:10px 2px 11px;border:0;border-bottom:1px solid #24252b;border-radius:0;background:transparent;color:var(--ink);text-align:left}
+.folder-overview-row:active{background:#171a22}
+.folder-overview-row .folder-entry-icon{display:grid;place-items:center;flex:0 0 68px;width:68px;height:57px;min-width:68px;padding:0;border-radius:0;background:transparent;color:#4b545f}
+.folder-entry-icon svg{display:block;width:68px;height:56px;fill:currentColor;stroke:none}
+.folder-overview-row .folder-entry-copy{display:block;flex:1;min-width:0}
+.folder-overview-row .folder-entry-copy strong{display:block;margin:0 0 4px;font-size:15px;line-height:1.24;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder-entry-meta{display:flex;align-items:center;gap:7px;min-height:17px;flex-wrap:wrap}
+.folder-entry-meta>span:first-child{color:#d9dbe1;font-size:12px;line-height:1.25}
+.folder-size{display:inline-block;border-radius:4px;padding:1px 5px;background:#484a50;color:#e3e5eb;font-size:10.5px;line-height:1.35;white-space:nowrap}
+.folder-overview-row .folder-path{display:block;min-width:0;margin-top:3px;color:#b8bbc3;font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder-overview-row .folder-entry-arrow{display:none}
+.folder-entry.folder-overview-row{border-bottom:1px solid #24252b}
+.folder-overview-row .folder-entry-icon{background:transparent}
+.folder-browse-bar[hidden]{display:none!important}
+.videos-fab{position:fixed;right:18px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:110;display:grid;place-items:center;width:54px;height:54px;border:1px solid #64aaff;border-radius:50%;background:#378cf5;color:#fff;box-shadow:0 8px 22px #0008,0 3px 9px #2678e9aa;padding:0}
+.videos-fab svg{display:block;width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.videos-fab:active{transform:scale(.96);background:#2679df}
+.videos-fab:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:380px){.folder-overview-row{gap:10px;min-height:73px;padding:9px 0}.folder-overview-row .folder-entry-icon{flex-basis:58px;width:58px;min-width:58px;height:50px}.folder-entry-icon svg{width:58px;height:50px}.folder-overview-row .folder-entry-copy strong{font-size:14px}.folder-entry-meta>span:first-child{font-size:11.5px}.folder-overview-row .folder-path{font-size:10px}.videos-fab{right:14px;width:50px;height:50px}}
+
 </style></head>
 <body>
 <main>
@@ -317,6 +340,9 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </section>
 </div>
 <section class="library" id="library"><div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div></section>
+<button class="videos-fab" id="videosFab" type="button" aria-label="Add storage folder" title="Add storage folder" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2H18.5A2.5 2.5 0 0 1 21 9.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5z"></path><path d="M12 10.5v7M8.5 14h7"></path></svg>
+</button>
 </section>
 
 <section class="page-panel" id="streamPage" hidden>
@@ -378,7 +404,7 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </button>
 </nav>
 <script>const $=id=>document.getElementById(id);
-let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=false,currentFolderPath='',mediaContentMode='all',sortDirection='asc',searchExpanded=false;
+let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
 function safeBridge(method,...args){try{if(window.LumioNative&&typeof window.LumioNative[method]==='function')return window.LumioNative[method](...args)}catch(e){}return null}
 function fmtSize(bytes){return bytes>=1073741824?(bytes/1073741824).toFixed(2)+' GB':bytes>=1048576?(bytes/1048576).toFixed(1)+' MB':bytes>=1024?(bytes/1024).toFixed(0)+' KB':(bytes||0)+' B'}
 function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll(String.fromCharCode(39),'&#39;')}
@@ -409,7 +435,7 @@ const thumbObserver=('IntersectionObserver' in window)?new IntersectionObserver(
 function requestThumbnail(img){if(!img||img.dataset.requested)return;img.dataset.requested='1';safeBridge('requestThumbnail',img.dataset.thumbUri,img.dataset.thumbKey)}
 function observeThumbnails(){document.querySelectorAll('.video-thumb,.history-thumb').forEach(img=>{if(img.dataset.requested)return;if(thumbObserver)thumbObserver.observe(img);else requestThumbnail(img)})}
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function pickFolder(){safeBridge('pickFolder')} function openVault(){safeBridge('openVault')}
-$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('videosFab').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 $('videoSearch').addEventListener('input',()=>{videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()});
 $('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;syncOptionsSelection();render()});
@@ -436,6 +462,7 @@ function openOptions(){syncOptionsSelection();$('optionsBackdrop').hidden=false;
 function closeOptions(){$('optionsBackdrop').hidden=true;$('viewOptionsToggle').focus()}
 function setContentMode(mode){
  mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';
+ if(active==='video')videoContentModePreference=mediaContentMode;
  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
  folderBrowseActive=mediaContentMode==='folders';currentFolderPath='';
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
@@ -449,8 +476,19 @@ function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'as
 function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
 function choosePage(page){
  currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';
- if(page!=='videos'){folderBrowseActive=false;currentFolderPath='';if(mediaContentMode==='folders')mediaContentMode='all';groupByFolder=mediaContentMode==='all';$('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders';syncOptionsSelection()}
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':'Videos';$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
+ if(page!=='videos'){
+  if(active==='video')videoContentModePreference=mediaContentMode;
+  folderBrowseActive=false;currentFolderPath='';
+  if(mediaContentMode==='folders')mediaContentMode='all';
+  groupByFolder=mediaContentMode==='all';
+  $('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders';syncOptionsSelection();
+ }else{
+  mediaContentMode=videoContentModePreference||'folders';
+  folderBrowseActive=mediaContentMode==='folders';currentFolderPath='';
+  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
+  syncOptionsSelection();
+ }
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
@@ -514,6 +552,90 @@ function mediaItemMarkup(x){
  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">♫</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">⋮</button></div>';
 }
 function setCurrentFolder(path){currentFolderPath=normalizeFolder(path);render()}
+function folderIconMarkup(){
+ return '<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 12a5 5 0 0 1 5-5h15l7 7h24a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"></path></svg>';
+}
+function folderAbsolutePath(value){
+ const normalized=normalizeFolder(value),parts=normalized.split('/').filter(Boolean);
+ if(!parts.length)return 'Storage location unavailable';
+ const head=parts[0],tail=parts.slice(1).join('/');
+ if(head==='Internal storage')return '/storage/emulated/0'+(tail?'/'+tail:'');
+ const external=head.match(/^External storage \\((.+)\\)$/);
+ if(external&&external[1]&&external[1]!=='null')return '/storage/'+external[1]+(tail?'/'+tail:'');
+ if(head==='Device storage')return 'Storage path unavailable on this Android version';
+ if(head==='Chosen files')return 'Location unavailable for individually selected files';
+ if(head==='Selected folders')return 'Selected folder'+(tail?' · '+tail:'');
+ return normalized;
+}
+function folderOverviewGroups(filtered){
+ const paths=new Set();
+ for(const item of filtered){
+  const value=normalizeFolder(item.folder);
+  if(!value)continue;
+  const parts=value.split('/'),head=parts[0];
+  const storageRoot=head==='Internal storage'||/^External storage \\(.+\\)$/.test(head);
+  if(storageRoot||head==='Selected folders'){
+   if(parts.length===1)paths.add(value);
+   else for(let depth=2;depth<=parts.length;depth++)paths.add(parts.slice(0,depth).join('/'));
+  }else paths.add(value);
+ }
+ const groups=[];
+ for(const path of paths){
+  const related=filtered.filter(item=>{const candidate=normalizeFolder(item.folder);return candidate===path||candidate.startsWith(path+'/')});
+  if(!related.length)continue;
+  const histories=related.map(historyFor).filter(Boolean);
+  groups.push({
+   path,name:path.split('/').filter(Boolean).pop()||path,
+   count:related.length,
+   size:related.reduce((sum,item)=>sum+Math.max(0,Number(item.size)||0),0),
+   latestDate:related.reduce((max,item)=>Math.max(max,Number(item.lastModified)||0),0),
+   playedAt:histories.reduce((max,row)=>Math.max(max,Number(row.lastPlayedAt)||0),0),
+   completed:histories.reduce((sum,row)=>sum+(row.completed?1:0),0),
+   duration:related.reduce((sum,item)=>sum+Math.max(0,Number(item.duration)||0),0),
+   resolution:related.reduce((max,item)=>Math.max(max,(Number(item.width)||0)*(Number(item.height)||0),resolutionPixels(item.resolution)),0),
+   frameRate:related.reduce((max,item)=>Math.max(max,Number(item.frameRate)||0),0)
+  });
+ }
+ const direction=sortDirection==='desc'?-1:1;
+ groups.sort((a,b)=>{
+  let left,right,result=0;
+  switch(videoSort){
+   case 'date':left=a.latestDate;right=b.latestDate;break;
+   case 'played':left=a.playedAt;right=b.playedAt;break;
+   case 'status':left=a.completed;right=b.completed;break;
+   case 'length':left=a.duration;right=b.duration;break;
+   case 'size':left=a.size;right=b.size;break;
+   case 'resolution':left=a.resolution;right=b.resolution;break;
+   case 'path':left=a.path.toLocaleLowerCase();right=b.path.toLocaleLowerCase();break;
+   case 'framerate':left=a.frameRate;right=b.frameRate;break;
+   case 'type':left='video';right='video';break;
+   default:left=a.name.toLocaleLowerCase();right=b.name.toLocaleLowerCase();
+  }
+  result=typeof left==='string'?left.localeCompare(right,undefined,{numeric:true,sensitivity:'base'}):left-right;
+  if(result!==0)return result*direction;
+  return a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'})*direction;
+ });
+ return groups;
+}
+function folderOverviewRowMarkup(folder){
+ const countLabel=folder.count+' video'+(folder.count===1?'':'s');
+ return '<button type="button" class="folder-entry folder-overview-row" data-open-folder="'+escapeHtml(folder.path)+'">'
+  +'<span class="folder-entry-icon" aria-hidden="true">'+folderIconMarkup()+'</span>'
+  +'<span class="folder-entry-copy"><strong>'+escapeHtml(folder.name)+'</strong>'
+  +'<span class="folder-entry-meta"><span>'+countLabel+'</span><span class="folder-size">'+fmtSize(folder.size)+'</span></span>'
+  +'<small class="folder-path">'+escapeHtml(folderAbsolutePath(folder.path))+'</small></span></button>';
+}
+function renderFolderOverview(filtered){
+ const library=$('library'),groups=folderOverviewGroups(filtered);
+ $('count').textContent=groups.length+' folder'+(groups.length===1?'':'s');
+ if(!groups.length){
+  library.innerHTML='<div class="empty"><div class="emptyicon">📁</div><strong>No video folders found</strong><p>Scan your phone or add a storage folder to browse videos by folder.</p><button id="folderOverviewScan" type="button">Scan phone</button></div>';
+  $('folderOverviewScan').onclick=scan;
+  return;
+ }
+ library.innerHTML=groups.map(folderOverviewRowMarkup).join('');
+ library.querySelectorAll('[data-open-folder]').forEach(button=>button.onclick=()=>setCurrentFolder(button.dataset.openFolder));
+}
 function renderFolderContents(filtered){
  const library=$('library'),current=normalizeFolder(currentFolderPath),parts=current?current.split('/').filter(Boolean):[];
  currentFolderPath=current;
@@ -537,7 +659,11 @@ function renderFolderContents(filtered){
  const rootFoldersOnly=mediaContentMode==='folders'&&!current;
  const direct=(rootFoldersOnly?[]:filtered.filter(item=>normalizeFolder(item.folder)===current)).sort(mediaComparator);
  let out='';
- for(const folder of orderedFolders)out+='<button type="button" class="folder-entry" data-open-folder="'+escapeHtml(folder.path)+'"><span class="folder-entry-icon">📁</span><span class="folder-entry-copy"><strong>'+escapeHtml(folder.name)+'</strong><small>'+folder.count+' media item'+(folder.count===1?'':'s')+'</small></span><span class="folder-entry-arrow">›</span></button>';
+ for(const folder of orderedFolders){
+  let size=0;
+  for(const candidate of filtered){const candidatePath=normalizeFolder(candidate.folder);if(candidatePath===folder.path||candidatePath.startsWith(folder.path+'/'))size+=Math.max(0,Number(candidate.size)||0)}
+  out+=folderOverviewRowMarkup({...folder,size});
+ }
  for(const item of direct)out+=mediaItemMarkup(item);
  if(!out)out='<div class="empty"><div class="emptyicon">📁</div><strong>This folder has no matching media</strong><p>Try another folder, clear the search, or add a storage folder.</p><button id="folderEmptyBrowse" type="button">Add folder</button></div>';
  library.innerHTML=out;
@@ -560,6 +686,7 @@ function render(){
  let filtered=items.filter(x=>x.type===active);
  if(videoSearchText)filtered=filtered.filter(x=>(String(x.name||'')+' '+String(x.folder||'')+' '+String(x.mime||'')+' '+String(x.type||'')).toLocaleLowerCase().includes(videoSearchText));
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
+ $('mediaTitle').textContent=active==='audio'?'Music':(folderBrowseActive?'Folders':'Videos');
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=items.filter(x=>x.type==='video').length;
  $('audioCount').textContent=items.filter(x=>x.type==='audio').length;
@@ -568,7 +695,7 @@ function render(){
  $('favoriteVideoCount').textContent=items.filter(x=>x.type==='video'&&isFavorite(x)).length;
  $('videoLibraryFilters').hidden=active!=='video';
  $('videoToolbar').hidden=!((active==='video'||active==='audio')&&searchExpanded);
- $('folderBrowseBar').hidden=active!=='video'||!folderBrowseActive;
+ $('folderBrowseBar').hidden=active!=='video'||!folderBrowseActive||!currentFolderPath;
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
@@ -576,7 +703,12 @@ function render(){
  const library=$('library');
  library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive&&mediaContentMode!=='folders');
  library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list'&&mediaContentMode!=='folders');
- if(active==='video'&&folderBrowseActive){renderFolderContents(filtered);return}
+ library.classList.toggle('folder-overview',active==='video'&&folderBrowseActive&&mediaContentMode==='folders'&&!currentFolderPath);
+ if(active==='video'&&folderBrowseActive&&mediaContentMode==='folders'){
+  if(currentFolderPath){renderFolderContents(filtered);return}
+  if(filtered.length){renderFolderOverview(filtered);return}
+ }
+ if(active==='video'&&folderBrowseActive&&currentFolderPath){renderFolderContents(filtered);return}
  if(!items.length){
   library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone, choose media, or add a storage folder from your phone, SD card, or a supported USB drive.</p><button id="emptyBrowse">Browse this device</button></div>';
   $('emptyBrowse').onclick=pick;return
