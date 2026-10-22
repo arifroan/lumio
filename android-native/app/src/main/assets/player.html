@@ -22,9 +22,11 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;
 .tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}.tools button{border:1px solid var(--line);background:#171620;color:#d9d3ed;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:750}.tools label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.tools input[type=range]{width:95px;accent-color:var(--lime)}.subtitle-note{font-size:10px;color:var(--muted);padding:0 15px 13px}
 .footer{display:flex;align-items:center;gap:9px;margin:23px 5px 0;color:#858198;font-size:10px}.privacydot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px #d7ff7240}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#12121bee;border-top:1px solid #343345;box-shadow:0 -10px 28px #0003;backdrop-filter:blur(18px)}
-.nav-item{display:flex;min-width:0;min-height:54px;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border:0;border-radius:13px;background:transparent;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.2px}
-.nav-item .nav-icon{font-size:19px;line-height:22px}
-.nav-item.active{color:var(--lime);background:#d7ff7210}
+.nav-item{display:flex;min-width:0;min-height:60px;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 2px;border:0;border-radius:0;background:transparent;color:#fff;font-size:12px;font-weight:850;letter-spacing:0}
+.nav-item .nav-icon{display:grid;place-items:center;width:29px;height:29px;color:currentColor}
+.nav-item .nav-icon svg{display:block;width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active{color:#fff;background:transparent}
+.nav-item:focus-visible{outline:2px solid #fff;outline-offset:-2px;border-radius:8px}
 .page-panel{margin-top:5px}
 .stream-card,.setting-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:17px;margin-bottom:12px}
 .stream-card h3{margin:0 0 7px;font-size:17px;letter-spacing:-.3px}
@@ -86,10 +88,18 @@ input[type=file]{display:none}[hidden]{display:none!important}
 <div class="footer" id="appFooter"><span class="privacydot"></span><span>OFFLINE FIRST · NO ACCOUNT · NO UPLOADS</span></div>
 </main>
 <nav class="bottom-nav" aria-label="Main navigation">
-  <button class="nav-item active" data-page="videos" aria-current="page"><span class="nav-icon">▻</span><span>Videos</span></button>
-  <button class="nav-item" data-page="music"><span class="nav-icon">♫</span><span>Music</span></button>
-  <button class="nav-item" data-page="stream"><span class="nav-icon">⌁</span><span>Stream</span></button>
-  <button class="nav-item" data-page="settings"><span class="nav-icon">⚙</span><span>Settings</span></button>
+  <button class="nav-item active" data-page="videos" aria-current="page" aria-label="Videos">
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h18a1.8 1.8 0 0 1 1.8 1.8v9.2a2 2 0 0 1-2 2H3.2a2 2 0 0 1-2-2V9.5a2 2 0 0 1 1.8-2Z"/><path d="M2 11.5h20"/><path d="m4.5 7.5 2.1-5 4.6 5"/><path d="m12.5 7.5 2.1-5 4.6 5"/><path d="M4.5 2.5h14"/></svg></span><span>Videos</span>
+  </button>
+  <button class="nav-item" data-page="music" aria-label="Music">
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span>Music</span>
+  </button>
+  <button class="nav-item" data-page="stream" aria-label="Stream">
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8.5 21 3.5-8 3.5 8"/><path d="M12 13V7"/><circle cx="12" cy="5" r="1.8"/><path d="M7.7 9.1a6 6 0 0 0 0 8.5"/><path d="M16.3 9.1a6 6 0 0 1 0 8.5"/><path d="M4.8 6.1a10 10 0 0 0 0 14.2"/><path d="M19.2 6.1a10 10 0 0 1 0 14.2"/></svg></span><span>Stream</span>
+  </button>
+  <button class="nav-item" data-page="settings" aria-label="Settings">
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.4 1.1-1.5 2.6-1.7-.6a8.3 8.3 0 0 1-1.7 1l-.3 1.8h-3l-.3-1.8a8.3 8.3 0 0 1-1.7-1l-1.7.6-1.5-2.6 1.4-1.1a7.4 7.4 0 0 1 0-2l-1.4-1.1 1.5-2.6 1.7.6a8.3 8.3 0 0 1 1.7-1l.3-1.8h3l.3 1.8a8.3 8.3 0 0 1 1.7 1l1.7-.6 1.5 2.6-1.4 1.1a7.4 7.4 0 0 1 0 2Z"/></svg></span><span>Settings</span>
+  </button>
 </nav>
 <script>const $=id=>document.getElementById(id);
 let items=[],active='video',selectedKey=null,currentPage='videos';
