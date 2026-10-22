@@ -15,6 +15,33 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;
 .tabs{display:flex;gap:8px;overflow:auto;padding:0 0 4px;margin-bottom:13px;scrollbar-width:none}.tab{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:#c2bfd4;padding:9px 15px;border-radius:30px;font-size:12px;font-weight:750}.tab.active{background:var(--violet);border-color:var(--violet);color:#1a1627}
 .library{border:1px solid var(--line);background:var(--surface);border-radius:22px;overflow:hidden}.empty{padding:27px 18px 30px;text-align:center}.emptyicon{width:54px;height:54px;margin:0 auto 13px;border-radius:18px;background:#2b2940;color:var(--violet);display:grid;place-items:center;font-size:25px}.empty strong{display:block;font-size:14px}.empty p{font-size:12px;color:var(--muted);margin:5px auto 15px;max-width:240px}.empty button{border:1px solid #62567f;background:#29253a;color:#e2d9ff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:12px}
 .file{display:flex;gap:12px;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line)}.file:last-child{border-bottom:0}.file-icon{flex:0 0 47px;width:47px;height:47px;border-radius:15px;background:linear-gradient(145deg,#3b3159,#252337);color:var(--violet);display:grid;place-items:center;font-size:20px}.file-name{flex:1;min-width:0}.file-name strong,.file-name small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-name strong{font-size:13px}.file-name small{font-size:11px;color:var(--muted);margin-top:4px}.openfile{background:transparent;border:0;color:#b8b1d0;font-size:21px;padding:8px}
+.library-toolbar{display:flex;flex-direction:column;gap:9px;margin:0 0 13px}
+.video-search{width:100%;min-width:0;min-height:44px;padding:10px 13px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--ink);outline:none}
+.video-search:focus,.video-sort:focus{border-color:var(--violet)}
+.video-search::placeholder{color:#817d98}
+.video-toolbar-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.sort-control{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;flex:1;min-width:150px}
+.video-sort{width:100%;min-width:0;min-height:39px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);padding:7px 9px;font:inherit}
+.view-toggle{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);background:var(--surface);border-radius:12px}
+.view-toggle button,.folder-toggle{min-height:33px;padding:6px 10px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:11px;font-weight:800;white-space:nowrap}
+.view-toggle button.active{background:var(--violet);color:#1a1627}
+.folder-toggle{border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.folder-toggle[aria-pressed="true"]{border-color:#655783;color:#e2d6ff}
+.library.video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0;background:transparent;border:0;overflow:visible}
+.folder-heading{padding:10px 13px 7px;background:#15151e;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.5px;color:var(--muted)}
+.video-grid .folder-heading{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:4px}
+.video-grid .file{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0;padding:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.video-thumb-wrap{position:relative;display:grid;place-items:center;flex:0 0 84px;width:84px;height:56px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#343047,#14141d 80%)}
+.video-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .16s ease}
+.video-thumb.loaded{opacity:1}
+.thumb-fallback{display:grid;place-items:center;width:100%;height:100%;color:var(--violet);font-size:21px}
+.video-grid .video-thumb-wrap{width:100%;height:auto;aspect-ratio:16/9;flex:initial}
+.video-grid .file-name{padding:10px 11px 12px}
+.video-grid .file-name strong{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.7em;overflow-wrap:anywhere}
+.video-grid .file-name small{white-space:nowrap;font-size:10px}
+.video-list .file{min-width:0}
+@media(min-width:620px){.library.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.video-toolbar-row{gap:10px}.sort-control{max-width:250px}}
+
 .player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
 .screen{aspect-ratio:16/9;min-height:180px;position:relative;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#29213d,#09090f 70%);overflow:hidden;touch-action:none;user-select:none}.screen audio{position:absolute;bottom:0;width:100%;z-index:2}.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:center;transition:transform .12s linear}.placeholder{text-align:center;padding:20px}.placeholder .playdisc{width:57px;height:57px;border-radius:21px;background:var(--violet);color:#181322;display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.placeholder strong{font-size:14px}.placeholder p{color:var(--muted);font-size:11px;margin:4px 0}
 .gesture-hint{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);background:#171520d9;border:1px solid #ffffff22;border-radius:18px;padding:8px 12px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}.gesture-hint.show{opacity:1}.lockoverlay{display:none;position:absolute;z-index:5;inset:0;background:#08080d55;align-items:center;justify-content:center}.lockoverlay.show{display:flex}.lockoverlay button{background:#171520e8;color:white;border:1px solid #ffffff44;border-radius:18px;padding:13px 17px;font-weight:850}
@@ -52,7 +79,23 @@ input[type=file]{display:none}[hidden]{display:none!important}
 <section id="mediaPage">
 <section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain">▶ Play in Lumio</button><button id="scanAgain">↻ Scan phone</button></div></section>
 <div class="sectionhead"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
-<section class="library" id="library"><div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Add a video or song stored on your phone to build your local library.</p><button id="emptyBrowse">Browse this device</button></div></section>
+<div class="library-toolbar" id="videoToolbar">
+  <input class="video-search" id="videoSearch" type="search" placeholder="Search videos by name…" autocomplete="off" aria-label="Search videos by name">
+  <div class="video-toolbar-row">
+    <label class="sort-control" for="videoSort"><span>Sort</span><select class="video-sort" id="videoSort">
+      <option value="name-asc">Name A–Z</option>
+      <option value="newest">Newest first</option>
+      <option value="largest">Largest first</option>
+      <option value="longest">Longest first</option>
+    </select></label>
+    <div class="view-toggle" role="group" aria-label="Video layout">
+      <button id="videoGridView" class="active" type="button" aria-pressed="true">Grid</button>
+      <button id="videoListView" type="button" aria-pressed="false">List</button>
+    </div>
+    <button class="folder-toggle" id="videoGroupToggle" type="button" aria-pressed="true">Folders: On</button>
+  </div>
+</div>
+<section class="library" id="library"><div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div></section>
 </section>
 
 <section class="page-panel" id="streamPage" hidden>
@@ -102,52 +145,63 @@ input[type=file]{display:none}[hidden]{display:none!important}
   </button>
 </nav>
 <script>const $=id=>document.getElementById(id);
-let items=[],active='video',selectedKey=null,currentPage='videos';
+let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='name-asc',videoViewMode='grid',groupByFolder=true,videoSearchText='';
 function safeBridge(method,...args){try{if(window.LumioNative&&typeof window.LumioNative[method]==='function')return window.LumioNative[method](...args)}catch(e){}return null}
 function fmtSize(bytes){return bytes>=1073741824?(bytes/1073741824).toFixed(2)+' GB':bytes>=1048576?(bytes/1048576).toFixed(1)+' MB':bytes>=1024?(bytes/1024).toFixed(0)+' KB':(bytes||0)+' B'}
 function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll(String.fromCharCode(39),'&#39;')}
-function mergeMedia(records){for(const raw of records||[]){if(!raw||!raw.uri)continue;const item={key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0};const ix=items.findIndex(x=>x.key===item.key);if(ix>=0)items[ix]={...items[ix],...item};else items.push(item)}items.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name));if(items.length)clearMessage();render()}
-window.onNativeMediaPicked=function(records){mergeMedia(records);if(records&&records.length){const record=records[0];choosePage(record.type==='audio'?'music':'videos');const item=items.find(x=>x.key===(record.key||record.uri));if(item)openItem(item.key)}};
-window.onNativeMediaScan=function(records,error){mergeMedia(records);if(error)showMessage(error);else if(!records||!records.length)showMessage('No indexed media was found yet. Use Add media to choose files, including files on a USB drive.')};
+function mergeMedia(records,replaceExisting=false){if(replaceExisting)items=[];for(const raw of records||[]){if(!raw||!raw.uri)continue;const item={key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0};const ix=items.findIndex(x=>x.uri===item.uri||x.key===item.key);if(ix>=0)items[ix]={...items[ix],...item};else items.push(item)}items.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name));if(items.length)clearMessage();render()}
+window.onNativeMediaPicked=function(records){mergeMedia(records);if(records&&records.length){const record=records[0];choosePage(record.type==='audio'?'music':'videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}};
+window.onNativeMediaScan=function(records,error){mergeMedia(records,!error);if(error)showMessage(error);else if(!records||!records.length)showMessage('No indexed media was found yet. Use Add media to choose files, including files on a USB drive.')};
+window.onNativeThumbnail=function(key,dataUri){if(!dataUri)return;const images=document.querySelectorAll('.video-thumb');for(const img of images){if(img.dataset.thumbKey===key){img.src=dataUri;img.classList.add('loaded');break}}};
+const thumbObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;const img=entry.target;thumbObserver.unobserve(img);requestThumbnail(img)}},{rootMargin:'180px 0px'}):null;
+function requestThumbnail(img){if(!img||img.dataset.requested)return;img.dataset.requested='1';safeBridge('requestThumbnail',img.dataset.thumbUri,img.dataset.thumbKey)}
+function observeThumbnails(){document.querySelectorAll('.video-thumb').forEach(img=>{if(img.dataset.requested)return;if(thumbObserver)thumbObserver.observe(img);else requestThumbnail(img)})}
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function openVault(){safeBridge('openVault')}
 $('heroBrowse').onclick=pick;$('scanDevice').onclick=scan;$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('videoSearch').addEventListener('input',()=>{videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()});
+$('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;render()});
+$('videoGridView').onclick=()=>setVideoView('grid');$('videoListView').onclick=()=>setVideoView('list');
+$('videoGroupToggle').onclick=()=>{groupByFolder=!groupByFolder;$('videoGroupToggle').setAttribute('aria-pressed',String(groupByFolder));$('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');render()};
+function setVideoView(mode){videoViewMode=mode;$('videoGridView').classList.toggle('active',mode==='grid');$('videoListView').classList.toggle('active',mode==='list');$('videoGridView').setAttribute('aria-pressed',String(mode==='grid'));$('videoListView').setAttribute('aria-pressed',String(mode==='list'));render()}
 function choosePage(page){
- currentPage=page;
- active=page==='music'?'audio':'video';
- const isMedia=page==='videos'||page==='music';
- $('homeIntro').hidden=page!=='videos';
- $('mediaPage').hidden=!isMedia;
- $('streamPage').hidden=page!=='stream';
- $('settingsPage').hidden=page!=='settings';
- $('appFooter').hidden=!isMedia;
- $('mediaTitle').textContent=page==='music'?'Music':'Videos';
- document.querySelectorAll('.nav-item').forEach(button=>{
-   const selected=button.dataset.page===page;
-   button.classList.toggle('active',selected);
-   if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
- });
- if(isMedia)render();
+ currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';
+ $('homeIntro').hidden=page!=='videos';$('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=page!=='videos';$('mediaTitle').textContent=page==='music'?'Music':'Videos';
+ document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
 $('openStream').onclick=()=>{
- const raw=$('streamUrl').value.trim();
- const message=$('streamMessage');
- if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return;}
- let url;
- try{url=new URL(raw);}catch(e){message.textContent='That does not look like a valid URL.';return;}
- if(url.protocol!=='https:'){message.textContent='For safety, Lumio accepts HTTPS stream URLs only.';return;}
- const resource=url.pathname.split('/').filter(Boolean).pop()||'Network stream';
- let title=resource.replace(/\+/g,' ');
- // URLs can contain malformed percent escapes; keep the original segment rather
- // than letting decodeURIComponent abort the stream button handler.
- try{title=decodeURIComponent(title)}catch(e){}
- const audio=/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|wma)(?:$)/i.test(url.pathname);
- message.textContent='Opening stream in Lumio…';
- safeBridge('playMedia',url.href,title,audio,'[]');
+ const raw=$('streamUrl').value.trim(),message=$('streamMessage');if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return}
+ let url;try{url=new URL(raw)}catch(e){message.textContent='That does not look like a valid URL.';return}
+ if(url.protocol!=='https:'){message.textContent='For safety, Lumio accepts HTTPS stream URLs only.';return}
+ const resource=url.pathname.split('/').filter(Boolean).pop()||'Network stream';let title=resource.replace(/\+/g,' ');try{title=decodeURIComponent(title)}catch(e){}
+ const audio=/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|wma)(?:$)/i.test(url.pathname);message.textContent='Opening stream in Lumio…';safeBridge('playMedia',url.href,title,audio,'[]')
 };
 function clearMessage(){const el=$('message');if(el)el.hidden=true}
 function showMessage(message){let el=$('message');if(!el){el=document.createElement('div');el.id='message';el.style.cssText='margin:10px 2px;padding:11px 13px;border:1px solid #49445d;border-radius:12px;color:#d5cdee;background:#1b1926;font-size:12px';$('library').before(el)}el.textContent=message;el.hidden=false}
-function render(){const filtered=items.filter(x=>x.type===active);$('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');$('videoCount').textContent=items.filter(x=>x.type==='video').length;$('audioCount').textContent=items.filter(x=>x.type==='audio').length;$('totalSize').textContent=fmtSize(items.reduce((n,x)=>n+x.size,0));if(!items.length){$('library').innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose audio and video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div>';$('emptyBrowse').onclick=pick;return}if(!filtered.length){$('library').innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>No '+(active==='video'?'videos':'music')+' found</strong><p>Choose local media or scan the device again.</p><button id="emptyBrowse">Browse this device</button></div>';$('emptyBrowse').onclick=pick;return}let out='',lastFolder=null;for(const x of filtered){if(x.folder!==lastFolder){lastFolder=x.folder;out+='<div style="padding:10px 14px 7px;background:#15151e;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.5px;color:var(--muted)">▰ '+escapeHtml(lastFolder)+'</div>'}out+='<div class="file" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">'+(x.type==='audio'?'♫':'▻')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+x.type.toUpperCase()+' · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div><button class="openfile" aria-label="Play '+escapeHtml(x.name)+'">›</button></div>'}$('library').innerHTML=out;[...$('library').querySelectorAll('.file')].forEach(el=>el.onclick=()=>openItem(el.dataset.key))}
+function videoComparator(a,b){let result=0;if(videoSort==='newest')result=(Number(b.lastModified)||0)-(Number(a.lastModified)||0);else if(videoSort==='largest')result=(Number(b.size)||0)-(Number(a.size)||0);else if(videoSort==='longest')result=(Number(b.duration)||0)-(Number(a.duration)||0);else result=a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});if(result===0)result=a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});return result}
+function render(){
+ let filtered=items.filter(x=>x.type===active);
+ if(active==='video'&&videoSearchText)filtered=filtered.filter(x=>x.name.toLocaleLowerCase().includes(videoSearchText));
+ $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');$('videoCount').textContent=items.filter(x=>x.type==='video').length;$('audioCount').textContent=items.filter(x=>x.type==='audio').length;$('totalSize').textContent=fmtSize(items.reduce((n,x)=>n+x.size,0));
+ const library=$('library');library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid');library.classList.toggle('video-list',active==='video'&&videoViewMode==='list');
+ document.querySelectorAll('.video-toolbar-row button').forEach(b=>{if(b.id!=='videoGroupToggle')return;b.textContent='Folders: '+(groupByFolder?'On':'Off')});
+ if(!items.length){library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose audio and video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div>';$('emptyBrowse').onclick=pick;return}
+ if(!filtered.length){const searching=active==='video'&&!!videoSearchText;library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>'+(searching?'No matching videos':('No '+(active==='video'?'videos':'music')+' found'))+'</strong><p>'+(searching?'Try another title or clear your search.':'Choose local media or scan the device again.')+'</p><button id="emptyBrowse">'+(searching?'Clear search':'Browse this device')+'</button></div>';$('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else pick()};return}
+ if(active==='video'&&groupByFolder)filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||videoComparator(a,b));
+ else if(active==='video')filtered.sort(videoComparator);
+ else filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+ let out='',lastFolder=null;
+ for(const x of filtered){
+   if((active!=='video'||groupByFolder)&&x.folder!==lastFolder){lastFolder=x.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
+   const isVideo=x.type==='video';
+   if(isVideo){
+     out+='<div class="file" data-key="'+escapeHtml(x.key)+'"><div class="video-thumb-wrap"><div class="thumb-fallback" aria-hidden="true">▶</div><img class="video-thumb" loading="lazy" alt="" data-thumb-uri="'+escapeHtml(x.uri)+'" data-thumb-key="'+escapeHtml(x.key)+'"></div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div></div>';
+   }else{
+     out+='<div class="file" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">♫</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div><button class="openfile" aria-label="Play '+escapeHtml(x.name)+'">›</button></div>';
+   }
+ }
+ library.innerHTML=out;[...library.querySelectorAll('.file')].forEach(el=>el.onclick=()=>openItem(el.dataset.key));if(active==='video')observeThumbnails()
+}
 function openItem(key){const x=items.find(y=>y.key===key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=items.find(y=>y.key===key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 choosePage('videos');render();setTimeout(scan,350);</script></body></html>
