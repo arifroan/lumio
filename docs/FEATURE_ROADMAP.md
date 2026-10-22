@@ -13,6 +13,10 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 - Persistent Continue Watching and Recently Played sections for local videos, with playback position, duration, completion state, and last-played time stored locally.
 - Persistent video Favorites with an All Videos/Favorites filter, per-video favorite controls, and a native actions menu for play, favorite, remove from recent history, and file details.
 - Periodic per-item playback progress saving and resume from each URI's saved position; completed items restart at the beginning.
+- Persistent Android Storage Access Framework folder grants using the system folder picker, with recursive media scanning through granted folders, including supported SD-card and USB-OTG document providers.
+- In-app folder navigation with breadcrumbs, visible child folders, direct folder contents, and a direct jump into a newly selected folder.
+- Storage-aware media identities that deduplicate MediaStore and Android external-storage document URIs for the same physical path, while keeping different storage volumes distinct.
+- Background serialized media scanning with a bounded folder traversal; partial permission, revoked folder, and scan-limit conditions preserve existing library entries rather than clearing the list.
 - Same-folder/type playlist queue with next-item autoplay.
 - Speed selection from 0.25x to 4x.
 - Double-tap seeking by ±10 seconds, horizontal seek gesture, vertical brightness and volume gestures, pinch zoom/pan, and playback touch lock.
@@ -32,7 +36,7 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 
 - Physical-device verification for gestures, brightness/volume controls, PiP, background audio/notification controls, audio sync, decoder preferences, subtitles, unusual media, and different Android versions.
 - Independent subtitle-pinching gesture without also zooming the video, and a selectable MicroDVD frame rate; current conversion assumes 25 fps.
-- Custom-folder navigation and stronger duplicate detection when the same physical file is surfaced through different MediaStore and document-provider URIs.
+- Physical-device validation of SD-card/USB-OTG folder grants, provider-specific listing behavior, revoked grants, and very large folders. External-storage document-provider URIs are deduplicated by stable volume/path identity; generic third-party providers without a stable filesystem path remain deduplicated by exact URI only.
 - Further optimization/testing of thumbnail cache behavior and very large collections on low-memory devices.
 - Direct browsing of every SD-card and USB-OTG filesystem. Lumio scans files exposed by Android's MediaStore and lets users choose provider-backed external-storage files through Android's document picker.
 - Fully reliable pitch preservation across all codecs/devices; the speed control is present but the renderer/device determines pitch behavior.
