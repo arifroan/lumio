@@ -949,8 +949,9 @@ public final class MainActivity extends Activity {
             rememberTreeUri(treeUri);
             DocumentFile root = DocumentFile.fromTreeUri(this, treeUri);
             String name = root == null || root.getName() == null ? "selected folder" : root.getName();
+            String rootPath = root == null ? "" : folderPathForTreeRoot(treeUri, root);
             callJs("window.onNativeFolderPicked && window.onNativeFolderPicked("
-                    + JSONObject.quote(name) + ")");
+                    + JSONObject.quote(name) + "," + JSONObject.quote(rootPath) + ")");
             publishScannedMedia();
             return;
         }
