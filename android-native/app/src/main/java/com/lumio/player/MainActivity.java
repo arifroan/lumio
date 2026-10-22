@@ -192,13 +192,18 @@ public final class MainActivity extends Activity {
     private String buildLibraryStateJson() {
         JSONObject state = new JSONObject();
         JSONArray favorites = new JSONArray();
+        JSONArray favoriteIdentities = new JSONArray();
         JSONArray history;
         try {
-            Set<String> savedFavorites = new HashSet<>(getSharedPreferences("lumio_library", MODE_PRIVATE)
-                    .getStringSet("favorite_uris", new HashSet<>()));
+            android.content.SharedPreferences libraryPrefs = getSharedPreferences("lumio_library", MODE_PRIVATE);
+            Set<String> savedFavorites = new HashSet<>(libraryPrefs.getStringSet("favorite_uris", new HashSet<>()));
+            Set<String> savedIdentities = new HashSet<>(libraryPrefs.getStringSet("favorite_identities", new HashSet<>()));
             List<String> orderedFavorites = new ArrayList<>(savedFavorites);
+            List<String> orderedIdentities = new ArrayList<>(savedIdentities);
             java.util.Collections.sort(orderedFavorites);
+            java.util.Collections.sort(orderedIdentities);
             for (String uri : orderedFavorites) if (uri != null && !uri.trim().isEmpty()) favorites.put(uri);
+            for (String identity : orderedIdentities) if (identity != null && !identity.trim().isEmpty()) favoriteIdentities.put(identity);
 
             String rawHistory = getSharedPreferences("lumio_playback", MODE_PRIVATE)
                     .getString("watch_history", "[]");
@@ -208,6 +213,7 @@ public final class MainActivity extends Activity {
         }
         try {
             state.put("favorites", favorites);
+            state.put("favoriteIdentities", favoriteIdentities);
             state.put("history", history);
         } catch (JSONException ignored) { }
         return state.toString();
@@ -219,69 +225,76 @@ public final class MainActivity extends Activity {
                 + JSONObject.quote(state) + ")");
     }
 
-    private boolean isFavoriteUri(String uri) {
-        if (uri == null || uri.trim().isEmpty()) return false;
-        Set<String> saved = getSharedPreferences("lumio_library", MODE_PRIVATE)
-                .getStringSet("favorite_uris", new HashSet<>());
-        return saved.contains(uri);
+    private boolean isFavoriteUri(String uri, String identity) {
+        android.content.SharedPreferences preferences = getSharedPreferences("lumio_library", MODE_PRIVATE);
+        Set<String> savedUris = preferences.getStringSet("favorite_uris", new HashSet<>());
+        Set<String> savedIdentities = preferences.getStringSet("favorite_identities", new HashSet<>());
+        return (uri != null && savedUris.contains(uri))
+                || (identity != null && !identity.trim().isEmpty() && savedIdentities.contains(identity));
     }
 
-    private boolean toggleFavoriteUri(String uri) {
+    private boolean toggleFavoriteUri(String uri, String identity) {
         if (uri == null || uri.trim().isEmpty()) return false;
         android.content.SharedPreferences preferences = getSharedPreferences("lumio_library", MODE_PRIVATE);
         Set<String> saved = new HashSet<>(preferences.getStringSet("favorite_uris", new HashSet<>()));
-        boolean nowFavorite;
-        if (saved.contains(uri)) {
+        Set<String> savedIdentities = new HashSet<>(preferences.getStringSet("favorite_identities", new HashSet<>()));
+        boolean hasIdentity = identity != null && !identity.trim().isEmpty();
+        boolean wasFavorite = saved.contains(uri) || (hasIdentity && savedIdentities.contains(identity));
+        if (wasFavorite) {
             saved.remove(uri);
-            nowFavorite = false;
+            if (hasIdentity) savedIdentities.remove(identity);
         } else {
             saved.add(uri);
-            nowFavorite = true;
+            if (hasIdentity) savedIdentities.add(identity);
         }
-        preferences.edit().putStringSet("favorite_uris", saved).apply();
-        return nowFavorite;
+        preferences.edit().putStringSet("favorite_uris", saved)
+                .putStringSet("favorite_identities", savedIdentities).apply();
+        return !wasFavorite;
     }
 
-    private boolean hasHistoryEntry(String uri) {
-        if (uri == null || uri.trim().isEmpty()) return false;
+    private boolean hasHistoryEntry(String uri, String identity) {
+        if ((uri == null || uri.trim().isEmpty()) && (identity == null || identity.trim().isEmpty())) return false;
         try {
             JSONArray history = new JSONArray(getSharedPreferences("lumio_playback", MODE_PRIVATE)
                     .getString("watch_history", "[]"));
             for (int i = 0; i < history.length(); i++) {
                 JSONObject row = history.optJSONObject(i);
-                if (row != null && uri.equals(row.optString("uri", ""))) return true;
+                if (row == null) continue;
+                if (uri != null && uri.equals(row.optString("uri", ""))) return true;
+                if (identity != null && !identity.trim().isEmpty()
+                        && identity.equals(row.optString("identity", ""))) return true;
             }
         } catch (Exception ignored) { }
         return false;
     }
 
-    private void removeFromWatchHistory(String uri) {
-        if (uri == null || uri.trim().isEmpty()) return;
+    private void removeFromWatchHistory(String uri, String identity) {
+        if ((uri == null || uri.trim().isEmpty()) && (identity == null || identity.trim().isEmpty())) return;
         android.content.SharedPreferences preferences = getSharedPreferences("lumio_playback", MODE_PRIVATE);
         JSONArray keep = new JSONArray();
         try {
             JSONArray history = new JSONArray(preferences.getString("watch_history", "[]"));
             for (int i = 0; i < history.length(); i++) {
                 JSONObject row = history.optJSONObject(i);
-                if (row == null || !uri.equals(row.optString("uri", ""))) {
-                    if (row != null) keep.put(row);
-                }
+                boolean sameUri = row != null && uri != null && uri.equals(row.optString("uri", ""));
+                boolean sameIdentity = row != null && identity != null && !identity.trim().isEmpty()
+                        && identity.equals(row.optString("identity", ""));
+                if (row != null && !sameUri && !sameIdentity) keep.put(row);
             }
         } catch (Exception ignored) { }
-        android.content.SharedPreferences.Editor editor = preferences.edit()
-                .putString("watch_history", keep.toString())
-                .remove("position:" + uri);
-        if (uri.equals(preferences.getString("last_uri", ""))) editor.remove("last_uri");
+        android.content.SharedPreferences.Editor editor = preferences.edit().putString("watch_history", keep.toString());
+        if (uri != null && !uri.trim().isEmpty()) editor.remove("position:" + uri);
+        if (uri != null && uri.equals(preferences.getString("last_uri", ""))) editor.remove("last_uri");
         editor.apply();
     }
 
-    private void showMediaActionsDialog(String uri, String title, long sizeBytes, long durationMs, boolean isAudio) {
+    private void showMediaActionsDialog(String uri, String title, long sizeBytes, long durationMs, boolean isAudio, String identity) {
         if (uri == null || uri.trim().isEmpty()) return;
         String safeTitle = title == null || title.trim().isEmpty() ? "Media item" : title;
         List<String> labels = new ArrayList<>();
         List<String> actions = new ArrayList<>();
         labels.add("Play now"); actions.add("play");
-        boolean favorite = isFavoriteUri(uri);
+        boolean favorite = isFavoriteUri(uri, identity);
         labels.add(favorite ? "Remove from Favorites" : "Add to Favorites"); actions.add("favorite");
         if (hasHistoryEntry(uri)) {
             labels.add("Remove from Recently Played"); actions.add("remove_recent");
@@ -296,17 +309,18 @@ public final class MainActivity extends Activity {
                         intent.putExtra(PlayerActivity.EXTRA_URI, uri);
                         intent.putExtra(PlayerActivity.EXTRA_TITLE, safeTitle);
                         intent.putExtra(PlayerActivity.EXTRA_AUDIO, isAudio);
+                        intent.putExtra(PlayerActivity.EXTRA_MEDIA_IDENTITY, identity == null ? "" : identity);
                         intent.putExtra(PlayerActivity.EXTRA_PLAYLIST, "[]");
                         try { startActivity(intent); }
                         catch (Exception e) {
                             Toast.makeText(MainActivity.this, "Could not open this media file", Toast.LENGTH_LONG).show();
                         }
                     } else if ("favorite".equals(action)) {
-                        boolean nowFavorite = toggleFavoriteUri(uri);
+                        boolean nowFavorite = toggleFavoriteUri(uri, identity);
                         Toast.makeText(MainActivity.this, nowFavorite ? "Added to Favorites" : "Removed from Favorites", Toast.LENGTH_SHORT).show();
                         publishLibraryState();
                     } else if ("remove_recent".equals(action)) {
-                        removeFromWatchHistory(uri);
+                        removeFromWatchHistory(uri, identity);
                         Toast.makeText(MainActivity.this, "Removed from Recently Played", Toast.LENGTH_SHORT).show();
                         publishLibraryState();
                     } else if ("details".equals(action)) {
