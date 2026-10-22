@@ -7,6 +7,9 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 - Native video/audio playback screen built on Media3.
 - Android document picker for local files, multi-select, persistent URI grants, and remembered picked-file library entries.
 - MediaStore scanning for indexed videos/audio, grouped by folder, with file type, size and duration summaries.
+- Videos library search by filename; sorting by name, newest, size, and duration; grid/list layout switching; and an on/off folder-grouping control.
+- On-demand native video thumbnails generated asynchronously, resized, cached in app cache, and loaded as visible list/grid rows approach the viewport.
+- Exact-URI duplicate merging and replacement of stale scan results after a successful refresh; unknown timestamps for picked files remain unknown instead of being guessed.
 - Same-folder/type playlist queue with next-item autoplay.
 - Speed selection from 0.25x to 4x.
 - Double-tap seeking by ±10 seconds, horizontal seek gesture, vertical brightness and volume gestures, pinch zoom/pan, and playback touch lock.
@@ -26,7 +29,8 @@ Lumio is an offline-first Android media player with an original violet-and-lime 
 
 - Physical-device verification for gestures, brightness/volume controls, PiP, background audio/notification controls, audio sync, decoder preferences, subtitles, unusual media, and different Android versions.
 - Independent subtitle-pinching gesture without also zooming the video, and a selectable MicroDVD frame rate; current conversion assumes 25 fps.
-- A complete library UI with search, sorting, thumbnail previews, recursive custom-folder navigation, and more robust duplicate handling.
+- Custom-folder navigation and stronger duplicate detection when the same physical file is surfaced through different MediaStore and document-provider URIs.
+- Further optimization/testing of thumbnail cache behavior and very large collections on low-memory devices.
 - Direct browsing of every SD-card and USB-OTG filesystem. Lumio scans files exposed by Android's MediaStore and lets users choose provider-backed external-storage files through Android's document picker.
 - Fully reliable pitch preservation across all codecs/devices; the speed control is present but the renderer/device determines pitch behavior.
 - Exhaustive headphone/Bluetooth profile and media-button tests.
