@@ -71,6 +71,7 @@ public final class PlayerActivity extends Activity {
     public static final String EXTRA_AUDIO = "media_is_audio";
     public static final String EXTRA_PLAYLIST = "media_playlist";
     public static final String EXTRA_TEMP_VAULT_FILE = "temporary_vault_file";
+    public static final String EXTRA_MEDIA_IDENTITY = "media_identity";
     private static final int REQUEST_SUBTITLE = 4301;
     private static final String PREFS = "lumio_playback";
     private static final String WATCH_HISTORY_KEY = "watch_history";
@@ -410,6 +411,15 @@ public final class PlayerActivity extends Activity {
             entry.put("durationMs", duration);
             entry.put("lastPlayedAt", System.currentTimeMillis());
             entry.put("completed", completed);
+            String identity = prefs.getString("identity:" + uri, "");
+            if ((identity == null || identity.isEmpty()) && uri.equals(requestedUri)) {
+                identity = getIntent().getStringExtra(EXTRA_MEDIA_IDENTITY);
+                if (identity == null) identity = "";
+            }
+            if (!identity.isEmpty()) {
+                prefs.edit().putString("identity:" + uri, identity).apply();
+                entry.put("identity", identity);
+            }
             history.put(entry);
 
             for (int i = 0; i < previous.length() && history.length() < MAX_WATCH_HISTORY; i++) {
