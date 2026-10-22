@@ -10,6 +10,46 @@ button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}
 main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:13px 12px}.stat strong{display:block;font-size:20px;letter-spacing:-.5px}.stat span{font-size:10px;color:var(--muted);letter-spacing:.3px}
 .info-card{margin-top:12px}.info-stats{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.info-stats .stat{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px}.info-stats .stat strong{order:2}.info-stats .stat span{order:1;font-size:11px}
 .sectionhead{display:flex;align-items:end;justify-content:space-between;margin:23px 2px 13px}.sectionhead h2{font-size:20px;letter-spacing:-.6px;margin:0}.sectionhead span{font-size:11px;color:var(--muted)}
+.media-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 2px 13px}
+.media-heading{min-width:0}.media-heading h2{font-size:20px;letter-spacing:-.6px;margin:0}.media-heading span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.media-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.icon-button{display:grid;place-items:center;width:43px;height:43px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--ink);padding:9px}
+.icon-button svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-button:active,.icon-button:focus-visible{background:var(--surface2);border-color:#51476c;outline:none}
+.icon-button[aria-expanded="true"]{color:var(--violet);background:#29233b}
+.library-toolbar{display:flex;flex-direction:column;gap:9px;margin:0 0 13px}
+.legacy-controls{display:none!important}
+.options-backdrop{position:fixed;inset:0;z-index:220;display:flex;align-items:flex-end;justify-content:center;background:#0009;backdrop-filter:blur(3px)}
+.options-backdrop[hidden]{display:none!important}
+.options-sheet{width:100%;max-width:900px;max-height:82dvh;overflow:auto;overscroll-behavior:contain;padding:0 16px calc(18px + env(safe-area-inset-bottom));border:1px solid #3c3b4a;border-bottom:0;border-radius:25px 25px 0 0;background:#202026;color:var(--ink);box-shadow:0 -18px 48px #0006}
+.sheet-grabber{display:flex;justify-content:center;padding:9px 0 12px}.sheet-grabber span{width:45px;height:5px;border-radius:9px;background:#666473}
+.options-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 0 14px}
+.options-head h2{margin:0;font-size:21px;letter-spacing:-.5px}.options-head p{margin:3px 0 0;font-size:11px;color:var(--muted)}
+.options-close{width:36px;height:36px;flex:0 0 36px;border:1px solid var(--line);border-radius:50%;background:#2a2a32;color:var(--ink);font-size:25px;line-height:1}
+.options-top-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:13px}
+.option-section h3{margin:2px 0 12px;font-size:17px;letter-spacing:-.3px}
+.option-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.option-layout-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.option-tile{display:flex;min-width:0;min-height:74px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 2px;border:1px solid transparent;border-radius:12px;background:transparent;color:#f4f2fb;font:inherit}
+.option-tile span:last-child{font-size:11px;line-height:1.2;text-align:center;overflow-wrap:anywhere}
+.option-symbol{display:flex;min-height:30px;align-items:center;justify-content:center;color:currentColor;font-size:27px;font-weight:650;line-height:1}
+.option-tile[data-sort="title"] .option-symbol{font-size:20px;letter-spacing:-1px}
+.option-tile[data-sort="resolution"] .option-symbol{font-size:21px;font-style:italic}
+.option-tile[data-sort="framerate"] .option-symbol{font-size:14px;line-height:1.0}
+.option-tile.active{color:#4a9aff;background:#2a303b;border-color:#438fff}
+.option-tile:focus-visible{outline:2px solid #438fff;outline-offset:-2px}
+.options-divider{height:1px;background:#4a4a51;margin:11px 0 14px}
+.sort-option-section h3{margin-bottom:10px}
+.option-sort-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.option-sort-grid .option-tile{min-height:74px;padding:7px 1px}
+.sort-direction-toggle{display:grid;grid-template-columns:1fr 1fr;margin-top:13px;border:1px solid #41414a;border-radius:11px;overflow:hidden}
+.sort-direction-toggle button{min-height:42px;border:0;background:transparent;color:#d3d2dc;font:inherit;font-size:12px}
+.sort-direction-toggle button+button{border-left:1px solid #41414a}
+.sort-direction-toggle button.active{background:#293342;box-shadow:inset 0 0 0 1px #438fff;color:#4a9aff}
+.options-footer{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.options-footer button{min-height:42px;border:1px solid var(--line);border-radius:11px;background:#292933;color:var(--ink);font:inherit;font-size:12px;font-weight:750}
+@media(max-width:360px){.options-sheet{padding-left:10px;padding-right:10px}.options-top-grid{gap:5px}.option-tile span:last-child{font-size:10px}.option-sort-grid .option-tile{min-height:69px}.media-header-actions{gap:3px}}
+@media(min-width:620px){.options-sheet{border-radius:25px 25px 0 0}.option-tile{min-height:80px}.option-symbol{font-size:30px}}
 .tabs{display:flex;gap:8px;overflow:auto;padding:0 0 4px;margin-bottom:13px;scrollbar-width:none}.tab{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:#c2bfd4;padding:9px 15px;border-radius:30px;font-size:12px;font-weight:750}.tab.active{background:var(--violet);border-color:var(--violet);color:#1a1627}
 .library{border:1px solid var(--line);background:var(--surface);border-radius:22px;overflow:hidden}.empty{padding:27px 18px 30px;text-align:center}.emptyicon{width:54px;height:54px;margin:0 auto 13px;border-radius:18px;background:#2b2940;color:var(--violet);display:grid;place-items:center;font-size:25px}.empty strong{display:block;font-size:14px}.empty p{font-size:12px;color:var(--muted);margin:5px auto 15px;max-width:240px}.empty button{border:1px solid #62567f;background:#29253a;color:#e2d9ff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:12px}
 .file{display:flex;gap:12px;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line)}.file:last-child{border-bottom:0}.file-icon{flex:0 0 47px;width:47px;height:47px;border-radius:15px;background:linear-gradient(145deg,#3b3159,#252337);color:var(--violet);display:grid;place-items:center;font-size:20px}.file-name{flex:1;min-width:0}.file-name strong,.file-name small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-name strong{font-size:13px}.file-name small{font-size:11px;color:var(--muted);margin-top:4px}.openfile{background:transparent;border:0;color:#b8b1d0;font-size:21px;padding:8px}
@@ -122,24 +162,77 @@ input[type=file]{display:none}[hidden]{display:none!important}
 <main>
 <section id="mediaPage">
 <section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain">▶ Play in Lumio</button><button id="scanAgain">↻ Scan phone</button></div></section>
-<div class="sectionhead"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
-<div class="library-toolbar" id="videoToolbar">
-  <input class="video-search" id="videoSearch" type="search" placeholder="Search videos by name…" autocomplete="off" aria-label="Search videos by name">
-  <div class="video-toolbar-row">
-    <label class="sort-control" for="videoSort"><span>Sort</span><select class="video-sort" id="videoSort">
-      <option value="name-asc">Name A–Z</option>
-      <option value="newest">Newest first</option>
-      <option value="largest">Largest first</option>
-      <option value="longest">Longest first</option>
-    </select></label>
-    <div class="view-toggle" role="group" aria-label="Video layout">
-      <button id="videoGridView" class="active" type="button" aria-pressed="true">Grid</button>
-      <button id="videoListView" type="button" aria-pressed="false">List</button>
-    </div>
-    <button class="folder-toggle" id="videoGroupToggle" type="button" aria-pressed="true">Folders: On</button>
-    <button class="folder-toggle" id="browseFoldersButton" type="button" aria-pressed="false">Browse folders</button>
-    <button class="folder-toggle" id="addFolderButton" type="button">＋ Add folder</button>
+<div class="media-header">
+  <div class="media-heading"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
+  <div class="media-header-actions">
+    <button class="icon-button" id="searchToggle" type="button" aria-label="Search media" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+    </button>
+    <button class="icon-button" id="viewOptionsToggle" type="button" aria-label="View and sort options" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="15" width="7" height="6" rx="1"></rect></svg>
+    </button>
   </div>
+</div>
+<div class="library-toolbar" id="videoToolbar" hidden>
+  <input class="video-search" id="videoSearch" type="search" placeholder="Search videos by name…" autocomplete="off" aria-label="Search media by name or folder">
+</div>
+<div class="legacy-controls" hidden aria-hidden="true">
+  <select id="videoSort">
+    <option value="title">Title</option><option value="date">Date</option><option value="played">Played time</option><option value="status">Status</option><option value="length">Length</option><option value="size">Size</option><option value="resolution">Resolution</option><option value="path">Path</option><option value="framerate">Frame rate</option><option value="type">Type</option>
+  </select>
+  <button id="videoGridView" type="button"></button><button id="videoListView" type="button"></button>
+  <button id="videoGroupToggle" type="button"></button><button id="browseFoldersButton" type="button"></button><button id="addFolderButton" type="button"></button>
+</div>
+<div class="options-backdrop" id="optionsBackdrop" hidden>
+  <section class="options-sheet" id="optionsSheet" role="dialog" aria-modal="true" aria-labelledby="optionsTitle">
+    <div class="sheet-grabber" aria-hidden="true"><span></span></div>
+    <div class="options-head">
+      <div><h2 id="optionsTitle">View &amp; sort</h2><p>Customize how your media is displayed.</p></div>
+      <button class="options-close" id="optionsClose" type="button" aria-label="Close options">×</button>
+    </div>
+    <div class="options-top-grid">
+      <section class="option-section">
+        <h3>View Mode</h3>
+        <div class="option-mode-grid">
+          <button class="option-tile" data-content-mode="all" type="button"><span class="option-symbol">▣</span><span>All folders</span></button>
+          <button class="option-tile" data-content-mode="files" type="button"><span class="option-symbol">▤</span><span>Files</span></button>
+          <button class="option-tile" data-content-mode="folders" type="button"><span class="option-symbol">▱</span><span>Folders</span></button>
+        </div>
+      </section>
+      <section class="option-section">
+        <h3>Layout</h3>
+        <div class="option-mode-grid option-layout-grid">
+          <button class="option-tile" data-layout="list" type="button"><span class="option-symbol">☰</span><span>List</span></button>
+          <button class="option-tile" data-layout="grid" type="button"><span class="option-symbol">▦</span><span>Grid</span></button>
+        </div>
+      </section>
+    </div>
+    <div class="options-divider"></div>
+    <section class="option-section sort-option-section">
+      <h3>Sort</h3>
+      <div class="option-sort-grid">
+        <button class="option-tile" data-sort="title" type="button"><span class="option-symbol">A↓Z</span><span>Title</span></button>
+        <button class="option-tile" data-sort="date" type="button"><span class="option-symbol">▦</span><span>Date</span></button>
+        <button class="option-tile" data-sort="played" type="button"><span class="option-symbol">◷</span><span>Played time</span></button>
+        <button class="option-tile" data-sort="status" type="button"><span class="option-symbol">◉</span><span>Status</span></button>
+        <button class="option-tile" data-sort="length" type="button"><span class="option-symbol">▷</span><span>Length</span></button>
+        <button class="option-tile" data-sort="size" type="button"><span class="option-symbol">▤</span><span>Size</span></button>
+        <button class="option-tile" data-sort="resolution" type="button"><span class="option-symbol">HD</span><span>Resolution</span></button>
+        <button class="option-tile" data-sort="path" type="button"><span class="option-symbol">⌖</span><span>Path</span></button>
+        <button class="option-tile" data-sort="framerate" type="button"><span class="option-symbol option-framerate">60<br>▥</span><span>Frame rate</span></button>
+        <button class="option-tile" data-sort="type" type="button"><span class="option-symbol">▷</span><span>Type</span></button>
+      </div>
+      <div class="sort-direction-toggle" role="group" aria-label="Sort direction">
+        <button data-direction="asc" type="button">↑ &nbsp; A to Z</button>
+        <button data-direction="desc" type="button">↓ &nbsp; Z to A</button>
+      </div>
+    </section>
+    <div class="options-divider"></div>
+    <div class="options-footer">
+      <button id="browseFoldersAction" type="button">📁 &nbsp; Browse folders</button>
+      <button id="addFolderAction" type="button">＋ &nbsp; Add folder</button>
+    </div>
+  </section>
 </div>
 <div class="folder-browse-bar" id="folderBrowseBar" hidden>
   <div class="folder-breadcrumb" id="folderBreadcrumb"></div>
