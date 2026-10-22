@@ -296,38 +296,101 @@ function renderWatchSections(){
  $('continueRail').innerHTML=continuing.map(row=>historyCardMarkup(row,true)).join('');$('recentRail').innerHTML=recent.map(row=>historyCardMarkup(row,false)).join('');
  if(continuing.length)bindHistoryRail($('continueRail'));if(recent.length)bindHistoryRail($('recentRail'))
 }
+function normalizeFolder(value){return String(value||'').replace(/\\/g,'/').split('/').filter(Boolean).join('/')}
+function mediaItemMarkup(x){
+ const isVideo=x.type==='video',isFav=isFavorite(x),unavailable=x.available===false;
+ const note=unavailable?'<span class="availability-note">Access unavailable · restore folder permission</span>':'';
+ if(isVideo){
+  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="video-thumb-wrap"><div class="thumb-fallback" aria-hidden="true">▶</div><img class="video-thumb" loading="lazy" alt="" data-thumb-uri="'+escapeHtml(x.uri)+'" data-thumb-key="'+escapeHtml(x.key)+'"><div class="video-thumb-actions"><button type="button" class="video-favorite '+(isFav?'favorited':'')+'" data-file-action="favorite" aria-label="'+(isFav?'Remove from favorites':'Add to favorites')+'">'+(isFav?'★':'☆')+'</button><button type="button" class="file-more" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">⋮</button></div></div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div></div>';
+ }
+ return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">♫</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">⋮</button></div>';
+}
+function setCurrentFolder(path){currentFolderPath=normalizeFolder(path);render()}
+function renderFolderContents(filtered){
+ const library=$('library'),current=normalizeFolder(currentFolderPath),parts=current?current.split('/').filter(Boolean):[];
+ currentFolderPath=current;
+ let crumbs='<button type="button" class="'+(!parts.length?'current':'')+'" data-breadcrumb="">All folders</button>',accumulated='';
+ parts.forEach((part,index)=>{accumulated+=(accumulated?'/':'')+part;crumbs+='<span class="crumb-sep">›</span><button type="button" class="'+(index===parts.length-1?'current':'')+'" data-breadcrumb="'+escapeHtml(accumulated)+'">'+escapeHtml(part)+'</button>'});
+ $('folderBreadcrumb').innerHTML=crumbs;
+ $('folderBreadcrumb').querySelectorAll('[data-breadcrumb]').forEach(button=>button.onclick=()=>setCurrentFolder(button.dataset.breadcrumb));
+ const prefix=current?current+'/':'',folders=new Map();
+ for(const item of filtered){
+  const path=normalizeFolder(item.folder);
+  if(path===current||!path.startsWith(prefix))continue;
+  const rest=path.slice(prefix.length),next=rest.split('/')[0];
+  if(!next)continue;
+  const childPath=(current?current+'/':'')+next;
+  if(childPath===current)continue;
+  let count=0;
+  for(const candidate of filtered){const candidatePath=normalizeFolder(candidate.folder);if(candidatePath===childPath||candidatePath.startsWith(childPath+'/'))count++}
+  folders.set(childPath,{name:next,path:childPath,count});
+ }
+ const orderedFolders=[...folders.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+ const direct=filtered.filter(item=>normalizeFolder(item.folder)===current).sort(videoComparator);
+ let out='';
+ for(const folder of orderedFolders)out+='<button type="button" class="folder-entry" data-open-folder="'+escapeHtml(folder.path)+'"><span class="folder-entry-icon">📁</span><span class="folder-entry-copy"><strong>'+escapeHtml(folder.name)+'</strong><small>'+folder.count+' media item'+(folder.count===1?'':'s')+'</small></span><span class="folder-entry-arrow">›</span></button>';
+ for(const item of direct)out+=mediaItemMarkup(item);
+ if(!out)out='<div class="empty"><div class="emptyicon">📁</div><strong>This folder has no matching media</strong><p>Try another folder, clear the search, or add a storage folder.</p><button id="folderEmptyBrowse" type="button">Add folder</button></div>';
+ library.innerHTML=out;
+ library.querySelectorAll('[data-open-folder]').forEach(button=>button.onclick=()=>setCurrentFolder(button.dataset.openFolder));
+ const emptyButton=$('folderEmptyBrowse');if(emptyButton)emptyButton.onclick=pickFolder;
+ bindMediaRows(library);
+ observeThumbnails()
+}
+function bindMediaRows(library){
+ library.querySelectorAll('.file').forEach(el=>{
+  el.onclick=event=>{
+   const action=event.target.closest('[data-file-action]'),item=items.find(x=>x.key===el.dataset.key);
+   if(!item)return;
+   if(action){event.stopPropagation();if(action.dataset.fileAction==='favorite')toggleFavorite(item);else showMediaActions(item);return}
+   openItem(el.dataset.key)
+  }
+ })
+}
 function render(){
  let filtered=items.filter(x=>x.type===active);
  if(active==='video'){
-   if(videoSearchText)filtered=filtered.filter(x=>x.name.toLocaleLowerCase().includes(videoSearchText));
-   if(videoLibraryFilter==='favorites')filtered=filtered.filter(x=>favoriteUris.has(x.uri)||favoriteUris.has(x.key));
+  if(videoSearchText)filtered=filtered.filter(x=>x.name.toLocaleLowerCase().includes(videoSearchText));
+  if(videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
  }
- $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');$('videoCount').textContent=items.filter(x=>x.type==='video').length;$('audioCount').textContent=items.filter(x=>x.type==='audio').length;$('totalSize').textContent=fmtSize(items.reduce((n,x)=>n+x.size,0));
- $('allVideoCount').textContent=items.filter(x=>x.type==='video').length;$('favoriteVideoCount').textContent=items.filter(x=>x.type==='video'&&(favoriteUris.has(x.uri)||favoriteUris.has(x.key))).length;
- $('videoLibraryFilters').hidden=active!=='video';$('videoToolbar').hidden=active!=='video';renderWatchSections();
- const library=$('library');library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid');library.classList.toggle('video-list',active==='video'&&videoViewMode==='list');
+ $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
+ $('videoCount').textContent=items.filter(x=>x.type==='video').length;
+ $('audioCount').textContent=items.filter(x=>x.type==='audio').length;
+ $('totalSize').textContent=fmtSize(items.reduce((n,x)=>n+x.size,0));
+ $('allVideoCount').textContent=items.filter(x=>x.type==='video').length;
+ $('favoriteVideoCount').textContent=items.filter(x=>x.type==='video'&&isFavorite(x)).length;
+ $('videoLibraryFilters').hidden=active!=='video';
+ $('videoToolbar').hidden=active!=='video';
+ $('folderBrowseBar').hidden=active!=='video'||!folderBrowseActive;
+ $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
+ $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
- if(!items.length){library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose audio and video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div>';$('emptyBrowse').onclick=pick;return}
- if(!filtered.length){const searching=active==='video'&&!!videoSearchText;const favoritesOnly=active==='video'&&videoLibraryFilter==='favorites';const title=searching?'No matching videos':favoritesOnly?'No favorites yet':('No '+(active==='video'?'videos':'music')+' found');const description=searching?'Try another title or clear your search.':favoritesOnly?'Mark videos with the star button to build your Favorites list.':'Choose local media or scan the device again.';const buttonLabel=searching?'Clear search':favoritesOnly?'Show all videos':'Browse this device';library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse">'+buttonLabel+'</button></div>';$('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else pick()};return}
+ renderWatchSections();
+ const library=$('library');
+ library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive);
+ library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list');
+ if(active==='video'&&folderBrowseActive){renderFolderContents(filtered);return}
+ if(!items.length){
+  library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone, choose media, or add a storage folder from your phone, SD card, or a supported USB drive.</p><button id="emptyBrowse">Browse this device</button></div>';
+  $('emptyBrowse').onclick=pick;return
+ }
+ if(!filtered.length){
+  const searching=active==='video'&&!!videoSearchText,favoritesOnly=active==='video'&&videoLibraryFilter==='favorites';
+  const title=searching?'No matching videos':favoritesOnly?'No favorites yet':('No '+(active==='video'?'videos':'music')+' found');
+  const description=searching?'Try another title or clear your search.':favoritesOnly?'Mark videos with the star button to build your Favorites list.':'Choose local media or scan the device again.';
+  const buttonLabel=searching?'Clear search':favoritesOnly?'Show all videos':'Browse this device';
+  library.innerHTML='<div class="empty"><div class="emptyicon">◫</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse">'+buttonLabel+'</button></div>';
+  $('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else pick()};return
+ }
  if(active==='video'&&groupByFolder)filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||videoComparator(a,b));
  else if(active==='video')filtered.sort(videoComparator);
  else filtered.sort((a,b)=>a.folder.localeCompare(b.folder)||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
  let out='',lastFolder=null;
- for(const x of filtered){
-   if((active!=='video'||groupByFolder)&&x.folder!==lastFolder){lastFolder=x.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
-   const isVideo=x.type==='video';
-   if(isVideo){
-     const isFav=favoriteUris.has(x.uri)||favoriteUris.has(x.key);
-     out+='<div class="file" data-key="'+escapeHtml(x.key)+'"><div class="video-thumb-wrap"><div class="thumb-fallback" aria-hidden="true">▶</div><img class="video-thumb" loading="lazy" alt="" data-thumb-uri="'+escapeHtml(x.uri)+'" data-thumb-key="'+escapeHtml(x.key)+'"><div class="video-thumb-actions"><button type="button" class="video-favorite '+(isFav?'favorited':'')+'" data-file-action="favorite" aria-label="'+(isFav?'Remove from favorites':'Add to favorites')+'">'+(isFav?'★':'☆')+'</button><button type="button" class="file-more" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">⋮</button></div></div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div></div>';
-   }else{
-     out+='<div class="file" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">♫</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">⋮</button></div>';
-   }
+ for(const item of filtered){
+  if((active!=='video'||groupByFolder)&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
+  out+=mediaItemMarkup(item)
  }
- library.innerHTML=out;
- [...library.querySelectorAll('.file')].forEach(el=>{
-   el.onclick=event=>{const action=event.target.closest('[data-file-action]');const item=items.find(x=>x.key===el.dataset.key);if(action){event.stopPropagation();if(!item)return;if(action.dataset.fileAction==='favorite')toggleFavorite(item);else showMediaActions(item);return}openItem(el.dataset.key)};
- });
- if(active==='video')observeThumbnails()
+ library.innerHTML=out;bindMediaRows(library);if(active==='video')observeThumbnails()
 }
 function openItem(key){const x=items.find(y=>y.key===key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=items.find(y=>y.key===key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
