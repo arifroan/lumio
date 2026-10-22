@@ -42,6 +42,34 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;
 .video-list .file{min-width:0}
 @media(min-width:620px){.library.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.video-toolbar-row{gap:10px}.sort-control{max-width:250px}}
 
+.video-library-filters{display:flex;gap:8px;margin:0 0 12px}
+.video-library-filters button{border:1px solid var(--line);background:var(--surface);color:#c2bfd4;border-radius:12px;padding:9px 13px;font-size:12px;font-weight:800}
+.video-library-filters button.active{background:#302842;border-color:#8b78b8;color:#f4edff}
+.video-library-filters .filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:19px;margin-left:5px;padding:0 5px;border-radius:8px;background:#ffffff12;font-size:10px}
+.watch-section{margin:0 0 18px}
+.watch-section .sectionhead{margin:4px 2px 10px}
+.history-rail{display:flex;gap:10px;overflow-x:auto;padding:0 1px 6px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.history-card{position:relative;flex:0 0 184px;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--surface);scroll-snap-align:start;cursor:pointer}
+.history-thumb-wrap{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:radial-gradient(ellipse at 50% 40%,#343047,#14141d 80%);overflow:hidden}
+.history-thumb-fallback{display:grid;place-items:center;width:100%;height:100%;color:var(--violet);font-size:24px}
+.history-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .16s ease}
+.history-thumb.loaded{opacity:1}
+.history-card .file-more{position:absolute;right:6px;top:6px;z-index:2;width:30px;height:30px;padding:0;border:1px solid #ffffff30;border-radius:10px;background:#101018d9;color:#fff;font-size:18px}
+.history-card-copy{padding:10px 11px 11px}
+.history-card-copy strong{display:block;font-size:12px;line-height:1.35;min-height:2.7em;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.history-card-copy small{display:block;margin-top:5px;color:var(--muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.watch-progress{height:4px;margin-top:9px;overflow:hidden;border-radius:9px;background:#ffffff18}
+.watch-progress span{display:block;height:100%;border-radius:9px;background:var(--lime)}
+.video-thumb-wrap{position:relative}
+.video-thumb-actions{position:absolute;right:5px;top:5px;z-index:2;display:flex;gap:4px}
+.video-thumb-actions button{display:grid;place-items:center;width:29px;height:29px;padding:0;border:1px solid #ffffff30;border-radius:9px;background:#101018d9;color:#fff;font-size:16px;line-height:1}
+.video-thumb-actions .favorited{color:var(--lime);border-color:#d7ff7280}
+.video-grid .video-thumb-actions{gap:5px}
+.video-grid .video-thumb-actions button{width:31px;height:31px}
+.video-list .video-thumb-actions{right:3px;top:3px}
+@media(max-width:380px){.history-card{flex-basis:160px}.video-toolbar-row{gap:6px}.sort-control{min-width:130px}.video-library-filters button{padding:8px 10px}}
+@media(min-width:620px){.library.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.video-toolbar-row{gap:10px}.sort-control{max-width:250px}.history-card{flex-basis:218px}}
+
 .player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
 .screen{aspect-ratio:16/9;min-height:180px;position:relative;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#29213d,#09090f 70%);overflow:hidden;touch-action:none;user-select:none}.screen audio{position:absolute;bottom:0;width:100%;z-index:2}.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:center;transition:transform .12s linear}.placeholder{text-align:center;padding:20px}.placeholder .playdisc{width:57px;height:57px;border-radius:21px;background:var(--violet);color:#181322;display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.placeholder strong{font-size:14px}.placeholder p{color:var(--muted);font-size:11px;margin:4px 0}
 .gesture-hint{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);background:#171520d9;border:1px solid #ffffff22;border-radius:18px;padding:8px 12px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}.gesture-hint.show{opacity:1}.lockoverlay{display:none;position:absolute;z-index:5;inset:0;background:#08080d55;align-items:center;justify-content:center}.lockoverlay.show{display:flex}.lockoverlay button{background:#171520e8;color:white;border:1px solid #ffffff44;border-radius:18px;padding:13px 17px;font-weight:850}
@@ -94,6 +122,20 @@ input[type=file]{display:none}[hidden]{display:none!important}
     </div>
     <button class="folder-toggle" id="videoGroupToggle" type="button" aria-pressed="true">Folders: On</button>
   </div>
+</div>
+<div class="video-library-filters" id="videoLibraryFilters" role="group" aria-label="Video library filter">
+  <button id="showAllVideos" class="active" type="button" aria-pressed="true">All videos <span class="filter-count" id="allVideoCount">0</span></button>
+  <button id="showFavoriteVideos" type="button" aria-pressed="false">★ Favorites <span class="filter-count" id="favoriteVideoCount">0</span></button>
+</div>
+<div id="watchSections" hidden>
+  <section class="watch-section" id="continueSection" hidden>
+    <div class="sectionhead"><h2>Continue Watching</h2><span id="continueCount">0 videos</span></div>
+    <div class="history-rail" id="continueRail"></div>
+  </section>
+  <section class="watch-section" id="recentSection" hidden>
+    <div class="sectionhead"><h2>Recently Played</h2><span id="recentCount">0 videos</span></div>
+    <div class="history-rail" id="recentRail"></div>
+  </section>
 </div>
 <section class="library" id="library"><div class="empty"><div class="emptyicon">◫</div><strong>Your story starts here</strong><p>Scan your phone or choose video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div></section>
 </section>
