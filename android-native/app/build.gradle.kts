@@ -21,8 +21,8 @@ android {
         applicationId = "com.lumio.player"
         minSdk = 23
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.2.5-preview"
+        versionCode = 8
+        versionName = "0.2.6"
     }
 
     signingConfigs {
