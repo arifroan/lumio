@@ -1,6 +1,7 @@
 package com.lumio.player;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.app.AlertDialog;
 import android.app.PictureInPictureParams;
 import android.content.ComponentName;
@@ -113,6 +114,10 @@ public final class PlayerActivity extends Activity {
         requestedUri = getIntent().getStringExtra(EXTRA_URI);
         requestedTitle = getIntent().getStringExtra(EXTRA_TITLE);
         requestedAudio = getIntent().getBooleanExtra(EXTRA_AUDIO, false);
+        // Keep the library in its normal orientation; rotate only video playback to landscape.
+        setRequestedOrientation(requestedAudio
+                ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         subtitleTextSize = prefs.getInt("subtitle_size", 22);
         subtitleStylePreset = prefs.getInt("subtitle_style", 0);
         buildPlayerUi();
