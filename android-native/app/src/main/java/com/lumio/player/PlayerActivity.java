@@ -13,6 +13,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Rational;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -43,6 +45,7 @@ import androidx.core.content.ContextCompat;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.TrackSelectionParameters;
@@ -73,6 +76,26 @@ public final class PlayerActivity extends Activity {
     private static final float[] SPEEDS = {0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f};
 
     private PlayerView playerView;
+    private LinearLayout topBar;
+    private final Handler controlsHandler = new Handler(Looper.getMainLooper());
+    private boolean playbackControlsVisible = true;
+    private final Runnable hidePlaybackControls = () -> {
+        if (requestedAudio || locked || controller == null || !controller.isPlaying() || isInPictureInPicture()) return;
+        setPlaybackControlsVisible(false);
+    };
+    private final Player.Listener playbackUiListener = new Player.Listener() {
+        @Override public void onIsPlayingChanged(boolean isPlaying) {
+            if (requestedAudio) return;
+            if (isPlaying) showPlaybackControlsTemporarily();
+            else showPlaybackControlsUntilResumed();
+        }
+        @Override public void onPlaybackStateChanged(int playbackState) {
+            if (requestedAudio) return;
+            if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
+                showPlaybackControlsUntilResumed();
+            }
+        }
+    };
     private MediaController controller;
     private ListenableFuture<MediaController> controllerFuture;
     private TextView hint;
@@ -163,7 +186,7 @@ public final class PlayerActivity extends Activity {
         root.addView(playerView, new FrameLayout.LayoutParams(-1, -1));
         contentFrame = playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
 
-        LinearLayout topBar = new LinearLayout(this);
+        topBar = new LinearLayout(this);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
         topBar.setPadding(dp(10), dp(10), dp(10), dp(10));
         topBar.setOrientation(LinearLayout.HORIZONTAL);
@@ -255,7 +278,12 @@ public final class PlayerActivity extends Activity {
             try {
                 controller = controllerFuture.get();
                 playerView.setPlayer(controller);
+                controller.addListener(playbackUiListener);
                 initializeMedia();
+                if (!requestedAudio) {
+                    if (controller.isPlaying()) showPlaybackControlsTemporarily();
+                    else showPlaybackControlsUntilResumed();
+                }
             } catch (Exception e) {
                 showHint("Could not start the playback engine");
             }
@@ -339,6 +367,8 @@ public final class PlayerActivity extends Activity {
     @Override
     protected void onStop() {
         persistPosition();
+        controlsHandler.removeCallbacks(hidePlaybackControls);
+        if (controller != null) controller.removeListener(playbackUiListener);
         if (playerView != null) playerView.setPlayer(null);
         if (controllerFuture != null) {
             MediaController.releaseFuture(controllerFuture);
@@ -380,15 +410,62 @@ public final class PlayerActivity extends Activity {
         lockOverlay.setVisibility(locked ? View.VISIBLE : View.GONE);
         playerView.setUseController(!locked);
         lockButton.setText(locked ? "Locked" : "Lock");
+        if (locked) {
+            controlsHandler.removeCallbacks(hidePlaybackControls);
+            if (!requestedAudio) setPlaybackControlsVisible(false);
+        } else if (!requestedAudio) {
+            showPlaybackControlsTemporarily();
+        }
         showHint(locked ? "Touch controls locked" : "Touch controls unlocked");
+    }
+
+    private boolean isInPictureInPicture() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode();
+    }
+
+    private void setPlaybackControlsVisible(boolean visible) {
+        playbackControlsVisible = visible;
+        if (topBar == null) return;
+        topBar.animate().cancel();
+        if (visible) {
+            topBar.setVisibility(View.VISIBLE);
+            topBar.setAlpha(1f);
+        } else {
+            topBar.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
+                if (!playbackControlsVisible && topBar != null) topBar.setVisibility(View.GONE);
+            }).start();
+        }
+    }
+
+    private void showPlaybackControlsTemporarily() {
+        if (requestedAudio || isInPictureInPicture() || locked) return;
+        controlsHandler.removeCallbacks(hidePlaybackControls);
+        setPlaybackControlsVisible(true);
+        if (playerView != null) playerView.showController();
+        if (controller != null && controller.isPlaying()) {
+            controlsHandler.postDelayed(hidePlaybackControls, 3200L);
+        }
+    }
+
+    private void showPlaybackControlsUntilResumed() {
+        if (requestedAudio || isInPictureInPicture()) return;
+        controlsHandler.removeCallbacks(hidePlaybackControls);
+        setPlaybackControlsVisible(true);
+        if (playerView != null) playerView.showController();
     }
 
     private void installGestures() {
         android.view.GestureDetector gestureDetector = new android.view.GestureDetector(this,
                 new android.view.GestureDetector.SimpleOnGestureListener() {
                     @Override public boolean onDown(MotionEvent e) { touchDownX = e.getX(); touchDownY = e.getY(); gestureHandled = false; return true; }
+                    @Override public boolean onSingleTapConfirmed(MotionEvent e) {
+                        if (locked) return false;
+                        showPlaybackControlsTemporarily();
+                        return true;
+                    }
                     @Override public boolean onDoubleTap(MotionEvent e) {
                         if (locked || controller == null || controller.getDuration() <= 0) return false;
+                        showPlaybackControlsTemporarily();
                         boolean forward = e.getX() >= playerView.getWidth() / 2f;
                         long target = controller.getCurrentPosition() + (forward ? 10_000L : -10_000L);
                         controller.seekTo(Math.max(0L, Math.min(controller.getDuration(), target)));
@@ -855,18 +932,21 @@ public final class PlayerActivity extends Activity {
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
-        ViewGroup topBar = titleText != null && titleText.getParent() instanceof ViewGroup
-                ? (ViewGroup) titleText.getParent() : null;
+        controlsHandler.removeCallbacks(hidePlaybackControls);
         if (isInPictureInPictureMode) {
             if (playerView != null) playerView.setUseController(true);
-            if (topBar != null) topBar.setVisibility(View.GONE);
+            setPlaybackControlsVisible(false);
+        } else if (!requestedAudio) {
+            if (controller != null && controller.isPlaying()) showPlaybackControlsTemporarily();
+            else showPlaybackControlsUntilResumed();
         } else {
-            if (topBar != null) topBar.setVisibility(View.VISIBLE);
+            setPlaybackControlsVisible(true);
         }
     }
 
     @Override
     protected void onDestroy() {
+        controlsHandler.removeCallbacks(hidePlaybackControls);
         persistPosition();
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
