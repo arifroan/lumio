@@ -420,7 +420,7 @@ function mediaComparator(a,b){
  if(result!==0)return result*(sortDirection==='asc'?1:-1);
  return String(a.name||'').localeCompare(String(b.name||''),undefined,{numeric:true,sensitivity:'base'});
 }
-function resolutionPixels(value){const match=String(value||'').match(/(\\d{3,5})\\s*[x×]\\s*(\\d{3,5})/i);return match?Number(match[1])*Number(match[2]):0}
+function resolutionPixels(value){const match=String(value||'').match(/(\d{3,5})\s*[x×]\s*(\d{3,5})/i);return match?Number(match[1])*Number(match[2]):0}
 function isLocalVideoHistory(row){const uri=String(row&&row.uri||'');return !!uri&&!row.isAudio&&(uri.startsWith('content://')||uri.startsWith('file://'))}
 function historyItem(row){const uri=String(row&&row.uri||''),identity=String(row&&row.identity||'');const found=items.find(x=>x.uri===uri||x.key===uri||(identity&&x.identity===identity));if(found)return found;const title=String(row&&row.title||'Video');return {key:uri,uri,name:title,size:0,mime:'video/*',type:'video',folder:'Recently Played',identity,lastModified:Number(row&&row.lastPlayedAt)||0,duration:Number(row&&row.durationMs)||0}}
 function isFavorite(item){return !!item&&(favoriteUris.has(item.uri)||favoriteUris.has(item.key)||(item.identity&&favoriteIdentities.has(item.identity)))}
@@ -531,7 +531,7 @@ function render(){
  else filtered.sort(mediaComparator);
  let out='',lastFolder=null;
  for(const item of filtered){
-  if((active!=='video'||groupByFolder)&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
+  if(mediaContentMode==='all'&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">▰ '+escapeHtml(lastFolder)+'</div>'}
   out+=mediaItemMarkup(item)
  }
  library.innerHTML=out;bindMediaRows(library);if(active==='video')observeThumbnails()
