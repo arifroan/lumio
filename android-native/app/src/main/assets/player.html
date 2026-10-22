@@ -7,10 +7,8 @@
 :root{color-scheme:dark;--bg:#101018;--surface:#191923;--surface2:#222230;--line:#303041;--ink:#f6f3ff;--muted:#a5a2b9;--violet:#b49aff;--lime:#d7ff72;--pink:#ff8cc6}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}
-main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;overflow:hidden;min-height:202px;border-radius:28px;padding:24px 22px;background:linear-gradient(125deg,#29233f 0%,#201d31 48%,#302244 100%);border:1px solid #403550}
-.hero:before,.hero:after{content:"";position:absolute;pointer-events:none;border-radius:50%;border:1px solid #c8a9ff22}.hero:before{width:230px;height:230px;right:-44px;top:-96px;box-shadow:0 0 0 20px #c8a9ff08,0 0 0 45px #c8a9ff06}.hero:after{width:150px;height:150px;right:7px;top:-53px;background:radial-gradient(circle at 35% 35%,#d7ff72 0 4%,transparent 5%),linear-gradient(145deg,#b49aff,#7558b8);opacity:.9}
-.kicker{font-size:10px;letter-spacing:2.3px;font-weight:850;color:var(--lime);position:relative;z-index:1}.hero h1{font-size:30px;line-height:1.08;letter-spacing:-1.3px;max-width:245px;margin:14px 0 8px;position:relative;z-index:1}.hero p{font-size:12px;color:#c7c0d9;max-width:225px;margin:0 0 19px;position:relative;z-index:1}.hero button{position:relative;z-index:1;border:0;background:var(--lime);color:#17171e;border-radius:13px;padding:12px 15px;font-weight:900;font-size:13px}.hero .secondary-cta{margin-left:7px;background:#201d31;color:#f6f3ff;border:1px solid #635779}
-.quickstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0 25px}.stat{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:13px 12px}.stat strong{display:block;font-size:20px;letter-spacing:-.5px}.stat span{font-size:10px;color:var(--muted);letter-spacing:.3px}
+main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:13px 12px}.stat strong{display:block;font-size:20px;letter-spacing:-.5px}.stat span{font-size:10px;color:var(--muted);letter-spacing:.3px}
+.info-card{margin-top:12px}.info-stats{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.info-stats .stat{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px}.info-stats .stat strong{order:2}.info-stats .stat span{order:1;font-size:11px}
 .sectionhead{display:flex;align-items:end;justify-content:space-between;margin:23px 2px 13px}.sectionhead h2{font-size:20px;letter-spacing:-.6px;margin:0}.sectionhead span{font-size:11px;color:var(--muted)}
 .tabs{display:flex;gap:8px;overflow:auto;padding:0 0 4px;margin-bottom:13px;scrollbar-width:none}.tab{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:#c2bfd4;padding:9px 15px;border-radius:30px;font-size:12px;font-weight:750}.tab.active{background:var(--violet);border-color:var(--violet);color:#1a1627}
 .library{border:1px solid var(--line);background:var(--surface);border-radius:22px;overflow:hidden}.empty{padding:27px 18px 30px;text-align:center}.emptyicon{width:54px;height:54px;margin:0 auto 13px;border-radius:18px;background:#2b2940;color:var(--violet);display:grid;place-items:center;font-size:25px}.empty strong{display:block;font-size:14px}.empty p{font-size:12px;color:var(--muted);margin:5px auto 15px;max-width:240px}.empty button{border:1px solid #62567f;background:#29253a;color:#e2d9ff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:12px}
@@ -118,14 +116,10 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.hero{position:relative;
 .setting-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:14px;background:#302842;color:var(--violet);font-size:20px}
 .setting-copy{flex:1;min-width:0}.setting-copy strong,.setting-copy small{display:block}.setting-copy strong{font-size:13px}.setting-copy small{color:var(--muted);font-size:11px;margin-top:3px}.setting-arrow{font-size:23px;color:var(--muted);padding:0 4px}
 input[type=file]{display:none}[hidden]{display:none!important}
-@media(min-width:620px){main{padding-left:24px;padding-right:24px}.hero{padding:30px;min-height:220px}.hero h1{font-size:36px;max-width:320px}.hero p{max-width:300px}.hero:after{right:14%;top:-65px;width:190px;height:190px}.quickstats{gap:13px}.stat{padding:16px}}
+@media(min-width:620px){main{padding-left:24px;padding-right:24px}.stat{padding:16px}}@media(min-width:760px){.info-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head>
 <body>
 <main>
-<div id="homeIntro">
-<section class="hero"><div class="kicker">YOUR LIBRARY, REIMAGINED</div><h1>Press play on your world.</h1><p>Your videos and music. Right here on your phone, ready when you are.</p><button id="heroBrowse">＋ &nbsp; Choose media</button><button class="secondary-cta" id="scanDevice">↻ &nbsp; Scan phone</button></section>
-<div class="quickstats"><div class="stat"><strong id="videoCount">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="audioCount">0</strong><span>AUDIO TRACKS</span></div><div class="stat"><strong id="totalSize">0 MB</strong><span>IN THIS SESSION</span></div></div>
-</div>
 <section id="mediaPage">
 <section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain">▶ Play in Lumio</button><button id="scanAgain">↻ Scan phone</button></div></section>
 <div class="sectionhead"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
@@ -195,6 +189,15 @@ input[type=file]{display:none}[hidden]{display:none!important}
   <button class="setting-row" id="settingsAddFolder">
     <span class="setting-icon">📁</span><span class="setting-copy"><strong>Add storage folder</strong><small>Grant persistent read access to a folder, SD card, or supported USB location</small></span><span class="setting-arrow">›</span>
   </button>
+  <div class="setting-card info-card" id="infoSection">
+    <div class="sectionhead" style="margin:0 0 8px"><h2>Info</h2><span>Library overview</span></div>
+    <div class="info-stats">
+      <div class="stat"><strong id="videoCount">0</strong><span>VIDEOS</span></div>
+      <div class="stat"><strong id="audioCount">0</strong><span>AUDIO TRACKS</span></div>
+      <div class="stat"><strong id="totalSize">0 MB</strong><span>IN THIS SESSION</span></div>
+    </div>
+    <p style="margin:12px 0 0;color:var(--muted);font-size:12px">These totals update as Lumio scans and indexes media on your device.</p>
+  </div>
   <div class="setting-card">
     <strong>Local by design</strong>
     <p style="margin:5px 0 0;color:var(--muted);font-size:12px">Your local library stays on this device. Stream URLs are opened directly by the media player.</p>
@@ -249,7 +252,7 @@ const thumbObserver=('IntersectionObserver' in window)?new IntersectionObserver(
 function requestThumbnail(img){if(!img||img.dataset.requested)return;img.dataset.requested='1';safeBridge('requestThumbnail',img.dataset.thumbUri,img.dataset.thumbKey)}
 function observeThumbnails(){document.querySelectorAll('.video-thumb,.history-thumb').forEach(img=>{if(img.dataset.requested)return;if(thumbObserver)thumbObserver.observe(img);else requestThumbnail(img)})}
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function pickFolder(){safeBridge('pickFolder')} function openVault(){safeBridge('openVault')}
-$('heroBrowse').onclick=pick;$('scanDevice').onclick=scan;$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
 $('browseFoldersButton').onclick=()=>{folderBrowseActive=!folderBrowseActive;currentFolderPath='';$('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));$('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';render()};
 $('videoSearch').addEventListener('input',()=>{videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()});
 $('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;render()});
@@ -261,7 +264,7 @@ function setVideoView(mode){videoViewMode=mode;$('videoGridView').classList.togg
 function choosePage(page){
  currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';
  if(page!=='videos'){folderBrowseActive=false;currentFolderPath='';$('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders'}
- $('homeIntro').hidden=page!=='videos';$('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=page!=='videos';$('mediaTitle').textContent=page==='music'?'Music':'Videos';
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videoToolbar').hidden=page!=='videos';$('mediaTitle').textContent=page==='music'?'Music':'Videos';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
