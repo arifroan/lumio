@@ -79,10 +79,7 @@ public final class PlayerActivity extends Activity {
     private LinearLayout topBar;
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
-    private final Runnable hidePlaybackControls = () -> {
-        if (requestedAudio || locked || controller == null || !controller.isPlaying() || isInPictureInPicture()) return;
-        setPlaybackControlsVisible(false);
-    };
+    private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
     private final Player.Listener playbackUiListener = new Player.Listener() {
         @Override public void onIsPlayingChanged(boolean isPlaying) {
             if (requestedAudio) return;
@@ -421,6 +418,11 @@ public final class PlayerActivity extends Activity {
 
     private boolean isInPictureInPicture() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode();
+    }
+
+    private void hidePlaybackControlsIfNeeded() {
+        if (requestedAudio || locked || controller == null || !controller.isPlaying() || isInPictureInPicture()) return;
+        setPlaybackControlsVisible(false);
     }
 
     private void setPlaybackControlsVisible(boolean visible) {
