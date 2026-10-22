@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.DocumentsContract;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -27,6 +28,7 @@ import android.view.Window;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,20 +42,28 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MainActivity extends Activity {
     private static final int REQUEST_PICK_MEDIA = 4107;
     private static final int REQUEST_SCAN_PERMISSION = 4108;
     private static final int REQUEST_SCAN_AFTER_PICK = 4109;
+    private static final int REQUEST_PICK_FOLDER = 4110;
+    private static final int MAX_TREE_MEDIA_FILES = 10000;
+    private static final int MAX_TREE_DEPTH = 32;
     private WebView webView;
     private boolean pendingScan;
     private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
+    private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicInteger scanGeneration = new AtomicInteger();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -109,6 +119,11 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void pickFolder() {
+            runOnUiThread(() -> launchFolderPicker());
+        }
+
+        @JavascriptInterface
         public void requestThumbnail(String mediaUri, String key) {
             if (mediaUri == null || mediaUri.trim().isEmpty() || key == null || key.trim().isEmpty()) return;
             final Uri uri;
@@ -144,13 +159,13 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public boolean toggleFavorite(String uri) {
-            return toggleFavoriteUri(uri);
+        public boolean toggleFavorite(String uri, String identity) {
+            return toggleFavoriteUri(uri, identity);
         }
 
         @JavascriptInterface
-        public void showMediaActions(String uri, String title, long sizeBytes, long durationMs, boolean isAudio) {
-            runOnUiThread(() -> showMediaActionsDialog(uri, title, sizeBytes, durationMs, isAudio));
+        public void showMediaActions(String uri, String title, long sizeBytes, long durationMs, boolean isAudio, String identity) {
+            runOnUiThread(() -> showMediaActionsDialog(uri, title, sizeBytes, durationMs, isAudio, identity));
         }
 
         @JavascriptInterface
