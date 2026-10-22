@@ -16,7 +16,12 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.MediaMetadataRetriever;
+import android.os.CancellationSignal;
+import android.util.Base64;
+import android.util.Size;
 import android.view.Window;
 import android.widget.Toast;
 
@@ -26,11 +31,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final int REQUEST_PICK_MEDIA = 4107;
@@ -38,6 +52,7 @@ public final class MainActivity extends Activity {
     private static final int REQUEST_SCAN_AFTER_PICK = 4109;
     private WebView webView;
     private boolean pendingScan;
+    private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -87,6 +102,36 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void requestThumbnail(String mediaUri, String key) {
+            if (mediaUri == null || mediaUri.trim().isEmpty() || key == null || key.trim().isEmpty()) return;
+            final Uri uri;
+            try {
+                uri = Uri.parse(mediaUri);
+                String scheme = uri.getScheme();
+                if (!"content".equalsIgnoreCase(scheme) && !"file".equalsIgnoreCase(scheme)) return;
+            } catch (Exception e) {
+                return;
+            }
+            thumbnailExecutor.execute(() -> {
+                String dataUri = "";
+                try {
+                    byte[] jpeg = loadOrCreateThumbnail(uri);
+                    if (jpeg != null && jpeg.length > 0) {
+                        dataUri = "data:image/jpeg;base64," + Base64.encodeToString(jpeg, Base64.NO_WRAP);
+                    }
+                } catch (Exception ignored) {
+                    // A missing/unsupported video should keep its fallback tile, not crash the library.
+                }
+                final String callback = "window.onNativeThumbnail && window.onNativeThumbnail("
+                        + JSONObject.quote(key) + "," + JSONObject.quote(dataUri) + ")";
+                runOnUiThread(() -> {
+                    WebView current = webView;
+                    if (current != null) current.evaluateJavascript(callback, null);
+                });
+            });
+        }
+
+        @JavascriptInterface
         public void playMedia(String uri, String title, boolean isAudio, String playlistJson) {
             runOnUiThread(() -> {
                 if (uri == null || uri.trim().isEmpty()) {
@@ -105,6 +150,88 @@ public final class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private byte[] loadOrCreateThumbnail(Uri uri) throws Exception {
+        File folder = new File(getCacheDir(), "lumio_thumbnails");
+        if (!folder.exists() && !folder.mkdirs()) return createThumbnailJpeg(uri);
+        String cacheName = sha256(uri.toString()) + ".jpg";
+        File cached = new File(folder, cacheName);
+        if (cached.isFile() && cached.length() > 0 && cached.length() <= 512 * 1024) {
+            try (FileInputStream in = new FileInputStream(cached);
+                 ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[8192];
+                int count;
+                while ((count = in.read(buffer)) != -1) bytes.write(buffer, 0, count);
+                return bytes.toByteArray();
+            } catch (IOException ignored) {
+                // A partially evicted cache entry can be regenerated below.
+            }
+        }
+
+        byte[] jpeg = createThumbnailJpeg(uri);
+        if (jpeg == null || jpeg.length == 0) return null;
+        File temp = new File(folder, cacheName + "." + Thread.currentThread().getId() + ".tmp");
+        try (FileOutputStream out = new FileOutputStream(temp, false)) {
+            out.write(jpeg);
+            out.flush();
+        } catch (IOException e) {
+            temp.delete();
+            return jpeg;
+        }
+        if (!temp.renameTo(cached)) {
+            temp.delete();
+        }
+        return jpeg;
+    }
+
+    private byte[] createThumbnailJpeg(Uri uri) throws Exception {
+        Bitmap source = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                source = getContentResolver().loadThumbnail(uri, new Size(320, 180), new CancellationSignal());
+            } catch (Exception ignored) {
+                // Some content providers do not implement loadThumbnail; try the decoder fallback.
+            }
+        }
+        if (source == null) {
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            try {
+                retriever.setDataSource(this, uri);
+                source = retriever.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            } catch (Exception ignored) {
+                // Keep a neutral fallback tile for unsupported or unavailable media.
+            } finally {
+                try { retriever.release(); } catch (Exception ignored) { }
+            }
+        }
+        if (source == null) return null;
+
+        Bitmap scaled = source;
+        try {
+            int width = source.getWidth();
+            int height = source.getHeight();
+            if (width <= 0 || height <= 0) return null;
+            float ratio = Math.min(1f, Math.min(320f / width, 180f / height));
+            if (ratio < 1f) {
+                scaled = Bitmap.createScaledBitmap(source,
+                        Math.max(1, Math.round(width * ratio)),
+                        Math.max(1, Math.round(height * ratio)), true);
+            }
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            if (!scaled.compress(Bitmap.CompressFormat.JPEG, 74, bytes)) return null;
+            return bytes.toByteArray();
+        } finally {
+            if (scaled != source) scaled.recycle();
+            source.recycle();
+        }
+    }
+
+    private String sha256(String value) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder(digest.length * 2);
+        for (byte b : digest) hex.append(String.format(Locale.US, "%02x", b & 0xff));
+        return hex.toString();
     }
 
     private void launchMediaPicker() {
@@ -273,7 +400,9 @@ public final class MainActivity extends Activity {
             entry.put("mime", mime == null ? (audio ? "audio/*" : "video/*") : mime);
             entry.put("type", audio ? "audio" : "video");
             entry.put("folder", "Chosen files");
-            entry.put("lastModified", System.currentTimeMillis());
+            // A document provider's actual modification time is not always available.
+            // Keep it unknown instead of falsely presenting the pick time as file age.
+            entry.put("lastModified", 0L);
         } catch (JSONException ignored) { }
         return entry;
     }
@@ -318,6 +447,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        thumbnailExecutor.shutdownNow();
         if (webView != null) {
             webView.removeJavascriptInterface("LumioNative");
             webView.destroy();
