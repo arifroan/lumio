@@ -21,8 +21,8 @@ android {
         applicationId = "com.lumio.player"
         minSdk = 23
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.2.4-preview"
+        versionCode = 7
+        versionName = "0.2.5-preview"
     }
 
     signingConfigs {
@@ -59,6 +59,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core:1.16.0")
+    implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("androidx.media3:media3-session:1.11.1")
