@@ -811,7 +811,7 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(replaceExisting){items=[];mediaLookup.clear()}
  else if(!mediaLookup.size&&items.length)rebuildMediaLookup();
  for(const raw of records||[]){
-  if(!raw||!raw.uri)continue;
+  if(!raw||!raw.uri||raw.type==='audio'||String(raw.mime||'').toLowerCase().startsWith('audio/'))continue;
   const item=refreshSearchText({key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,width:Number(raw.width)||0,height:Number(raw.height)||0,frameRate:Number(raw.frameRate)||0,resolution:String(raw.resolution||''),identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false});
   let ix=mediaLookup.get('u:'+item.uri);
   if(ix===undefined)ix=mediaLookup.get('k:'+item.key);
