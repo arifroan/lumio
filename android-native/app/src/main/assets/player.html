@@ -583,6 +583,21 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 }
 #musicPage .music-search-row input::placeholder {color:var(--muted)!important}
 #musicPage .music-track-list .empty {background:var(--surface)!important;color:var(--muted)!important}
+/* Theme the music hero and quick actions too; no hard-coded dark palette in light themes. */
+#musicPage .music-brand-mark {background:var(--accent-soft)!important;color:var(--accent)!important}
+#musicPage .music-feature {background:linear-gradient(145deg,var(--surface2),var(--surface))!important;border-color:var(--line)!important;color:var(--ink)!important}
+#musicPage .music-feature:after {border-color:var(--accent)!important;opacity:.14}
+#musicPage .music-eyebrow,
+#musicPage .music-shortcut-symbol {color:var(--accent)!important}
+#musicPage .music-feature-copy small,
+#musicPage .music-shortcut small {color:var(--muted)!important}
+#musicPage .music-feature-actions button {background:var(--accent-soft)!important;color:var(--ink)!important;border-color:var(--line)!important}
+#musicPage .music-shortcut,
+#musicPage .music-shortcut:nth-child(n) {background:var(--surface2)!important;border-color:var(--line)!important;color:var(--ink)!important}
+#musicPage .music-playlist-track,
+#musicPage .music-group-row,
+#musicPage .music-playlist-detail-head button,
+#musicPage .music-tools-actions button {background:var(--surface2)!important;color:var(--ink)!important;border-color:var(--line)!important}
 #musicPage button:focus-visible,
 #musicPage input:focus-visible,
 #musicPage select:focus-visible {outline:2px solid var(--accent)!important;outline-offset:2px}
