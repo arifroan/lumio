@@ -574,10 +574,8 @@ public final class MainActivity extends Activity {
         final boolean completeMediaStoreAccess = canReadVideo() && canReadAudio();
         scanExecutor.execute(() -> {
             JSONArray array = new JSONArray();
-            boolean videoScanFailed = canReadVideo()
-                    && !appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
-            boolean audioScanFailed = canReadAudio()
-                    && !appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+            boolean videoScanFailed = canReadVideo() && !appendAllStoreVolumes(array, true);
+            boolean audioScanFailed = canReadAudio() && !appendAllStoreVolumes(array, false);
 
             int[] treeCount = new int[]{0};
             boolean treesComplete = appendSavedTreeMedia(array, treeCount);
@@ -853,6 +851,39 @@ public final class MainActivity extends Activity {
                 || n.endsWith(".mts") || n.endsWith(".m2ts") || n.endsWith(".mpeg")
                 || n.endsWith(".mpg") || n.endsWith(".ogv") || n.endsWith(".flv")
                 || n.endsWith(".wmv") || n.endsWith(".vob") || n.endsWith(".asf");
+    }
+
+    private boolean appendAllStoreVolumes(JSONArray results, boolean video) {
+        // On Android 10+, query each visible external volume so music stored on
+        // removable SD cards is not missed. Older Android versions use the
+        // legacy aggregate external collection.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return appendStore(results, video
+                    ? MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    : MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, video);
+        }
+        Set<String> volumes;
+        try {
+            volumes = MediaStore.getExternalVolumeNames(this);
+        } catch (Exception ignored) {
+            return appendStore(results, video
+                    ? MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    : MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, video);
+        }
+        if (volumes == null || volumes.isEmpty()) {
+            return appendStore(results, video
+                    ? MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    : MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, video);
+        }
+        boolean complete = true;
+        for (String volume : volumes) {
+            if (volume == null || volume.trim().isEmpty()) continue;
+            Uri collection = video
+                    ? MediaStore.Video.Media.getContentUri(volume)
+                    : MediaStore.Audio.Media.getContentUri(volume);
+            if (!appendStore(results, collection, video)) complete = false;
+        }
+        return complete;
     }
 
     private boolean appendStore(JSONArray results, Uri collection, boolean video) {
