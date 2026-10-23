@@ -885,34 +885,35 @@ function folderOverviewGroups(filtered){
  for(const item of filtered){
   const value=normalizeFolder(item.folder);
   if(!value)continue;
-  const parts=value.split('/'),head=parts[0];
+  const parts=value.split('/').filter(Boolean),head=parts[0];
   const storageRoot=head==='Internal storage'||/^External storage \\(.+\\)$/.test(head);
-  const targets=[];
-  if(storageRoot||head==='Selected folders'){
-   if(parts.length===1)targets.push(value);
-   else for(let depth=2;depth<=parts.length;depth++)targets.push(parts.slice(0,depth).join('/'));
-  }else targets.push(value);
+  let folderPath=value;
+  if(mediaContentMode==='folders'){
+   // Folders = one clean entry per top-level storage folder, with descendant
+   // media aggregated once. All Folders = each real media-containing path.
+   if((storageRoot||head==='Selected folders')&&parts.length>1)folderPath=parts.slice(0,2).join('/');
+   else if(storageRoot||head==='Selected folders')folderPath=value;
+   else folderPath=parts[0]||value;
+  }
   const history=historyFor(item);
   const bytes=Math.max(0,Number(item.size)||0);
   const date=Math.max(0,Number(item.lastModified)||0);
   const duration=Math.max(0,Number(item.duration)||0);
   const pixels=Math.max((Number(item.width)||0)*(Number(item.height)||0),resolutionPixels(item.resolution));
   const fps=Math.max(0,Number(item.frameRate)||0);
-  for(const folderPath of targets){
-   let group=groupsByPath.get(folderPath);
-   if(!group){
-    group={path:folderPath,name:folderPath.split('/').filter(Boolean).pop()||folderPath,count:0,size:0,latestDate:0,playedAt:0,completed:0,duration:0,resolution:0,frameRate:0};
-    groupsByPath.set(folderPath,group);
-   }
-   group.count++;
-   group.size+=bytes;
-   group.latestDate=Math.max(group.latestDate,date);
-   group.playedAt=Math.max(group.playedAt,Number(history&&history.lastPlayedAt)||0);
-   if(history&&history.completed)group.completed++;
-   group.duration+=duration;
-   group.resolution=Math.max(group.resolution,pixels);
-   group.frameRate=Math.max(group.frameRate,fps);
+  let group=groupsByPath.get(folderPath);
+  if(!group){
+   group={path:folderPath,name:folderPath.split('/').filter(Boolean).pop()||folderPath,count:0,size:0,latestDate:0,playedAt:0,completed:0,duration:0,resolution:0,frameRate:0};
+   groupsByPath.set(folderPath,group);
   }
+  group.count++;
+  group.size+=bytes;
+  group.latestDate=Math.max(group.latestDate,date);
+  group.playedAt=Math.max(group.playedAt,Number(history&&history.lastPlayedAt)||0);
+  if(history&&history.completed)group.completed++;
+  group.duration+=duration;
+  group.resolution=Math.max(group.resolution,pixels);
+  group.frameRate=Math.max(group.frameRate,fps);
  }
  const groups=[...groupsByPath.values()],direction=sortDirection==='desc'?-1:1;
  groups.sort((a,b)=>{
