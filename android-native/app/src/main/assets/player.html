@@ -868,7 +868,7 @@ $('videoSearch').addEventListener('input',()=>{if(searchRenderFrame)cancelAnimat
 $('videoSort').addEventListener('change',()=>{videoSort=$('videoSort').value;syncOptionsSelection();render()});
 $('videoGridView').onclick=()=>setVideoView('grid');$('videoListView').onclick=()=>setVideoView('list');
 $('videoGroupToggle').onclick=()=>setContentMode(groupByFolder?'files':'all');
-$('searchToggle').onclick=()=>{searchExpanded=!searchExpanded;$('videoToolbar').hidden=!searchExpanded;$('searchToggle').setAttribute('aria-expanded',String(searchExpanded));if(searchExpanded){$('videoSearch').placeholder=active==='audio'?'Search music by name…':'Search videos by name…';$('videoSearch').focus()}else{videoSearchText='';$('videoSearch').value='';render()}};
+$('searchToggle').onclick=()=>{searchExpanded=!searchExpanded;$('videoToolbar').hidden=!searchExpanded;$('searchToggle').setAttribute('aria-expanded',String(searchExpanded));if(searchExpanded){$('videoSearch').placeholder='Search videos by name…';$('videoSearch').focus()}else{videoSearchText='';$('videoSearch').value='';render()}};
 $('viewOptionsToggle').onclick=openOptions;$('optionsClose').onclick=closeOptions;
 $('optionsBackdrop').addEventListener('click',event=>{if(event.target===$('optionsBackdrop'))closeOptions()});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&window.handleLumioBack&&window.handleLumioBack())event.preventDefault()});
