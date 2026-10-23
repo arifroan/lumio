@@ -574,6 +574,35 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .music-search-row{padding:9px 11px}.music-search-row .music-search-term{flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:380px){.music-feature{min-height:133px;padding:14px}.music-feature-copy strong{font-size:18px}.music-shortcuts{gap:6px}.music-shortcut{padding:9px;min-height:88px}.music-shortcut small{font-size:8px}.music-feature-actions button{padding:8px 9px}}
 
+
+/* Music library navigation and collection controls */
+.music-browse-tabs{display:flex;gap:24px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:8px 2px 13px;margin:2px 0 14px;border-bottom:1px solid var(--music-border)}
+.music-browse-tabs::-webkit-scrollbar{display:none}
+.music-browse-tab{position:relative;flex:0 0 auto;border:0;background:transparent;color:var(--muted);padding:8px 1px 12px;font:600 15px/1.2 "Space Grotesk",system-ui,sans-serif;white-space:nowrap}
+.music-browse-tab.active{color:var(--text);font-size:19px;font-weight:800}
+.music-browse-tab.active:after{content:"";position:absolute;height:3px;border-radius:4px;background:var(--accent);left:0;right:0;bottom:0}
+.music-library-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px}
+.music-library-tools .music-count-label{font-size:13px;color:var(--muted)}
+.music-library-tools .music-tools-actions{display:flex;gap:7px}
+.music-tools-actions button{border:1px solid var(--music-border);border-radius:10px;background:#101a28;color:var(--text);min-width:38px;min-height:36px;padding:6px 10px}
+.music-group-row{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:12px 10px;border:0;border-bottom:1px solid var(--music-border);background:transparent;color:var(--text);cursor:pointer}
+.music-group-row .music-playlist-art{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:13px;background:linear-gradient(145deg,#174b77,#35205b);color:#7cdbff;font-size:24px}
+.music-group-row .music-playlist-copy{flex:1;min-width:0}
+.music-group-row .music-playlist-copy strong,.music-playlist-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-group-row .music-playlist-copy small{margin-top:5px;color:var(--muted);font-size:12px}
+.music-playlist-row{display:flex;align-items:center;gap:10px}
+.music-playlist-row [data-open-playlist]{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--text);text-align:left;padding:12px 0}
+.music-playlist-row [data-open-playlist] .music-playlist-copy{flex:1;min-width:0}
+.music-playlist-row button:not([data-open-playlist]){flex:0 0 auto}
+.music-playlist-detail-head{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
+.music-playlist-detail-head button{border:1px solid var(--music-border);background:#101a28;color:var(--text);border-radius:10px;padding:8px 11px}
+.music-playlist-detail-head strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-playlist-track{display:flex;align-items:center;gap:9px;padding:10px;border-bottom:1px solid var(--music-border)}
+.music-playlist-track .music-playlist-copy{flex:1;min-width:0}
+.music-playlist-track .music-playlist-copy strong,.music-playlist-track .music-playlist-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-playlist-track .music-playlist-copy small{color:var(--muted);margin-top:4px;font-size:12px}
+.music-playlist-track button{border:0;background:transparent;color:var(--muted);padding:8px}
+@media(max-width:420px){.music-browse-tabs{gap:19px}.music-browse-tab{font-size:14px}.music-browse-tab.active{font-size:18px}}
 </style></head>
 <body>
 <div id="startupGate" role="status" aria-live="polite"><div class="startup-mark">L</div><div class="startup-title">LUMIO</div><div class="startup-spinner" aria-hidden="true"></div><div class="startup-status" id="startupStatus">Preparing your media library…</div></div>
@@ -666,6 +695,14 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <section class="page-panel music-experience" id="musicPage" hidden>
  <div class="music-greeting"><div><div class="music-brand"><span class="music-brand-mark">♫</span> LUMIO</div><h2 id="musicTitle">Good evening</h2><p>Music for your moment.</p></div><div class="music-header-actions"><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></div></div>
  <div class="music-feature" id="musicFeature"><div class="music-feature-copy"><span class="music-eyebrow">YOUR LIBRARY</span><strong>Every track, one place.</strong><small>Local music. Always yours.</small></div><div class="music-feature-actions"><button id="musicPlayAll" type="button">▶ Play all</button><button id="musicShuffle" type="button" aria-label="Shuffle all">⤨</button></div></div>
+ <nav class="music-browse-tabs" aria-label="Browse music">
+  <button class="music-browse-tab active" type="button" data-music-view="all" aria-pressed="true">Songs</button>
+  <button class="music-browse-tab" type="button" data-music-view="playlists" aria-pressed="false">Playlists</button>
+  <button class="music-browse-tab" type="button" data-music-view="folders" aria-pressed="false">Folders</button>
+  <button class="music-browse-tab" type="button" data-music-view="albums" aria-pressed="false">Albums</button>
+  <button class="music-browse-tab" type="button" data-music-view="artists" aria-pressed="false">Artists</button>
+  <button class="music-browse-tab" type="button" data-music-view="genres" aria-pressed="false">Genres</button>
+ </nav>
  <div class="music-shortcuts" aria-label="Music categories">
   <button class="music-shortcut" type="button" data-music-view="favorites"><span class="music-shortcut-symbol">♡</span><strong>Favorites</strong><small id="favoriteMusicCount">0 tracks</small></button>
   <button class="music-shortcut" type="button" data-music-view="recent"><span class="music-shortcut-symbol">◷</span><strong>Recent</strong><small id="recentMusicCount">0 tracks</small></button>
@@ -1370,4 +1407,72 @@ function render(){
 }
 function openItem(key){const x=findMediaByKey(key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=findMediaByKey(key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
-mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();choosePage('videos');refreshLibraryState();render();</script></body></html>
+mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();choosePage('videos');refreshLibraryState();render();
+/* LUMIO Music library upgrade: switchable collections, folder browser and playlist details. */
+let currentMusicPlaylistId='';
+function setMusicBrowseView(view){
+ musicBrowseView=view;
+ if(view!=='folders')currentMusicFolder='';
+ if(view!=='playlists')currentMusicPlaylistId='';
+ musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
+ $('musicPlaylistsPanel').hidden=view!=='playlists';
+ $('musicSearchHistory').hidden=view!=='searches';
+ $('musicLibrary').hidden=['playlists','searches','albums','artists','genres'].includes(view);
+ $('musicLibraryHeading').textContent=({all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',genres:'Genres',searches:'Search history'})[view]||'Songs';
+ document.querySelectorAll('[data-music-view]').forEach(b=>{const active=b.dataset.musicView===view;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+ if(view==='folders'){showMusicInfo('folders');return}
+ if(['albums','artists','genres'].includes(view)){currentMusicGroup=null;showMusicGrouping(view,items.filter(x=>x.type==='audio'));return}
+ if(view==='searches'){renderMusicSearches();return}
+ renderMusic();
+ if(view==='playlists')renderMusicPlaylists();
+}
+function showMusicInfo(view){
+ if(view!=='folders')return;
+ const tracks=items.filter(x=>x.type==='audio');
+ const folders=Array.from(new Set(tracks.map(x=>String(x.folder||'Device storage').replace(/\\\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+ const lib=$('musicLibrary');if(!lib)return;
+ $('musicLibraryHeading').textContent=currentMusicFolder||'Folders';
+ $('musicCount').textContent=currentMusicFolder?tracks.filter(x=>(x.folder||'Device storage')===currentMusicFolder).length+' tracks':folders.length+' folders';
+ $('musicLibrary').hidden=false;$('musicPlaylistsPanel').hidden=true;$('musicSearchHistory').hidden=true;
+ if(currentMusicFolder){
+  const list=tracks.filter(x=>(x.folder||'Device storage')===currentMusicFolder);
+  lib.className='library music-track-list';
+  lib.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicFolderBack">← Folders</button><strong>'+escapeHtml(currentMusicFolder)+'</strong><button type="button" id="musicFolderPlay">▶ Play</button></div>'+list.map(x=>'<div class="file" data-mkey="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.artist||x.album||fmtSize(x.size))+'</small></div><button class="openfile" data-ma="favorite" aria-label="Toggle favorite">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button class="openfile" data-ma="play" aria-label="Play">'+uiIcon('play')+'</button><button class="openfile" data-ma="more" aria-label="More actions">'+uiIcon('more')+'</button></div>').join('')||'<div class="empty"><strong>No tracks in this folder</strong><p>Try scanning your music library again.</p></div>';
+  $('musicFolderBack').onclick=()=>{currentMusicFolder='';showMusicInfo('folders')};
+  $('musicFolderPlay').disabled=!list.length;$('musicFolderPlay').onclick=()=>{if(list.length){selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))}};
+  bindMusicTrackRows(lib);return;
+ }
+ lib.className='library music-track-list';
+ lib.innerHTML=folders.map(folder=>{const count=tracks.filter(x=>(x.folder||'Device storage').replace(/\\\\/g,'/')===folder).length;return '<button class="music-group-row" type="button" data-folder-name="'+escapeHtml(folder)+'"><span class="music-playlist-art">▰</span><span class="music-playlist-copy"><strong>'+escapeHtml(folder.split('/').filter(Boolean).pop()||folder)+'</strong><small>'+count+' tracks · '+escapeHtml(folder)+'</small></span><span>›</span></button>'}).join('')||'<div class="empty"><strong>No music folders found</strong><p>Scan music or select a folder with audio files.</p><button id="musicEmptyScan" type="button">Scan music</button></div>';
+ lib.querySelectorAll('[data-folder-name]').forEach(b=>b.onclick=()=>{currentMusicFolder=b.dataset.folderName;showMusicInfo('folders')});
+ const scan=$('musicEmptyScan');if(scan)scan.onclick=()=>safeBridge('scanLocalMedia');
+}
+const lumioBaseRenderMusic=renderMusic;
+function renderMusic(){
+ lumioBaseRenderMusic();
+ if(musicBrowseView==='folders'){showMusicInfo('folders');return}
+}
+function renderMusicPlaylists(){
+ const box=$('musicPlaylistsList');if(!box)return;
+ if(currentMusicPlaylistId){
+  const p=musicPlaylists.find(x=>x.id===currentMusicPlaylistId);
+  if(!p){currentMusicPlaylistId='';}
+  else{
+   const list=p.uris.map(uri=>items.find(x=>x.uri===uri&&x.type==='audio')).filter(Boolean);
+   box.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicPlaylistBack">← Playlists</button><strong>'+escapeHtml(p.name)+'</strong><button type="button" id="musicPlaylistPlay">▶ Play</button></div><p class="subtitle-note">'+list.length+' available tracks · Changes are saved on this device</p>'+list.map(x=>'<div class="music-playlist-track" data-mkey="'+escapeHtml(x.key)+'"><span class="music-playlist-art">♫</span><div class="music-playlist-copy"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.artist||x.album||x.folder||'Local audio')+'</small></div><button type="button" data-remove-track="'+escapeHtml(x.uri)+'" aria-label="Remove from playlist">×</button><button type="button" data-play-track="'+escapeHtml(x.key)+'" aria-label="Play track">▶</button></div>').join('')||'<div class="empty"><strong>This playlist is empty</strong><p>Open Songs, tap a track’s menu, then choose Add to playlist.</p><button type="button" id="musicBrowseSongs">Browse songs</button></div>';
+   $('musicPlaylistBack').onclick=()=>{currentMusicPlaylistId='';renderMusicPlaylists()};
+   $('musicPlaylistPlay').disabled=!list.length;$('musicPlaylistPlay').onclick=()=>playMusicPlaylist(p.id);
+   box.querySelectorAll('[data-remove-track]').forEach(b=>b.onclick=()=>{p.uris=p.uris.filter(uri=>uri!==b.dataset.removeTrack);saveMusicPlaylists();renderMusicPlaylists();renderMusic()});
+   box.querySelectorAll('[data-play-track]').forEach(b=>b.onclick=()=>playMusicItem(b.dataset.playTrack));
+   const browse=$('musicBrowseSongs');if(browse)browse.onclick=()=>setMusicBrowseView('all');
+   return;
+  }
+ }
+ box.innerHTML=musicPlaylists.map(p=>'<div class="music-playlist-row"><button type="button" data-open-playlist="'+escapeHtml(p.id)+'" aria-label="Open '+escapeHtml(p.name)+'"><span class="music-playlist-art">♫</span><span class="music-playlist-copy"><strong>'+escapeHtml(p.name)+'</strong><small>'+p.uris.filter(uri=>items.some(x=>x.uri===uri&&x.type==='audio')).length+' songs</small></span></button><button type="button" data-playlist="'+escapeHtml(p.id)+'" aria-label="Play playlist">▶</button><button type="button" data-remove-playlist="'+escapeHtml(p.id)+'" aria-label="Delete playlist">×</button></div>').join('')||'<div class="empty"><strong>No playlists yet</strong><p>Create a playlist, then use a track’s menu to add songs.</p><button type="button" id="musicCreatePlaylistEmpty">＋ Create playlist</button></div>';
+ box.querySelectorAll('[data-open-playlist]').forEach(b=>b.onclick=()=>{currentMusicPlaylistId=b.dataset.openPlaylist;renderMusicPlaylists()});
+ box.querySelectorAll('[data-playlist]').forEach(b=>b.onclick=()=>playMusicPlaylist(b.dataset.playlist));
+ box.querySelectorAll('[data-remove-playlist]').forEach(b=>b.onclick=()=>{const p=musicPlaylists.find(p=>p.id===b.dataset.removePlaylist);if(p&&confirm('Delete playlist "'+p.name+'"?')){musicPlaylists=musicPlaylists.filter(x=>x.id!==p.id);saveMusicPlaylists();renderMusicPlaylists();renderMusic()}});
+ const create=$('musicCreatePlaylistEmpty');if(create)create.onclick=createMusicPlaylist;
+}
+
+</script></body></html>
