@@ -91,6 +91,13 @@ public final class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 publishLibraryState();
+                // Start the native media scan only after the WebView page and
+                // JavaScript bridge are ready. This makes scanning independent
+                // of a JavaScript timer and ensures the library refreshes on launch.
+                if ("file:///android_asset/player.html".equals(url)
+                        || url != null && url.startsWith("file:///android_asset/player.html?")) {
+                    beginMediaScan();
+                }
             }
         });
         WebSettings settings = webView.getSettings();
