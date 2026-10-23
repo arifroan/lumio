@@ -595,7 +595,7 @@ public final class MainActivity extends Activity {
                 } else if (videoScanFailed) {
                     warning = "Android could not read the video library. Try Browse this device or Add folder, then scan again.";
                 } else {
-                    warning = "Android could not read the video library. Try Browse this device or Add folder, then scan again.";
+                    warning = "Android could not read the music library. Check audio permission, then try scanning again.";
                 }
             }
             if (!completeMediaStoreAccess) {
