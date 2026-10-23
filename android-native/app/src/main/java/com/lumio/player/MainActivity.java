@@ -100,7 +100,8 @@ public final class MainActivity extends Activity {
                 // of a JavaScript timer and ensures the library refreshes on launch.
                 if ("file:///android_asset/player.html".equals(url)
                         || url != null && url.startsWith("file:///android_asset/player.html?")) {
-                    beginMediaScan();
+                    // The WebView uses a recent successful cache when available; otherwise scan before showing the app.
+                    view.evaluateJavascript("window.requestNativeStartupScan && window.requestNativeStartupScan()", null);
                 }
             }
         });
