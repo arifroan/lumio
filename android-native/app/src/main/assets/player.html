@@ -146,7 +146,7 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .playerbar{padding:14px 15px 16px}.timeline{width:100%;accent-color:var(--lime);height:4px}.times{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:10px;margin:2px 0 10px}.times input{flex:1}.playrow{display:flex;align-items:center;justify-content:space-between;gap:5px}.playrow button{background:transparent;border:0;color:var(--ink);padding:8px 9px;font-weight:800}.playrow .primary{background:var(--lime);color:#15151b;border-radius:50%;width:44px;height:44px;font-size:19px}.speed{border:1px solid var(--line)!important;border-radius:10px!important;font-size:11px!important}.nowplaying{padding:12px 15px 15px;border-top:1px solid #2c2b38;font-size:12px}.nowplaying strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowplaying span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
 .tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}.tools button{border:1px solid var(--line);background:#171620;color:#d9d3ed;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:750}.tools label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.tools input[type=range]{width:95px;accent-color:var(--lime)}.subtitle-note{font-size:10px;color:var(--muted);padding:0 15px 13px}
 .footer{display:flex;align-items:center;gap:9px;margin:23px 5px 0;color:#858198;font-size:10px}.privacydot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px #d7ff7240}
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#12121bee;border-top:1px solid #343345;box-shadow:0 -10px 28px #0003;backdrop-filter:blur(18px)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:100;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#12121bee;border-top:1px solid #343345;box-shadow:0 -10px 28px #0003;backdrop-filter:blur(18px)}
 .nav-item{display:flex;min-width:0;min-height:60px;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 2px;border:0;border-radius:0;background:transparent;color:#fff;font-size:12px;font-weight:850;letter-spacing:0}
 .nav-item .nav-icon{display:grid;place-items:center;width:29px;height:29px;color:currentColor}
 .nav-item .nav-icon svg{display:block;width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
@@ -588,6 +588,8 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <section class="library" id="library"><div class="empty"><div class="emptyicon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M12 8h5M12 12h5M12 16h3"/></svg></div><strong>Your story starts here</strong><p>Scan your phone or choose video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div></section>
 </section>
 
+<section class="page-panel" id="musicPage" hidden><div class="media-header"><div class="media-heading"><h2 id="musicTitle">Music</h2><span id="musicCount">0 tracks</span></div><div class="media-header-actions"><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button><button class="icon-button" id="musicScanToggle" type="button" aria-label="Refresh music library"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 1.7 5.2"/><path d="M20 4v7h-7"/></svg></button></div></div><div class="library-toolbar" id="musicToolbar" hidden><input class="video-search" id="musicSearch" type="search" placeholder="Search songs…" autocomplete="off" aria-label="Search music"></div><div class="video-library-filters" id="musicFilters" role="group" aria-label="Music library filter"><button id="showAllMusic" class="active" type="button" aria-pressed="true">All music <span class="filter-count" id="allMusicCount">0</span></button><button id="showFavoriteMusic" type="button" aria-pressed="false">Favorites <span class="filter-count" id="favoriteMusicCount">0</span></button></div><section class="library" id="musicLibrary"><div class="empty"><div class="emptyicon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><strong>Your music library is ready</strong><p>Scan your device to find local audio and music files.</p><button id="musicEmptyScan" type="button">Scan music</button></div></section></section>
+
 <section class="page-panel" id="streamPage" hidden>
   <div class="sectionhead"><h2>Stream</h2><span>Network playback</span></div>
   <div class="stream-card">
@@ -622,6 +624,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
     <div class="sectionhead" style="margin:0 0 8px"><h2>Info</h2><span>Library overview</span></div>
     <div class="info-stats">
       <div class="stat"><strong id="videoCount">0</strong><span>VIDEOS</span></div>
+<div class="stat"><strong id="audioCount">0</strong><span>AUDIO TRACKS</span></div>
       <div class="stat"><strong id="totalSize">0 MB</strong><span>IN THIS SESSION</span></div>
     </div>
     <p style="margin:12px 0 0;color:var(--muted);font-size:12px">These totals update as Lumio scans and indexes media on your device.</p>
@@ -661,6 +664,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
   <button class="nav-item active" data-page="videos" aria-current="page" aria-label="Videos">
     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h18a1.8 1.8 0 0 1 1.8 1.8v9.2a2 2 0 0 1-2 2H3.2a2 2 0 0 1-2-2V9.5a2 2 0 0 1 1.8-2Z"/><path d="M2 11.5h20"/><path d="m4.5 7.5 2.1-5 4.6 5"/><path d="m12.5 7.5 2.1-5 4.6 5"/><path d="M4.5 2.5h14"/></svg></span><span>Videos</span>
   </button>
+  <button class="nav-item" data-page="music" aria-label="Music"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span>Music</span></button>
   <button class="nav-item" data-page="stream" aria-label="Stream">
     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8.5 21 3.5-8 3.5 8"/><path d="M12 13V7"/><circle cx="12" cy="5" r="1.8"/><path d="M7.7 9.1a6 6 0 0 0 0 8.5"/><path d="M16.3 9.1a6 6 0 0 1 0 8.5"/><path d="M4.8 6.1a10 10 0 0 0 0 14.2"/><path d="M19.2 6.1a10 10 0 0 1 0 14.2"/></svg></span><span>Stream</span>
   </button>
@@ -787,7 +791,7 @@ function mountChatStyleIcons(){
 function readViewPreferences(){try{const raw=localStorage.getItem('lumio.viewPreferences');const value=raw?JSON.parse(raw):{};return value&&typeof value==='object'?value:{}}catch(e){return {}}}
 const savedViewPreferences=readViewPreferences();
 function saveViewPreferences(){try{localStorage.setItem('lumio.viewPreferences',JSON.stringify({videoSort,videoViewMode,sortDirection,mediaContentMode}))}catch(e){}}
-let items=[],active='video',selectedKey=null,currentPage='videos',videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='list'?'list':'grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'folders',videoContentModePreference='folders',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
+let items=[],active='video',selectedKey=null,currentPage='videos',musicSearchText='',musicLibraryFilter='all',musicSearchExpanded=false,videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='list'?'list':'grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'folders',videoContentModePreference='folders',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
@@ -810,7 +814,7 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(replaceExisting){items=[];mediaLookup.clear()}
  else if(!mediaLookup.size&&items.length)rebuildMediaLookup();
  for(const raw of records||[]){
-  if(!raw||!raw.uri||raw.type==='audio'||String(raw.mime||'').toLowerCase().startsWith('audio/'))continue;
+  if(!raw||!raw.uri)continue;
   const item=refreshSearchText({key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,width:Number(raw.width)||0,height:Number(raw.height)||0,frameRate:Number(raw.frameRate)||0,resolution:String(raw.resolution||''),identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false});
   let ix=mediaLookup.get('u:'+item.uri);
   if(ix===undefined)ix=mediaLookup.get('k:'+item.key);
@@ -904,7 +908,7 @@ function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'as
 function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';saveViewPreferences();$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
 function openAppearancePage(){
  currentPage='appearance';
- $('mediaPage').hidden=true;$('streamPage').hidden=true;$('settingsPage').hidden=true;$('appearancePage').hidden=false;
+ $('mediaPage').hidden=true;$('musicPage').hidden=true;$('streamPage').hidden=true;$('settingsPage').hidden=true;$('appearancePage').hidden=false;
  $('appFooter').hidden=false;$('videosFab').hidden=true;$('videoToolbar').hidden=true;
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page==='settings';button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  document.documentElement.scrollTop=0;
@@ -923,7 +927,7 @@ function choosePage(page){
  }
  ++libraryRenderGeneration;
  const ticket=++pendingPageRender;
- if(!['videos','stream','settings'].includes(page))page='videos';currentPage=page;active='video';const isMedia=page==='videos';folderNavigationHistory=[];
+ if(!['videos','music','stream','settings'].includes(page))page='videos';currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos';const isMusic=page==='music';folderNavigationHistory=[];
  if(page!=='videos'){
   if(active==='video')videoContentModePreference=mediaContentMode;
   folderBrowseActive=false;currentFolderPath='';
@@ -936,10 +940,11 @@ function choosePage(page){
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
   syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';
+ $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!(isMusic&&musicSearchExpanded);
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  // Swap to the selected tab's own cached content immediately. Never leave the
  // previous tab's rows visible while the selected tab is being refreshed.
+ if(isMusic){renderMusic();}
  if(isMedia){
   const cached=pageRenderCache[page].get(pageCacheKey(page));
   if(cached!==undefined){
@@ -957,6 +962,7 @@ function choosePage(page){
  }
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
+ $('musicSearchToggle').onclick=()=>{musicSearchExpanded=!musicSearchExpanded;$('musicToolbar').hidden=!musicSearchExpanded;$('musicSearchToggle').setAttribute('aria-expanded',String(musicSearchExpanded));if(musicSearchExpanded)$('musicSearch').focus();else{$('musicSearch').value='';musicSearchText='';renderMusic()}};$('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();renderMusic()});$('musicScanToggle').onclick=()=>safeBridge('scanLocalMedia');$('musicEmptyScan').onclick=()=>safeBridge('scanLocalMedia');$('showAllMusic').onclick=()=>{musicLibraryFilter='all';renderMusic()};$('showFavoriteMusic').onclick=()=>{musicLibraryFilter='favorites';renderMusic()};
 $('openStream').onclick=()=>{
  const raw=$('streamUrl').value.trim(),message=$('streamMessage');if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return}
  let url;try{url=new URL(raw)}catch(e){message.textContent='That does not look like a valid URL.';return}
@@ -1023,7 +1029,7 @@ function mediaItemMarkup(x){
 }
 function setCurrentFolder(path){const nextPath=normalizeFolder(path),previousPath=normalizeFolder(currentFolderPath);if(nextPath===previousPath)return;if(folderNavigationHistory.length>=96)folderNavigationHistory.shift();folderNavigationHistory.push(previousPath);currentFolderPath=nextPath;render()}
 function returnToPreviousFolder(){if(!currentFolderPath)return false;currentFolderPath=normalizeFolder(folderNavigationHistory.length?folderNavigationHistory.pop():'');render();return true}
-window.handleLumioBack=function(){const options=$('optionsBackdrop');if(options&&!options.hidden){closeOptions();return true}if(currentPage==='appearance'){choosePage('settings');return true}if(currentPage!=='videos'){choosePage('videos');return true}if(searchExpanded){if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}searchExpanded=false;render();return true}if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}if(currentFolderPath)return returnToPreviousFolder();return false};
+window.handleLumioBack=function(){const options=$('optionsBackdrop');if(options&&!options.hidden){closeOptions();return true}if(currentPage==='appearance'){choosePage('settings');return true}if(currentPage==='music'&&musicSearchExpanded){musicSearchExpanded=false;$('musicToolbar').hidden=true;$('musicSearch').value='';musicSearchText='';renderMusic();return true}if(currentPage!=='videos'){choosePage('videos');return true}if(searchExpanded){if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}searchExpanded=false;render();return true}if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}if(currentFolderPath)return returnToPreviousFolder();return false};
 function folderIconMarkup(){return uiIcon('folder')}
 function folderAbsolutePath(value){
  const normalized=normalizeFolder(value),parts=normalized.split('/').filter(Boolean);
@@ -1200,7 +1206,10 @@ function renderMediaItemsIncrementally(library,filtered,generation){
  };
  appendBatch();
 }
+function renderMusic(){const lib=$('musicLibrary');if(!lib)return;const tracks=items.filter(x=>x.type==='audio'),favs=tracks.filter(isFavorite);$('musicCount').textContent=tracks.length+' tracks';$('audioCount').textContent=tracks.length;$('allMusicCount').textContent=tracks.length;$('favoriteMusicCount').textContent=favs.length;$('showAllMusic').classList.toggle('active',musicLibraryFilter==='all');$('showFavoriteMusic').classList.toggle('active',musicLibraryFilter==='favorites');$('showAllMusic').setAttribute('aria-pressed',String(musicLibraryFilter==='all'));$('showFavoriteMusic').setAttribute('aria-pressed',String(musicLibraryFilter==='favorites'));let list=musicLibraryFilter==='favorites'?favs:tracks;if(musicSearchText)list=list.filter(x=>(x.searchText||'').includes(musicSearchText));if(!list.length){const msg=musicSearchText?'No matching tracks':musicLibraryFilter==='favorites'?'No favorite tracks yet':tracks.length?'No music found':'No music indexed yet';lib.className='library';lib.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('music')+'</div><strong>'+msg+'</strong><p>'+(tracks.length?'Try another filter or search.':'Scan your phone to find local music.')+'</p><button id="musicEmptyAction" type="button">'+(musicSearchText?'Clear search':musicLibraryFilter==='favorites'?'Show all music':'Scan music')+'</button></div>';const b=$('musicEmptyAction');if(b)b.onclick=()=>{if(musicSearchText){musicSearchText='';$('musicSearch').value='';renderMusic()}else if(musicLibraryFilter==='favorites'){musicLibraryFilter='all';renderMusic()}else safeBridge('scanLocalMedia')};return}list=list.slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));lib.className='library';lib.innerHTML=list.map(x=>'<div class="file" data-mkey="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small></div><button class="openfile" data-ma="play" aria-label="Play '+escapeHtml(x.name)+'">'+uiIcon('play')+'</button><button class="openfile" data-ma="more" aria-label="More actions">'+uiIcon('more')+'</button></div>').join('');lib.querySelectorAll('[data-mkey]').forEach(row=>row.onclick=e=>{if(!e.target.closest('[data-ma]'))playMusicItem(row.dataset.mkey)});lib.querySelectorAll('[data-ma="play"]').forEach(b=>b.onclick=e=>{e.stopPropagation();playMusicItem(b.closest('[data-mkey]').dataset.mkey)});lib.querySelectorAll('[data-ma="more"]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=items.find(y=>y.key===b.closest('[data-mkey]').dataset.mkey);if(x)showMediaActions(x)})}
+function playMusicItem(key){const x=items.find(y=>y.key===key&&y.type==='audio');if(x){selectedKey=x.key;safeBridge('playMedia',x.uri,x.name,true,JSON.stringify(items.filter(y=>y.type==='audio').slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}}
 function render(){
+ if(active==='audio'){renderMusic();return;}
  $('library').dataset.renderComplete='false';
  const renderGeneration=++libraryRenderGeneration;
  let videoTotal=0,totalSize=0,favoritesTotal=0;for(const item of items){if(item.type==='video'){videoTotal++;totalSize+=Math.max(0,Number(item.size)||0);if(isFavorite(item))favoritesTotal++}}let filtered=items.filter(x=>x.type==='video');
