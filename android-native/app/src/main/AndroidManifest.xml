@@ -15,10 +15,12 @@
 
     <application
         android:allowBackup="false"
-        android:label="Lumio Player Preview"
+        android:label="LUMIO"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <activity
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboardHidden"
