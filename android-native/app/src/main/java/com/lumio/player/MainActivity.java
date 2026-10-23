@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
@@ -657,6 +659,7 @@ public final class MainActivity extends Activity {
         Deque<TreeFolder> pending = new ArrayDeque<>();
         pending.push(new TreeFolder(root, initialPath, 0));
         boolean complete = true;
+        Map<String, String> identityUpdates = new HashMap<>();
 
         while (!pending.isEmpty()) {
             if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
@@ -705,7 +708,7 @@ public final class MainActivity extends Activity {
                     entry.put("source", "folder");
                     if (!identity.isEmpty()) {
                         entry.put("identity", identity);
-                        rememberMediaIdentity(mediaUri, identity);
+                        identityUpdates.put(mediaUri.toString(), identity);
                     }
                     results.put(entry);
                     totalCount[0]++;
@@ -713,6 +716,7 @@ public final class MainActivity extends Activity {
                 if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
             }
         }
+        rememberMediaIdentities(identityUpdates);
         return complete;
     }
 
@@ -802,8 +806,22 @@ public final class MainActivity extends Activity {
 
     private void rememberMediaIdentity(Uri uri, String identity) {
         if (uri == null || identity == null || identity.trim().isEmpty()) return;
-        getSharedPreferences("lumio_library", MODE_PRIVATE).edit()
-                .putString("identity:" + uri.toString(), identity).apply();
+        Map<String, String> updates = new HashMap<>();
+        updates.put(uri.toString(), identity);
+        rememberMediaIdentities(updates);
+    }
+
+    private void rememberMediaIdentities(Map<String, String> identities) {
+        if (identities == null || identities.isEmpty()) return;
+        android.content.SharedPreferences.Editor editor = getSharedPreferences("lumio_library", MODE_PRIVATE).edit();
+        for (Map.Entry<String, String> entry : identities.entrySet()) {
+            String uri = entry.getKey();
+            String identity = entry.getValue();
+            if (uri != null && !uri.trim().isEmpty() && identity != null && !identity.trim().isEmpty()) {
+                editor.putString("identity:" + uri, identity);
+            }
+        }
+        editor.apply();
     }
 
     private String savedMediaIdentity(Uri uri) {
@@ -855,6 +873,8 @@ public final class MainActivity extends Activity {
         }
         // Do not ask MediaStore to sort the full library: LUMIO sorts the merged
         // result once after scanning, avoiding a second potentially expensive sort.
+        // Batch identity writes instead of scheduling one SharedPreferences write per file.
+        Map<String, String> identityUpdates = new HashMap<>();
         try (Cursor cursor = getContentResolver().query(collection, columns.toArray(new String[0]), null, null, null)) {
             if (cursor == null) return false;
             int idCol = cursor.getColumnIndex(MediaStore.MediaColumns._ID);
@@ -915,11 +935,12 @@ public final class MainActivity extends Activity {
                     entry.put("source", "mediastore");
                     if (!identity.isEmpty()) {
                         entry.put("identity", identity);
-                        rememberMediaIdentity(fileUri, identity);
+                        identityUpdates.put(fileUri.toString(), identity);
                     }
                     results.put(entry);
                 } catch (JSONException ignored) { }
             }
+            rememberMediaIdentities(identityUpdates);
             return true;
         } catch (SecurityException ignored) {
             // A permission may have been revoked while scanning; the picker remains available.
