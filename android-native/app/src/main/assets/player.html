@@ -1427,20 +1427,7 @@ function bindMusicActions(){
  $('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});
  $('musicPlayAll').onclick=()=>playMusicCollection(false);$('musicShuffle').onclick=()=>playMusicCollection(true);
 
- /* Swipe the Music content area like a native player; preserve vertical scroll and controls. */
- const swipeSurface=$('musicPage');
- if(swipeSurface&&!swipeSurface.dataset.contentSwipeBound){
-  swipeSurface.dataset.contentSwipeBound='true';let sx=0,sy=0,eligible=false;
-  swipeSurface.addEventListener('touchstart',e=>{eligible=false;if(e.touches.length!==1)return;const t=e.target;if(t.closest('button,input,select,textarea,a,[contenteditable="true"],.music-browse-tabs'))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;eligible=true},{passive:true});
-  swipeSurface.addEventListener('touchend',e=>{if(!eligible||!e.changedTouches.length)return;eligible=false;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.35)return;const order=['all','playlists','folders','albums','artists'];const i=order.indexOf(musicBrowseView);if(i<0)return;const j=Math.max(0,Math.min(order.length-1,i+(dx<0?1:-1)));if(j!==i)setMusicBrowseView(order[j])},{passive:true});
- }
 
- const tabs=$('musicBrowseTabs');
- if(tabs&&!tabs.dataset.swipeBound){
-  tabs.dataset.swipeBound='true';let sx=0,sy=0,tracking=false;
-  tabs.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=true},{passive:true});
-  tabs.addEventListener('touchend',e=>{if(!tracking||!e.changedTouches.length)return;tracking=false;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.25)return;const order=['all','playlists','folders','albums','artists'];const i=order.indexOf(musicBrowseView);if(i<0)return;const j=Math.max(0,Math.min(order.length-1,i+(dx<0?1:-1)));if(j!==i)setMusicBrowseView(order[j])},{passive:true});
- }
 }
 function playMusicCollection(shuffle){let list=musicTracksForCurrentView().slice();if(!list.length)return;if(shuffle)for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}const first=list[0];selectedKey=first.key;safeBridge('playMedia',first.uri,first.name,true,JSON.stringify(list.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playMusicItem(key){const x=items.find(y=>y.key===key&&y.type==='audio');if(x){const list=musicTracksForCurrentView(),ordered=[x,...list.filter(y=>y.key!==x.key)];selectedKey=x.key;safeBridge('playMedia',x.uri,x.name,true,JSON.stringify(ordered.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}}
