@@ -1429,7 +1429,7 @@ function setMusicBrowseView(view){
 function showMusicInfo(view){
  if(view!=='folders')return;
  const tracks=items.filter(x=>x.type==='audio');
- const folders=Array.from(new Set(tracks.map(x=>String(x.folder||'Device storage').replace(/\\\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+ const folders=Array.from(new Set(tracks.map(x=>String(x.folder||'Device storage').replace(/\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  const lib=$('musicLibrary');if(!lib)return;
  $('musicLibraryHeading').textContent=currentMusicFolder||'Folders';
  $('musicCount').textContent=currentMusicFolder?tracks.filter(x=>(x.folder||'Device storage')===currentMusicFolder).length+' tracks':folders.length+' folders';
@@ -1443,7 +1443,7 @@ function showMusicInfo(view){
   bindMusicTrackRows(lib);return;
  }
  lib.className='library music-track-list';
- lib.innerHTML=folders.map(folder=>{const count=tracks.filter(x=>(x.folder||'Device storage').replace(/\\\\/g,'/')===folder).length;return '<button class="music-group-row" type="button" data-folder-name="'+escapeHtml(folder)+'"><span class="music-playlist-art">▰</span><span class="music-playlist-copy"><strong>'+escapeHtml(folder.split('/').filter(Boolean).pop()||folder)+'</strong><small>'+count+' tracks · '+escapeHtml(folder)+'</small></span><span>›</span></button>'}).join('')||'<div class="empty"><strong>No music folders found</strong><p>Scan music or select a folder with audio files.</p><button id="musicEmptyScan" type="button">Scan music</button></div>';
+ lib.innerHTML=folders.map(folder=>{const count=tracks.filter(x=>(x.folder||'Device storage').replace(/\\/g,'/')===folder).length;return '<button class="music-group-row" type="button" data-folder-name="'+escapeHtml(folder)+'"><span class="music-playlist-art">▰</span><span class="music-playlist-copy"><strong>'+escapeHtml(folder.split('/').filter(Boolean).pop()||folder)+'</strong><small>'+count+' tracks · '+escapeHtml(folder)+'</small></span><span>›</span></button>'}).join('')||'<div class="empty"><strong>No music folders found</strong><p>Scan music or select a folder with audio files.</p><button id="musicEmptyScan" type="button">Scan music</button></div>';
  lib.querySelectorAll('[data-folder-name]').forEach(b=>b.onclick=()=>{currentMusicFolder=b.dataset.folderName;showMusicInfo('folders')});
  const scan=$('musicEmptyScan');if(scan)scan.onclick=()=>safeBridge('scanLocalMedia');
 }
@@ -1473,6 +1473,90 @@ function renderMusicPlaylists(){
  box.querySelectorAll('[data-playlist]').forEach(b=>b.onclick=()=>playMusicPlaylist(b.dataset.playlist));
  box.querySelectorAll('[data-remove-playlist]').forEach(b=>b.onclick=()=>{const p=musicPlaylists.find(p=>p.id===b.dataset.removePlaylist);if(p&&confirm('Delete playlist "'+p.name+'"?')){musicPlaylists=musicPlaylists.filter(x=>x.id!==p.id);saveMusicPlaylists();renderMusicPlaylists();renderMusic()}});
  const create=$('musicCreatePlaylistEmpty');if(create)create.onclick=createMusicPlaylist;
+}
+
+
+/* Follow-up Music workflow improvements: playlist rename/reorder/add and grouped playback. */
+function renameMusicPlaylist(id){
+ const p=musicPlaylists.find(x=>x.id===id);if(!p)return;
+ const value=prompt('Rename playlist',p.name);if(!value||!value.trim())return;
+ const name=value.trim().slice(0,80);
+ if(musicPlaylists.some(x=>x.id!==id&&x.name.toLocaleLowerCase()===name.toLocaleLowerCase())){showMessage('A playlist with that name already exists.');return}
+ p.name=name;saveMusicPlaylists();renderMusicPlaylists();
+}
+function addTracksToPlaylist(id){
+ const p=musicPlaylists.find(x=>x.id===id);if(!p)return;
+ const tracks=items.filter(x=>x.type==='audio');
+ if(!tracks.length){showMessage('Scan your music library first.');return}
+ const existing=new Set(p.uris);
+ const candidates=tracks.filter(x=>!existing.has(x.uri));
+ if(!candidates.length){showMessage('All available songs are already in this playlist.');return}
+ const selection=prompt('Add a song to "'+p.name+'":\n'+candidates.slice(0,80).map((x,i)=>(i+1)+'. '+x.name).join('\n')+'\nEnter a song number.');
+ const index=Number(selection)-1;const item=candidates[index];if(!item)return;
+ p.uris.push(item.uri);saveMusicPlaylists();renderMusicPlaylists();showMessage('Added '+item.name+' to '+p.name+'.');
+}
+function reorderPlaylistTrack(id,uri,direction){
+ const p=musicPlaylists.find(x=>x.id===id);if(!p)return;
+ const i=p.uris.indexOf(uri),j=i+direction;if(i<0||j<0||j>=p.uris.length)return;
+ [p.uris[i],p.uris[j]]=[p.uris[j],p.uris[i]];saveMusicPlaylists();renderMusicPlaylists();
+}
+function renderMusicPlaylists(){
+ const box=$('musicPlaylistsList');if(!box)return;
+ if(currentMusicPlaylistId){
+  const p=musicPlaylists.find(x=>x.id===currentMusicPlaylistId);
+  if(!p){currentMusicPlaylistId='';}
+  else{
+   const list=p.uris.map(uri=>items.find(x=>x.uri===uri&&x.type==='audio')).filter(Boolean);
+   box.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicPlaylistBack">← Playlists</button><strong>'+escapeHtml(p.name)+'</strong><button type="button" id="musicPlaylistPlay">▶ Play</button></div><div class="music-tools-actions"><button type="button" id="musicPlaylistAdd">＋ Add songs</button><button type="button" id="musicPlaylistRename">Rename</button></div><p class="subtitle-note">'+list.length+' available tracks · Saved on this device</p>'+list.map((x,i)=>'<div class="music-playlist-track" data-mkey="'+escapeHtml(x.key)+'"><span class="music-playlist-art">♫</span><div class="music-playlist-copy"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.artist||x.album||x.folder||'Local audio')+'</small></div><button type="button" data-move-track="'+escapeHtml(x.uri)+'" data-direction="-1" '+(i===0?'disabled':'')+' aria-label="Move track up">↑</button><button type="button" data-move-track="'+escapeHtml(x.uri)+'" data-direction="1" '+(i===list.length-1?'disabled':'')+' aria-label="Move track down">↓</button><button type="button" data-remove-track="'+escapeHtml(x.uri)+'" aria-label="Remove from playlist">×</button><button type="button" data-play-track="'+escapeHtml(x.key)+'" aria-label="Play track">▶</button></div>').join('')||'<div class="empty"><strong>This playlist is empty</strong><p>Add songs from your Music library or use Add songs.</p></div>';
+   $('musicPlaylistBack').onclick=()=>{currentMusicPlaylistId='';renderMusicPlaylists()};
+   $('musicPlaylistPlay').disabled=!list.length;$('musicPlaylistPlay').onclick=()=>playMusicPlaylist(p.id);
+   $('musicPlaylistAdd').onclick=()=>addTracksToPlaylist(p.id);
+   $('musicPlaylistRename').onclick=()=>renameMusicPlaylist(p.id);
+   box.querySelectorAll('[data-remove-track]').forEach(b=>b.onclick=()=>{p.uris=p.uris.filter(uri=>uri!==b.dataset.removeTrack);saveMusicPlaylists();renderMusicPlaylists();renderMusic()});
+   box.querySelectorAll('[data-move-track]').forEach(b=>b.onclick=()=>reorderPlaylistTrack(p.id,b.dataset.moveTrack,Number(b.dataset.direction)));
+   box.querySelectorAll('[data-play-track]').forEach(b=>b.onclick=()=>playMusicItem(b.dataset.playTrack));
+   return;
+  }
+ }
+ box.innerHTML=musicPlaylists.map(p=>'<div class="music-playlist-row"><button type="button" data-open-playlist="'+escapeHtml(p.id)+'" aria-label="Open '+escapeHtml(p.name)+'"><span class="music-playlist-art">♫</span><span class="music-playlist-copy"><strong>'+escapeHtml(p.name)+'</strong><small>'+p.uris.filter(uri=>items.some(x=>x.uri===uri&&x.type==='audio')).length+' songs</small></span></button><button type="button" data-playlist="'+escapeHtml(p.id)+'" aria-label="Play playlist">▶</button><button type="button" data-rename-playlist="'+escapeHtml(p.id)+'" aria-label="Rename playlist">✎</button><button type="button" data-add-playlist="'+escapeHtml(p.id)+'" aria-label="Add songs">＋</button><button type="button" data-remove-playlist="'+escapeHtml(p.id)+'" aria-label="Delete playlist">×</button></div>').join('')||'<div class="empty"><strong>No playlists yet</strong><p>Create a playlist, then use a track’s menu to add songs.</p><button type="button" id="musicCreatePlaylistEmpty">＋ Create playlist</button></div>';
+ box.querySelectorAll('[data-open-playlist]').forEach(b=>b.onclick=()=>{currentMusicPlaylistId=b.dataset.openPlaylist;renderMusicPlaylists()});
+ box.querySelectorAll('[data-playlist]').forEach(b=>b.onclick=()=>playMusicPlaylist(b.dataset.playlist));
+ box.querySelectorAll('[data-rename-playlist]').forEach(b=>b.onclick=()=>renameMusicPlaylist(b.dataset.renamePlaylist));
+ box.querySelectorAll('[data-add-playlist]').forEach(b=>b.onclick=()=>addTracksToPlaylist(b.dataset.addPlaylist));
+ box.querySelectorAll('[data-remove-playlist]').forEach(b=>b.onclick=()=>{const p=musicPlaylists.find(p=>p.id===b.dataset.removePlaylist);if(p&&confirm('Delete playlist "'+p.name+'"?')){musicPlaylists=musicPlaylists.filter(x=>x.id!==p.id);saveMusicPlaylists();currentMusicPlaylistId='';renderMusicPlaylists();renderMusic()}});
+ const create=$('musicCreatePlaylistEmpty');if(create)create.onclick=createMusicPlaylist;
+}
+function showMusicActionsMenu(item){
+ if(!item)return;
+ const actions=[
+  {title:'Play now',run:()=>playMusicItem(item.key)},
+  {title:isFavorite(item)?'Remove from favorites':'Add to favorites',run:()=>toggleFavorite(item)},
+  {title:'Add to playlist',run:()=>addToMusicPlaylist(item)},
+  {title:'Move / organize file',run:()=>showMessage('Physical file moving requires an Android storage permission flow. Use Folders to browse files; playlist organization is available now.')},
+  {title:'File details',run:()=>safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,true,item.identity||'')}
+ ];
+ const choice=prompt('Music actions: '+item.name+'\n'+actions.map((a,i)=>(i+1)+'. '+a.title).join('\n')+'\nEnter a number:');
+ const action=actions[Number(choice)-1];if(action)action.run();
+}
+function showMusicGrouping(kind,tracks){
+ const key=kind==='albums'?'album':kind==='artists'?'artist':'genre',map=new Map();
+ tracks.forEach(t=>{const value=(t[key]||'').trim()||(kind==='albums'?'Unknown album':kind==='artists'?'Unknown artist':'Unknown genre');if(!map.has(value))map.set(value,[]);map.get(value).push(t)});
+ const lib=$('musicLibrary');if(!lib)return;
+ $('musicCount').textContent=map.size+' '+kind;
+ lib.hidden=false;lib.className='library';
+ lib.innerHTML=Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0],undefined,{sensitivity:'base'})).map(([name,list])=>'<button class="music-group-row" data-group-name="'+escapeHtml(name)+'" type="button"><span class="music-playlist-art">'+(kind==='albums'?'▣':kind==='artists'?'♟':'♫')+'</span><span class="music-playlist-copy"><strong>'+escapeHtml(name)+'</strong><small>'+list.length+' songs'+(kind==='albums'?' · '+(list[0].artist||'Unknown artist'):'')+'</small></span><span>›</span></button>').join('')||'<div class="empty"><strong>No '+kind+' groups yet</strong><p>Scan your library to read available audio metadata.</p></div>';
+ lib.querySelectorAll('[data-group-name]').forEach(row=>row.onclick=()=>{currentMusicGroup={kind,name:row.dataset.groupName};renderMusicGroupDetail(tracks)});
+}
+function renderMusicGroupDetail(allTracks){
+ const g=currentMusicGroup;if(!g)return;
+ const key=g.kind==='albums'?'album':g.kind==='artists'?'artist':'genre';
+ const fallback=g.kind==='albums'?'Unknown album':g.kind==='artists'?'Unknown artist':'Unknown genre';
+ const list=allTracks.filter(t=>((t[key]||'').trim()||fallback)===g.name);
+ const lib=$('musicLibrary');$('musicLibraryHeading').textContent=g.name;$('musicCount').textContent=list.length+' songs';
+ lib.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicGroupBack">← Back</button><strong>'+escapeHtml(g.name)+'</strong><button type="button" id="musicGroupPlay">▶ Play</button></div>'+list.map(x=>'<div class="file" data-mkey="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.artist||x.album||x.folder||'Local file')+'</small></div><button class="openfile" data-ma="favorite" aria-label="Toggle favorite">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button class="openfile" data-ma="play" aria-label="Play">'+uiIcon('play')+'</button><button class="openfile" data-ma="more" aria-label="More actions">'+uiIcon('more')+'</button></div>').join('')||'<div class="empty"><strong>No tracks in this group</strong></div>';
+ $('musicGroupBack').onclick=()=>setMusicBrowseView(g.kind);
+ $('musicGroupPlay').disabled=!list.length;$('musicGroupPlay').onclick=()=>{if(list.length)safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))};
+ bindMusicTrackRows(lib);
 }
 
 </script></body></html>
