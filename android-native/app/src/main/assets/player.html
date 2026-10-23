@@ -778,7 +778,6 @@ function mountChatStyleIcons(){
  put('#appearanceBack','arrowLeft');
  put('#vaultSettings .setting-icon','lock');
  put('#settingsAdd .setting-icon','plus');
- put('#settingsScan .setting-icon','refresh');
  put('#settingsAddFolder .setting-icon','folderPlus');
  put('.stream-card .emptyicon','radio');
  putChild('.sort-direction-toggle [data-direction="asc"]','arrowUp');
@@ -876,7 +875,7 @@ function observeThumbnails(){
  });
 }
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function openVault(){safeBridge('openVault')}
-$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
+$('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
 $('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 let searchRenderFrame=0;
