@@ -514,8 +514,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
 
-#startupGate{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;background:#101018;color:#f6f3ff;text-align:center;transition:opacity .18s ease}#startupGate.done{opacity:0;pointer-events:none}#startupGate[hidden]{display:none!important}.startup-mark{display:grid;place-items:center;width:72px;height:72px;border:1px solid #4a4265;border-radius:24px;background:#211c30;color:#b49aff;font-size:32px;font-weight:800;letter-spacing:-2px}.startup-title{font:700 25px/1.2 "Space Grotesk",system-ui,sans-serif;letter-spacing:-.8px}.startup-status{max-width:280px;color:#a5a2b9;font-size:13px}.startup-spinner{width:22px;height:22px;border:2px solid #393348;border-top-color:#b49aff;border-radius:50%;animation:lumioSpin .8s linear infinite}@keyframes lumioSpin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
-
 /* LUMIO Music: local-first browse and library experience */
 .music-experience{--music-accent:#58c7ff;--music-surface:#111b2a;--music-border:#24364b}
 .music-greeting{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:3px 0 17px}
@@ -605,7 +603,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 @media(max-width:420px){.music-browse-tabs{gap:19px}.music-browse-tab{font-size:14px}.music-browse-tab.active{font-size:18px}}
 </style></head>
 <body>
-<div id="startupGate" role="status" aria-live="polite"><div class="startup-mark">L</div><div class="startup-title">LUMIO</div><div class="startup-spinner" aria-hidden="true"></div><div class="startup-status" id="startupStatus">Preparing your media library…</div></div>
 <main>
 <section id="mediaPage">
 <section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
@@ -960,8 +957,8 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(shouldRender)render()
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
-function finishStartupGate(){const gate=$('startupGate');if(!gate)return;gate.classList.add('done');setTimeout(()=>{gate.hidden=true},220)}
-window.requestNativeStartupScan=function(){const status=$('startupStatus');if(status)status.textContent=items.length?'Scanning videos, music and selected folders…':'Scanning your device for videos and music…';const gate=$('startupGate');if(gate){gate.hidden=false;gate.classList.remove('done')}safeBridge('scanLocalMedia')};
+function finishStartupGate(){}
+window.requestNativeStartupScan=function(){safeBridge('scanLocalMedia')};
 window.onNativeMediaScan=function(records,error){mergeMedia(records,!error,false);if(!refreshLibraryState())render();if(!error){try{localStorage.setItem('lumio.lastSuccessfulScanAt',String(Date.now()))}catch(e){}}finishStartupGate();if(error&&!items.length)showMessage(error)};
 window.onNativeFolderPicked=function(name,path){const previousPath=currentPage==='videos'?normalizeFolder(currentFolderPath):'';const nextPath=normalizeFolder(path||'');choosePage('videos');mediaContentMode='folders';videoContentModePreference='folders';groupByFolder=true;folderBrowseActive=true;folderNavigationHistory=previousPath===nextPath?['']:[previousPath];currentFolderPath=nextPath;$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';syncOptionsSelection();render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
 function applyLibraryState(raw){try{const state=typeof raw==='string'?JSON.parse(raw):raw||{};favoriteUris=new Set(Array.isArray(state.favorites)?state.favorites.filter(Boolean):[]);favoriteIdentities=new Set(Array.isArray(state.favoriteIdentities)?state.favoriteIdentities.filter(Boolean):[]);watchHistory=Array.isArray(state.history)?state.history.filter(row=>row&&row.uri).sort((a,b)=>(Number(b.lastPlayedAt)||0)-(Number(a.lastPlayedAt)||0)):[]}catch(e){favoriteUris=new Set();favoriteIdentities=new Set();watchHistory=[]}rebuildHistoryLookup();render();if(typeof renderMusicPlaylists==='function')renderMusicPlaylists()}
