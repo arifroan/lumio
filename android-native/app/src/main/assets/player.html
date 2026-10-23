@@ -912,6 +912,14 @@ function openAppearancePage(){
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page==='settings';button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  document.documentElement.scrollTop=0;
 }
+// Explicitly bind the bottom navigation so every section responds to taps.
+document.querySelectorAll('.nav-item[data-page]').forEach(button=>{
+ button.addEventListener('click',event=>{
+  event.preventDefault();
+  const page=button.dataset.page;
+  if(page)choosePage(page);
+ });
+});
 let pendingPageRender=0;
 function choosePage(page){
  if(!['videos','music','stream','settings'].includes(page))return;
