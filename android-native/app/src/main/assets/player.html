@@ -955,6 +955,15 @@ function renderFolderOverview(filtered){
  library.innerHTML=groups.map(folderOverviewRowMarkup).join('');
  bindMediaRows(library);
 }
+function folderBreadcrumbMarkup(current){
+ const parts=normalizeFolder(current).split('/').filter(Boolean);
+ let path='',crumbs='<button type="button" data-open-folder=""'+(!parts.length?' class="current" aria-current="page"':'')+'>All folders</button>';
+ for(let i=0;i<parts.length;i++){
+  path+=(path?'/':'')+parts[i];
+  crumbs+='<span class="crumb-sep" aria-hidden="true">›</span><button type="button" data-open-folder="'+escapeHtml(path)+'"'+(i===parts.length-1?' class="current" aria-current="page"':'')+'>'+escapeHtml(parts[i])+'</button>';
+ }
+ return '<div class="folder-browse-bar"><nav class="folder-breadcrumb" aria-label="Folder path">'+crumbs+'</nav><p>'+escapeHtml(folderAbsolutePath(current))+'</p></div>';
+}
 function renderFolderContents(filtered){
  const library=$('library'),current=normalizeFolder(currentFolderPath);
  currentFolderPath=current;
@@ -976,10 +985,10 @@ function renderFolderContents(filtered){
  const orderedFolders=[...folders.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'})*direction);
  const rootFoldersOnly=mediaContentMode==='folders'&&!current;
  const direct=(rootFoldersOnly?[]:directCandidates).sort(mediaComparator);
- let out='';
+ let out=current?folderBreadcrumbMarkup(current):'';
  for(const folder of orderedFolders)out+=folderOverviewRowMarkup(folder);
  for(const item of direct)out+=mediaItemMarkup(item);
- if(!out)out='<div class="empty"><div class="emptyicon">'+uiIcon('folderOpen')+'</div><strong>This folder has no matching media</strong><p>Try another folder, clear the search, or add a storage folder.</p><button id="folderEmptyBrowse" type="button">Add folder</button></div>';
+ if(!orderedFolders.length&&!direct.length)out+='<div class="empty"><div class="emptyicon">'+uiIcon('folderOpen')+'</div><strong>'+(videoSearchText?'No matching media in this folder':'No media in this folder')+'</strong><p>'+(videoSearchText?'Clear the search to see all media here.':'This location has no indexed videos. Check storage access or choose another folder.')+'</p><button id="folderEmptyBrowse" type="button">'+(videoSearchText?'Clear search':'Choose folder')+'</button></div>';
  library.innerHTML=out;
  bindMediaRows(library);
  observeThumbnails();
@@ -997,7 +1006,10 @@ function bindMediaRows(library){
   const folderButton=target.closest('[data-open-folder]');
   if(folderButton&&library.contains(folderButton)){setCurrentFolder(folderButton.dataset.openFolder);return}
   const addFolder=target.closest('#folderEmptyBrowse');
-  if(addFolder&&library.contains(addFolder)){pickFolder();return}
+  if(addFolder&&library.contains(addFolder)){
+   if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return}
+   pickFolder();return
+  }
   const row=target.closest('.file');
   if(!row||!library.contains(row))return;
   const item=findMediaByKey(row.dataset.key);
