@@ -584,9 +584,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
   </section>
 </div>
 <section class="library" id="library"><div class="empty"><div class="emptyicon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M12 8h5M12 12h5M12 16h3"/></svg></div><strong>Your story starts here</strong><p>Scan your phone or choose video files from local storage.</p><button id="emptyBrowse">Browse this device</button></div></section>
-<button class="videos-fab" id="videosFab" type="button" aria-label="Add storage folder" title="Add storage folder" hidden>
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2H18.5A2.5 2.5 0 0 1 21 9.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5z"></path><path d="M12 10.5v7M8.5 14h7"></path></svg>
-</button>
 </section>
 
 <section class="page-panel" id="streamPage" hidden>
@@ -618,9 +615,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
   </button>
   <button class="setting-row" id="settingsScan">
     <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1.7 5.2"/><path d="M20 4v7h-7"/></svg></span><span class="setting-copy"><strong>Scan phone</strong><small>Refresh the local media library</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
-  </button>
-  <button class="setting-row" id="settingsAddFolder">
-    <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6m-3-3h6"/></svg></span><span class="setting-copy"><strong>Add storage folder</strong><small>Grant persistent read access to a folder, SD card, or supported USB location</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
   </button>
   <div class="setting-card info-card" id="infoSection">
     <div class="sectionhead" style="margin:0 0 8px"><h2>Info</h2><span>Library overview</span></div>
@@ -862,9 +856,9 @@ function observeThumbnails(){
   if(thumbObserver)thumbObserver.observe(img);else requestThumbnail(img);
  });
 }
-function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function pickFolder(){safeBridge('pickFolder')} function openVault(){safeBridge('openVault')}
+function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function openVault(){safeBridge('openVault')}
 $('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
-$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('videosFab').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('settingsScan').onclick=scan;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 let searchRenderFrame=0;
 $('videoSearch').addEventListener('input',()=>{if(searchRenderFrame)cancelAnimationFrame(searchRenderFrame);searchRenderFrame=requestAnimationFrame(()=>{searchRenderFrame=0;videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()})});
@@ -1167,7 +1161,7 @@ function bindMediaRows(library){
   const addFolder=target.closest('#folderEmptyBrowse');
   if(addFolder&&library.contains(addFolder)){
    if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return}
-   pickFolder();return
+   return
   }
   const row=target.closest('.file');
   if(!row||!library.contains(row))return;
