@@ -26,6 +26,8 @@ import android.util.Base64;
 import android.util.Size;
 import android.view.Window;
 import android.widget.Toast;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
@@ -60,6 +62,7 @@ public final class MainActivity extends Activity {
     private static final int MAX_TREE_MEDIA_FILES = 10000;
     private static final int MAX_TREE_DEPTH = 32;
     private WebView webView;
+    private OnBackInvokedCallback backInvokedCallback;
     private boolean pendingScan;
     private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor();
@@ -100,7 +103,33 @@ public final class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(false);
         webView.addJavascriptInterface(new LumioBridge(), "LumioNative");
         setContentView(webView);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            backInvokedCallback = this::dispatchBackToLumio;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback);
+        }
         webView.loadUrl("file:///android_asset/player.html");
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        dispatchBackToLumio();
+    }
+
+    private void dispatchBackToLumio() {
+        WebView current = webView;
+        if (current == null) {
+            finishAfterTransition();
+            return;
+        }
+        current.evaluateJavascript(
+                "(function(){return typeof window.handleLumioBack === 'function' ? window.handleLumioBack() : false;})()",
+                result -> {
+                    if (!"true".equals(result) && !isFinishing()) {
+                        finishAfterTransition();
+                    }
+                });
     }
 
     private final class LumioBridge {
@@ -1058,6 +1087,10 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backInvokedCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+            backInvokedCallback = null;
+        }
         scanGeneration.incrementAndGet();
         scanExecutor.shutdownNow();
         thumbnailExecutor.shutdownNow();

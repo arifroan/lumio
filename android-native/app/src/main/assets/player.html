@@ -637,7 +637,7 @@ function mountChatStyleIcons(){
  });
 }
 
-let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
+let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
@@ -677,7 +677,7 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage(record.type==='audio'?'music':'videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
 window.onNativeMediaScan=function(records,error){mergeMedia(records,!error,false);if(!refreshLibraryState())render();if(error)showMessage(error);else if(!records||!records.length)showMessage('No indexed media was found yet. Use Add media or Add folder to choose storage locations.')};
-window.onNativeFolderPicked=function(name,path){choosePage('videos');mediaContentMode='folders';videoContentModePreference='folders';groupByFolder=true;folderBrowseActive=true;currentFolderPath=normalizeFolder(path||'');$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';syncOptionsSelection();render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
+window.onNativeFolderPicked=function(name,path){const previousPath=currentPage==='videos'?normalizeFolder(currentFolderPath):'';const nextPath=normalizeFolder(path||'');choosePage('videos');mediaContentMode='folders';videoContentModePreference='folders';groupByFolder=true;folderBrowseActive=true;folderNavigationHistory=previousPath===nextPath?['']:[previousPath];currentFolderPath=nextPath;$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';syncOptionsSelection();render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
 function applyLibraryState(raw){try{const state=typeof raw==='string'?JSON.parse(raw):raw||{};favoriteUris=new Set(Array.isArray(state.favorites)?state.favorites.filter(Boolean):[]);favoriteIdentities=new Set(Array.isArray(state.favoriteIdentities)?state.favoriteIdentities.filter(Boolean):[]);watchHistory=Array.isArray(state.history)?state.history.filter(row=>row&&row.uri).sort((a,b)=>(Number(b.lastPlayedAt)||0)-(Number(a.lastPlayedAt)||0)):[]}catch(e){favoriteUris=new Set();favoriteIdentities=new Set();watchHistory=[]}rebuildHistoryLookup();render()}
 window.onNativeLibraryState=function(raw){applyLibraryState(raw)};
 function refreshLibraryState(){const state=safeBridge('getLibraryState');if(state){applyLibraryState(state);return true}return false}
@@ -717,7 +717,7 @@ $('videoGroupToggle').onclick=()=>setContentMode(groupByFolder?'files':'all');
 $('searchToggle').onclick=()=>{searchExpanded=!searchExpanded;$('videoToolbar').hidden=!searchExpanded;$('searchToggle').setAttribute('aria-expanded',String(searchExpanded));if(searchExpanded){$('videoSearch').placeholder=active==='audio'?'Search music by name…':'Search videos by name…';$('videoSearch').focus()}else{videoSearchText='';$('videoSearch').value='';render()}};
 $('viewOptionsToggle').onclick=openOptions;$('optionsClose').onclick=closeOptions;
 $('optionsBackdrop').addEventListener('click',event=>{if(event.target===$('optionsBackdrop'))closeOptions()});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('optionsBackdrop').hidden)closeOptions()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&window.handleLumioBack&&window.handleLumioBack())event.preventDefault()});
 document.querySelectorAll('[data-content-mode]').forEach(button=>button.addEventListener('click',()=>setContentMode(button.dataset.contentMode)));
 document.querySelectorAll('[data-layout]').forEach(button=>button.addEventListener('click',()=>setVideoView(button.dataset.layout)));
 document.querySelectorAll('[data-sort]').forEach(button=>button.addEventListener('click',()=>setSortField(button.dataset.sort)));
@@ -737,7 +737,7 @@ function setContentMode(mode){
  mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';
  if(active==='video')videoContentModePreference=mediaContentMode;
  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
- folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
+ folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';folderNavigationHistory=[];currentFolderPath='';
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').setAttribute('aria-pressed',String(groupByFolder));
@@ -748,7 +748,7 @@ function setSortField(field){videoSort=['title','date','played','status','length
 function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'asc';syncOptionsSelection();render()}
 function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
 function choosePage(page){
- currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';
+ currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';folderNavigationHistory=[];
  if(page!=='videos'){
   if(active==='video')videoContentModePreference=mediaContentMode;
   folderBrowseActive=false;currentFolderPath='';
@@ -828,7 +828,9 @@ function mediaItemMarkup(x){
  }
  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">'+uiIcon('more')+'</button></div>';
 }
-function setCurrentFolder(path){currentFolderPath=normalizeFolder(path);render()}
+function setCurrentFolder(path){const nextPath=normalizeFolder(path),previousPath=normalizeFolder(currentFolderPath);if(nextPath===previousPath)return;if(folderNavigationHistory.length>=96)folderNavigationHistory.shift();folderNavigationHistory.push(previousPath);currentFolderPath=nextPath;render()}
+function returnToPreviousFolder(){if(!currentFolderPath)return false;currentFolderPath=normalizeFolder(folderNavigationHistory.length?folderNavigationHistory.pop():'');render();return true}
+window.handleLumioBack=function(){const options=$('optionsBackdrop');if(options&&!options.hidden){closeOptions();return true}if(currentPage!=='videos'){choosePage('videos');return true}if(searchExpanded){if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}searchExpanded=false;render();return true}if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}if(currentFolderPath)return returnToPreviousFolder();return false};
 function folderIconMarkup(){return uiIcon('folder')}
 function folderAbsolutePath(value){
  const normalized=normalizeFolder(value),parts=normalized.split('/').filter(Boolean);
@@ -979,10 +981,10 @@ function render(){
  titleEl.innerHTML=active==='audio'?'Music':(canGoUp?uiIcon('chevronLeft')+'<span>'+escapeHtml(currentParts[currentParts.length-1])+'</span>':escapeHtml(sectionTitle));
  titleEl.style.cursor=canGoUp?'pointer':'';
  titleEl.setAttribute('role',canGoUp?'button':'heading');
- titleEl.setAttribute('aria-label',canGoUp?'Go to parent folder from '+currentParts[currentParts.length-1]:sectionTitle);
+ titleEl.setAttribute('aria-label',canGoUp?'Return to previous folder from '+currentParts[currentParts.length-1]:sectionTitle);
  titleEl.tabIndex=canGoUp?0:-1;
- titleEl.onclick=canGoUp?()=>setCurrentFolder(currentParts.slice(0,-1).join('/')):null;
- titleEl.onkeydown=canGoUp?event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();setCurrentFolder(currentParts.slice(0,-1).join('/'))}}:null;
+ titleEl.onclick=canGoUp?returnToPreviousFolder:null;
+ titleEl.onkeydown=canGoUp?event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();returnToPreviousFolder()}}:null;
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=videoTotal;
  $('audioCount').textContent=audioTotal;
