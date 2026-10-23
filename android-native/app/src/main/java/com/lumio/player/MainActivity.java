@@ -935,6 +935,10 @@ public final class MainActivity extends Activity {
         columns.add(MediaStore.MediaColumns.MIME_TYPE);
         columns.add(MediaStore.MediaColumns.DATE_MODIFIED);
         columns.add(video ? MediaStore.Video.Media.DURATION : MediaStore.Audio.Media.DURATION);
+        if (!video) {
+            columns.add(MediaStore.Audio.Media.ARTIST);
+            columns.add(MediaStore.Audio.Media.ALBUM);
+        }
         if (video) {
             columns.add(MediaStore.MediaColumns.WIDTH);
             columns.add(MediaStore.MediaColumns.HEIGHT);
@@ -957,6 +961,8 @@ public final class MainActivity extends Activity {
             int pathCol = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH);
             int volumeCol = cursor.getColumnIndex(MediaStore.MediaColumns.VOLUME_NAME);
             int durationCol = cursor.getColumnIndex(video ? MediaStore.Video.Media.DURATION : MediaStore.Audio.Media.DURATION);
+            int artistCol = !video ? cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST) : -1;
+            int albumCol = !video ? cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM) : -1;
             int widthCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.WIDTH) : -1;
             int heightCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.HEIGHT) : -1;
             int frameRateCol = -1;
@@ -988,6 +994,11 @@ public final class MainActivity extends Activity {
                     entry.put("folder", folder);
                     entry.put("lastModified", dateCol >= 0 ? cursor.getLong(dateCol) * 1000L : 0L);
                     entry.put("duration", durationCol >= 0 && !cursor.isNull(durationCol) ? cursor.getLong(durationCol) : 0L);
+                    if (!video) {
+                        entry.put("artist", artistCol >= 0 && !cursor.isNull(artistCol) ? cursor.getString(artistCol) : "");
+                        entry.put("album", albumCol >= 0 && !cursor.isNull(albumCol) ? cursor.getString(albumCol) : "");
+                        entry.put("genre", "");
+                    }
                     long width = widthCol >= 0 && !cursor.isNull(widthCol) ? Math.max(0L, cursor.getLong(widthCol)) : 0L;
                     long height = heightCol >= 0 && !cursor.isNull(heightCol) ? Math.max(0L, cursor.getLong(heightCol)) : 0L;
                     double frameRate = 0d;
