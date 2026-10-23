@@ -501,30 +501,21 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 }
 
 
-/* Keep bottom navigation neutral; no selected-section indicator. */
-.bottom-nav .nav-item,
-.bottom-nav .nav-item.active,
-.bottom-nav .nav-item[aria-current="page"]{
- color:inherit!important;
- background:transparent!important;
- border-color:transparent!important;
- box-shadow:none!important;
- transform:none;
-}
+/* Keep bottom navigation neutral; hide decorative section indicators. */
+.bottom-nav .nav-item,.bottom-nav .nav-item.active,.bottom-nav .nav-item[aria-current="page"]{color:inherit!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;transform:none}
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
-
-/* LUMIO Music refresh: keep the six functional browse tabs, remove the old visual treatment */
-#musicPage .music-greeting,
-#musicPage .music-feature,
-#musicPage .music-shortcuts{display:none!important}
-#musicPage .music-browse-tabs{margin:0 0 12px;padding:5px 1px 11px;gap:22px;position:sticky;top:0;z-index:5;background:var(--bg)}
-#musicPage .music-library-header{margin:0 0 10px}
-#musicPage .music-sort-row{margin:0 0 12px}
-#musicPage .music-track-list .file{border-radius:12px}
+/* Music category-first layout: remove legacy cards and duplicate controls. */
+#musicPage .music-greeting,#musicPage .music-feature,#musicPage .music-shortcuts,#musicPage .music-library-header,#musicPage .music-sort-row{display:none!important}
+#musicPage .music-browse-tabs{display:flex;gap:22px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:8px 2px 11px;margin:0 0 12px;border-bottom:1px solid var(--music-border);position:relative;background:var(--bg);touch-action:pan-x pan-y}
+#musicPage .music-browse-tabs::-webkit-scrollbar{display:none}
+#musicPage .music-browse-tab{flex:0 0 auto;min-height:42px;padding:8px 1px 10px;touch-action:manipulation}
+#musicPage .music-browse-tab.active:after{height:2px}
+#musicPage .music-track-list .file{border-radius:0}
 #musicPage .music-group-row{width:100%;text-align:left}
 #musicPage .music-playlists-panel,#musicPage .music-search-history{margin-top:12px}
-
+#musicPage .music-playlists-panel[hidden],#musicPage .music-search-history[hidden],#musicPage #musicLibrary[hidden]{display:none!important}
+/* Horizontal category swipes preserve vertical list scrolling. */
 /* LUMIO Music: local-first browse and library experience */
 .music-experience{--music-accent:#58c7ff;--music-surface:#111b2a;--music-border:#24364b}
 .music-greeting{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:3px 0 17px}
@@ -703,7 +694,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <section class="page-panel music-experience" id="musicPage" hidden>
  <div class="music-greeting"><div><div class="music-brand"><span class="music-brand-mark">♫</span> LUMIO</div><h2 id="musicTitle">Good evening</h2><p>Music for your moment.</p></div><div class="music-header-actions"><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></div></div>
  <div class="music-feature" id="musicFeature"><div class="music-feature-copy"><span class="music-eyebrow">YOUR LIBRARY</span><strong>Every track, one place.</strong><small>Local music. Always yours.</small></div><div class="music-feature-actions"><button id="musicPlayAll" type="button">▶ Play all</button><button id="musicShuffle" type="button" aria-label="Shuffle all">⤨</button></div></div>
- <nav class="music-browse-tabs" aria-label="Browse music">
+ <nav class="music-browse-tabs" id="musicBrowseTabs" aria-label="Browse music">
   <button class="music-browse-tab active" type="button" data-music-view="all" aria-pressed="true">Songs</button>
   <button class="music-browse-tab" type="button" data-music-view="playlists" aria-pressed="false">Playlists</button>
   <button class="music-browse-tab" type="button" data-music-view="folders" aria-pressed="false">Folders</button>
@@ -1369,7 +1360,22 @@ function addToMusicPlaylist(item){if(!item)return;if(!musicPlaylists.length){sho
 function showMusicActionsMenu(item){if(!item)return;const actions=[{title:'Play',run:()=>playMusicItem(item.key)},{title:isFavorite(item)?'Remove favorite':'Add to favorites',run:()=>toggleFavorite(item)},{title:'Add to playlist',run:()=>addToMusicPlaylist(item)},{title:'File details',run:()=>safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,true,item.identity||'')}];const choice=prompt('Actions for '+item.name+'\n'+actions.map((a,i)=>(i+1)+'. '+a.title).join('\n')+'\nEnter a number:');const action=actions[Number(choice)-1];if(action)action.run()}
 function showMediaActions(item){if(!item)return;if(item.type==='audio'&&typeof showMusicActionsMenu==='function'){showMusicActionsMenu(item);return}safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,false,item.identity||'')}
 function showMusicInfo(view){if(view==='folders'){const folders=Array.from(new Set(items.filter(x=>x.type==='audio').map(x=>x.folder||'Device storage'))).sort();if(!folders.length){showMessage('No music folders were found yet.');return}const choice=prompt('Music folders\n'+folders.map((f,i)=>(i+1)+'. '+f).join('\n')+'\nEnter folder number:');const folder=folders[Number(choice)-1];if(folder){currentMusicFolder=folder;setMusicBrowseView('folders');$('musicLibraryHeading').textContent=folder;renderMusic()}}else if(['albums','artists','genres'].includes(view)){currentMusicGroup=null;setMusicBrowseView(view)}}
-function bindMusicActions(){document.querySelectorAll('[data-music-view]').forEach(b=>b.onclick=()=>{const view=b.dataset.musicView;if(['albums','artists','genres','folders'].includes(view)){showMusicInfo(view);return}setMusicBrowseView(view)});$('musicCreatePlaylist').onclick=createMusicPlaylist;$('musicCreatePlaylistPanel').onclick=createMusicPlaylist;$('musicClearSearches').onclick=()=>{musicSearches=[];saveMusicSearches();renderMusicSearches()};$('musicSearchToggle').onclick=()=>{musicSearchExpanded=!musicSearchExpanded;$('musicToolbar').hidden=!musicSearchExpanded;$('musicSearchToggle').setAttribute('aria-expanded',String(musicSearchExpanded));if(musicSearchExpanded){setMusicBrowseView('all');$('musicSearchHistory').hidden=true;$('musicLibrary').hidden=false;$('musicSearch').focus()}else{$('musicSearch').value='';musicSearchText='';$('musicSearchHistory').hidden=true;$('musicLibrary').hidden=false;renderMusic()}};$('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();if(musicSearchText){musicSearches=[$('musicSearch').value.trim(),...musicSearches.filter(x=>x.toLocaleLowerCase()!==musicSearchText)].slice(0,8);saveMusicSearches();renderMusicSearches()}$('musicSearchHistory').hidden=true;$('musicLibrary').hidden=false;renderMusic()});$('showAllMusic').onclick=()=>setMusicBrowseView('all');$('showRecentMusic').onclick=()=>setMusicBrowseView('recent');$('showFavoriteMusic').onclick=()=>setMusicBrowseView('favorites');$('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});$('musicPlayAll').onclick=()=>playMusicCollection(false);$('musicShuffle').onclick=()=>playMusicCollection(true);$('musicClearSearches').addEventListener('click',renderMusicSearches)}
+function bindMusicActions(){
+ document.querySelectorAll('[data-music-view]').forEach(b=>b.onclick=()=>setMusicBrowseView(b.dataset.musicView));
+ $('musicCreatePlaylist').onclick=createMusicPlaylist;$('musicCreatePlaylistPanel').onclick=createMusicPlaylist;
+ $('musicClearSearches').onclick=()=>{musicSearches=[];saveMusicSearches();renderMusicSearches()};
+ $('musicSearchToggle').onclick=()=>{musicSearchExpanded=!musicSearchExpanded;$('musicToolbar').hidden=!musicSearchExpanded;$('musicSearchToggle').setAttribute('aria-expanded',String(musicSearchExpanded));if(musicSearchExpanded){setMusicBrowseView('all');$('musicSearch').focus()}else{$('musicSearch').value='';musicSearchText='';renderMusic()}};
+ $('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();if(musicSearchText){musicSearches=[$('musicSearch').value.trim(),...musicSearches.filter(x=>x.toLocaleLowerCase()!==musicSearchText)].slice(0,8);saveMusicSearches()}$('musicSearchHistory').hidden=true;$('musicLibrary').hidden=false;renderMusic()});
+ $('showAllMusic').onclick=()=>setMusicBrowseView('all');$('showRecentMusic').onclick=()=>setMusicBrowseView('recent');$('showFavoriteMusic').onclick=()=>setMusicBrowseView('favorites');
+ $('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});
+ $('musicPlayAll').onclick=()=>playMusicCollection(false);$('musicShuffle').onclick=()=>playMusicCollection(true);
+ const tabs=$('musicBrowseTabs');
+ if(tabs&&!tabs.dataset.swipeBound){
+  tabs.dataset.swipeBound='true';let sx=0,sy=0,tracking=false;
+  tabs.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=true},{passive:true});
+  tabs.addEventListener('touchend',e=>{if(!tracking||!e.changedTouches.length)return;tracking=false;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.25)return;const order=['all','playlists','folders','albums','artists','genres'];const i=order.indexOf(musicBrowseView);if(i<0)return;const j=Math.max(0,Math.min(order.length-1,i+(dx<0?1:-1)));if(j!==i)setMusicBrowseView(order[j])},{passive:true});
+ }
+}
 function playMusicCollection(shuffle){let list=musicTracksForCurrentView().slice();if(!list.length)return;if(shuffle)for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}const first=list[0];selectedKey=first.key;safeBridge('playMedia',first.uri,first.name,true,JSON.stringify(list.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playMusicItem(key){const x=items.find(y=>y.key===key&&y.type==='audio');if(x){const list=musicTracksForCurrentView(),ordered=[x,...list.filter(y=>y.key!==x.key)];selectedKey=x.key;safeBridge('playMedia',x.uri,x.name,true,JSON.stringify(ordered.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}}
 function render(){
@@ -1428,17 +1434,22 @@ mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();ch
 /* LUMIO Music library upgrade: switchable collections, folder browser and playlist details. */
 let currentMusicPlaylistId='';
 function setMusicBrowseView(view){
+ const allowed=['all','playlists','folders','albums','artists','genres','recent','favorites','searches'];
+ if(!allowed.includes(view))view='all';
  musicBrowseView=view;
  if(view!=='folders')currentMusicFolder='';
  if(view!=='playlists')currentMusicPlaylistId='';
+ currentMusicGroup=null;
  musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
- $('musicPlaylistsPanel').hidden=view!=='playlists';
- $('musicSearchHistory').hidden=view!=='searches';
- $('musicLibrary').hidden=['playlists','searches','albums','artists','genres'].includes(view);
- $('musicLibraryHeading').textContent=({all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',genres:'Genres',searches:'Search history'})[view]||'Songs';
- document.querySelectorAll('[data-music-view]').forEach(b=>{const active=b.dataset.musicView===view;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+ const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel'),searches=$('musicSearchHistory');
+ if(playlists)playlists.hidden=view!=='playlists';if(searches)searches.hidden=view!=='searches';
+ if(lib)lib.hidden=['playlists','searches'].includes(view);
+ const labels={all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',genres:'Genres',searches:'Search history'};
+ const heading=$('musicLibraryHeading');if(heading)heading.textContent=labels[view]||'Songs';
+ document.querySelectorAll('.music-browse-tab').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
+ document.querySelectorAll('.music-chip').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
  if(view==='folders'){showMusicInfo('folders');return}
- if(['albums','artists','genres'].includes(view)){currentMusicGroup=null;showMusicGrouping(view,items.filter(x=>x.type==='audio'));return}
+ if(['albums','artists','genres'].includes(view)){showMusicGrouping(view,items.filter(x=>x.type==='audio'));return}
  if(view==='searches'){renderMusicSearches();return}
  renderMusic();
  if(view==='playlists')renderMusicPlaylists();
