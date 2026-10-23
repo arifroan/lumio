@@ -1183,16 +1183,18 @@ function render(){
  }
  if(active==='video'&&folderBrowseActive&&currentFolderPath){renderFolderContents(filtered);return}
  if(!items.length){
-  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Your story starts here</strong><p>Scan your phone, choose media, or add a storage folder from your phone, SD card, or a supported USB drive.</p><button id="emptyBrowse">Browse this device</button></div>';
-  $('emptyBrowse').onclick=pick;return
+  const sectionName=active==='audio'?'music':'video';
+  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>'+(active==='audio'?'Your music library is ready':'Your video library is ready')+'</strong><p>LUMIO scans your phone automatically. If your files are not listed, scan again or add selected media.</p><button id="emptyScan" type="button">Scan phone</button><button id="emptyAdd" type="button">Add media</button></div>';
+  $('emptyScan').onclick=scan;$('emptyAdd').onclick=pick;return
  }
  if(!filtered.length){
   const searching=active==='video'&&!!videoSearchText,favoritesOnly=active==='video'&&videoLibraryFilter==='favorites';
   const title=searching?'No matching videos':favoritesOnly?'No favorites yet':('No '+(active==='video'?'videos':'music')+' found');
-  const description=searching?'Try another title or clear your search.':favoritesOnly?'Mark videos with the star button to build your Favorites list.':'Choose local media or scan the device again.';
-  const buttonLabel=searching?'Clear search':favoritesOnly?'Show all videos':'Browse this device';
-  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('library')+'</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse">'+buttonLabel+'</button></div>';
-  $('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else pick()};return
+  const description=searching?'Try another title or clear your search.':favoritesOnly?'Mark videos with the star button to build your Favorites list.':'Scan your phone again, or add selected media if the files are not indexed.';
+  const buttonLabel=searching?'Clear search':favoritesOnly?'Show all videos':'Scan phone';
+  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse" type="button">'+buttonLabel+'</button>'+(searching||favoritesOnly?'':'<button id="emptyAdd" type="button">Add media</button>')+'</div>';
+  $('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else scan()};
+  const addButton=$('emptyAdd');if(addButton)addButton.onclick=pick;return
  }
  if(active==='video'&&mediaContentMode==='all')filtered.sort((a,b)=>normalizeFolder(a.folder).localeCompare(normalizeFolder(b.folder),undefined,{numeric:true,sensitivity:'base'})||mediaComparator(a,b));
  else filtered.sort(mediaComparator);
