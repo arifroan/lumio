@@ -514,6 +514,17 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
 
+/* LUMIO Music refresh: keep the six functional browse tabs, remove the old visual treatment */
+#musicPage .music-greeting,
+#musicPage .music-feature,
+#musicPage .music-shortcuts{display:none!important}
+#musicPage .music-browse-tabs{margin:0 0 12px;padding:5px 1px 11px;gap:22px;position:sticky;top:0;z-index:5;background:var(--bg)}
+#musicPage .music-library-header{margin:0 0 10px}
+#musicPage .music-sort-row{margin:0 0 12px}
+#musicPage .music-track-list .file{border-radius:12px}
+#musicPage .music-group-row{width:100%;text-align:left}
+#musicPage .music-playlists-panel,#musicPage .music-search-history{margin-top:12px}
+
 /* LUMIO Music: local-first browse and library experience */
 .music-experience{--music-accent:#58c7ff;--music-surface:#111b2a;--music-border:#24364b}
 .music-greeting{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:3px 0 17px}
@@ -957,6 +968,15 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(shouldRender)render()
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
+let lastInvisibleMusicScanRequest=0;
+function requestInvisibleMusicScan(){
+ const now=Date.now();
+ let last=0;
+ try{last=Number(localStorage.getItem('lumio.lastSuccessfulScanAt'))||0}catch(e){}
+ if(now-last<60000||now-lastInvisibleMusicScanRequest<60000)return;
+ lastInvisibleMusicScanRequest=now;
+ safeBridge('scanLocalMedia');
+}
 function finishStartupGate(){}
 window.requestNativeStartupScan=function(){safeBridge('scanLocalMedia')};
 window.onNativeMediaScan=function(records,error){mergeMedia(records,!error,false);if(!refreshLibraryState())render();if(!error){try{localStorage.setItem('lumio.lastSuccessfulScanAt',String(Date.now()))}catch(e){}}finishStartupGate();if(error&&!items.length)showMessage(error)};
@@ -1067,7 +1087,7 @@ function choosePage(page){
  }
  $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!(isMusic&&musicSearchExpanded);
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
- if(isMusic){renderMusic();if(musicBrowseView==='playlists')renderMusicPlaylists();if(musicBrowseView==='searches'){renderMusicSearches();$('musicLibrary').hidden=true;$('musicSearchHistory').hidden=false}}
+ if(isMusic){requestInvisibleMusicScan();renderMusic();if(musicBrowseView==='playlists')renderMusicPlaylists();if(musicBrowseView==='searches'){renderMusicSearches();$('musicLibrary').hidden=true;$('musicSearchHistory').hidden=false}}
  if(isMedia){
   const cached=pageRenderCache[page].get(pageCacheKey(page));
   if(cached!==undefined){library.innerHTML=cached;library.dataset.renderComplete='true';bindMediaRows(library);if(active==='video')observeThumbnails()}
