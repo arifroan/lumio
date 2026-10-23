@@ -506,16 +506,19 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
 /* Music library: one simple track list, no category tabs or decorative browse controls. */
-#musicPage .music-greeting,
-#musicPage .music-feature,
-#musicPage .music-shortcuts,
 #musicPage .music-library-header,
 #musicPage .music-sort-row,
 #musicPage .music-browse-tabs,
 #musicPage .music-chip,
+#musicPage .music-shortcut[data-music-view="albums"],
+#musicPage .music-shortcut[data-music-view="artists"],
 #musicPage .music-group-row[data-group-kind="genres"] {
  display:none!important;
 }
+/* Keep essential actions reachable while removing the broken category-tab strip. */
+#musicPage .music-greeting,
+#musicPage .music-feature,
+#musicPage .music-shortcuts {display:flex}
 #musicPage .music-browse-tabs,
 #musicPage .music-browse-tab {display:none!important}
 #musicPage .music-track-list .file{border-radius:0}
