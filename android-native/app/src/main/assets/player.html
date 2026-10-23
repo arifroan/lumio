@@ -1125,8 +1125,7 @@ function renderFolderOverview(filtered){
  const library=$('library'),groups=folderOverviewGroups(filtered);
  $('count').textContent=groups.length+' folder'+(groups.length===1?'':'s');
  if(!groups.length){
-  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('folderOpen')+'</div><strong>No video folders found</strong><p>Scan your phone or add a storage folder to browse videos by folder.</p><button id="folderOverviewScan" type="button">Scan phone</button></div>';
-  $('folderOverviewScan').onclick=scan;
+  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('folderOpen')+'</div><strong>No video folders found</strong><p>Your video folders will appear here automatically when media is available.</p></div>';
   return;
  }
  library.innerHTML=groups.map(folderOverviewRowMarkup).join('');
