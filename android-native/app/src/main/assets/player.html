@@ -516,6 +516,50 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 #musicPage .music-playlists-panel,#musicPage .music-search-history{margin-top:12px}
 #musicPage .music-playlists-panel[hidden],#musicPage .music-search-history[hidden],#musicPage #musicLibrary[hidden]{display:none!important}
 /* Horizontal category swipes preserve vertical list scrolling. */
+
+/* Porcelain theme: keep every Music component on the active global palette. */
+:root[data-theme="porcelain"] #musicPage,
+:root[data-theme="porcelain"] #musicPage .music-track-list,
+:root[data-theme="porcelain"] #musicPage .library,
+:root[data-theme="porcelain"] #musicPage .file,
+:root[data-theme="porcelain"] #musicPage .music-playlist-row,
+:root[data-theme="porcelain"] #musicPage .music-search-row,
+:root[data-theme="porcelain"] #musicPage .music-playlist-art {
+ background:var(--surface)!important;
+ color:var(--ink)!important;
+ border-color:var(--line)!important;
+}
+:root[data-theme="porcelain"] #musicPage .file-name strong,
+:root[data-theme="porcelain"] #musicPage .music-library-header h3,
+:root[data-theme="porcelain"] #musicPage .music-playlist-copy strong,
+:root[data-theme="porcelain"] #musicPage .music-search-term {
+ color:var(--ink)!important;
+}
+:root[data-theme="porcelain"] #musicPage .file-name small,
+:root[data-theme="porcelain"] #musicPage .music-library-header span,
+:root[data-theme="porcelain"] #musicPage .music-playlist-copy small,
+:root[data-theme="porcelain"] #musicPage .music-count-label {
+ color:var(--muted)!important;
+}
+:root[data-theme="porcelain"] #musicPage .file-icon,
+:root[data-theme="porcelain"] #musicPage .music-playlist-art {
+ background:var(--surface2)!important;color:var(--accent)!important;
+}
+:root[data-theme="porcelain"] #musicPage .music-favorite,
+:root[data-theme="porcelain"] #musicPage .openfile,
+:root[data-theme="porcelain"] #musicPage .music-playlist-row button,
+:root[data-theme="porcelain"] #musicPage .music-search-row button {
+ color:var(--accent)!important;
+}
+:root[data-theme="porcelain"] #musicPage .music-sort-row select,
+:root[data-theme="porcelain"] #musicPage .music-sort-row button,
+:root[data-theme="porcelain"] #musicPage .music-playlists-panel .sectionhead button,
+:root[data-theme="porcelain"] #musicPage .music-search-history .sectionhead button {
+ background:var(--surface2)!important;color:var(--ink)!important;border-color:var(--line)!important;
+}
+:root[data-theme="porcelain"] #musicPage .music-track-list .file {border-bottom:1px solid var(--line)!important}
+:root[data-theme="porcelain"] #musicPage .music-track-list {box-shadow:0 8px 28px #1823310a}
+
 /* LUMIO Music: local-first browse and library experience */
 .music-experience{--music-accent:#58c7ff;--music-surface:#111b2a;--music-border:#24364b}
 .music-greeting{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:3px 0 17px}
