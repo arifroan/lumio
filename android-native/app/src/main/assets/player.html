@@ -359,6 +359,11 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .options-close:active,.file-more:active,.openfile:active,.video-thumb-actions button:active{transform:scale(.94)}
 @media(prefers-reduced-motion:reduce){.options-close:active,.file-more:active,.openfile:active,.video-thumb-actions button:active{transform:none}}
 
+/* ChatGPT-style minimal line icon system: consistent 24px geometry and stroke. */
+.ui-icon{display:inline-block;width:21px;height:21px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.media-heading h2 .ui-icon{width:17px;height:17px;margin-right:1px;vertical-align:-2px}
+.folder-entry .folder-entry-icon .ui-icon,.folder-overview-row .folder-entry-icon .ui-icon{width:27px;height:27px;min-width:27px;max-width:27px;min-height:27px;max-height:27px}
+.option-symbol .ui-icon{width:22px;height:22px;stroke-width:1.75}
 </style></head>
 <body>
 <main>
@@ -572,12 +577,66 @@ const LUMIO_ICON_PATHS=Object.freeze({
  stream:'<path d="M5 9a10 10 0 0 0 0 6M9 6a15 15 0 0 0 0 12M15 6a15 15 0 0 1 0 12M19 9a10 10 0 0 1 0 6"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/>',
  chevronRight:'<path d="m9 5 7 7-7 7"/>',
  check:'<path d="m5 12 4.2 4.2L19 6.5"/>',
- film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v4m0 4v4m0 4v0m10-16v4m0 4v4m0 4v0M3 9h4m10 0h4M3 15h4m10 0h4"/>'
+ film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v4m0 4v4m0 4v0m10-16v4m0 4v4m0 4v0M3 9h4m10 0h4M3 15h4m10 0h4"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>',
+ slidersHorizontal:'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/><path d="M14 2v4M8 10v4M16 18v4"/>',
+ video:'<path d="m16 13 5 3V8l-5 3"/><rect x="3" y="6" width="13" height="12" rx="2"/>',
+ radio:'<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48 0a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="m19.4 15.2 1.1.8-1.6 2.8-1.3-.5a7.7 7.7 0 0 1-2 .9l-.2 1.4h-3.2l-.2-1.4a7.7 7.7 0 0 1-2-.9l-1.3.5-1.6-2.8 1.1-.8a7.5 7.5 0 0 1 0-2.4l-1.1-.8 1.6-2.8 1.3.5a7.7 7.7 0 0 1 2-.9l.2-1.4h3.2l.2 1.4a7.7 7.7 0 0 1 2 .9l1.3-.5 1.6 2.8-1.1.8a7.5 7.5 0 0 1 0 2.4z"/>',
+ fileVideo:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M10 11l5 3-5 3z"/>',
+ grid2x2:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ list:'<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
+ arrowDownAZ:'<path d="M3 6h6M3 10h4M3 14h6M16 3v18M11 16l5 5 5-5"/>',
+ calendarDays:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>',
+ history:'<path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+ circleCheck:'<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ hardDrive:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h.01M10 15h.01M14 15h.01"/>',
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+ route:'<circle cx="6" cy="19" r="3"/><path d="M9 19h5.5a3.5 3.5 0 0 0 0-7h-5a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+ gauge:'<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="M12 2v2"/>',
+ fileType:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+ chevronLeft:'<path d="m15 18-6-6 6-6"/>'
+
 });
 function uiIcon(name,extraClass=''){
  const iconName=LUMIO_ICON_PATHS[name]?name:'library';
  return '<svg class="ui-icon'+(extraClass?' '+extraClass:'')+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+LUMIO_ICON_PATHS[iconName]+'</svg>';
 }
+function mountChatStyleIcons(){
+ const put=(selector,name)=>document.querySelectorAll(selector).forEach(node=>{node.innerHTML=uiIcon(name)});
+ const putChild=(selector,name)=>document.querySelectorAll(selector).forEach(node=>{const icon=node.querySelector('svg');if(icon)icon.outerHTML=uiIcon(name)});
+ put('#searchToggle','search');
+ put('#viewOptionsToggle','slidersHorizontal');
+ put('.nav-item[data-page="videos"] .nav-icon','video');
+ put('.nav-item[data-page="music"] .nav-icon','music');
+ put('.nav-item[data-page="stream"] .nav-icon','radio');
+ put('.nav-item[data-page="settings"] .nav-icon','settings');
+ put('#videosFab','folderPlus');
+ put('#optionsClose','close');
+ put('.setting-arrow','chevronRight');
+ put('#vaultSettings .setting-icon','lock');
+ put('#settingsAdd .setting-icon','plus');
+ put('#settingsScan .setting-icon','refresh');
+ put('#settingsAddFolder .setting-icon','folderPlus');
+ put('.stream-card .emptyicon','radio');
+ putChild('.sort-direction-toggle [data-direction="asc"]','arrowUp');
+ putChild('.sort-direction-toggle [data-direction="desc"]','arrowDown');
+ putChild('#openStream','play');
+ putChild('.theme-check','check');
+ const contentModes={all:'folder',files:'fileVideo',folders:'folderOpen'};
+ const layouts={list:'list',grid:'grid2x2'};
+ const sorts={title:'arrowDownAZ',date:'calendarDays',played:'history',status:'circleCheck',length:'clock',size:'hardDrive',resolution:'monitor',path:'route',framerate:'gauge',type:'fileType'};
+ document.querySelectorAll('.option-tile').forEach(button=>{
+  let name=null;
+  if(button.dataset.contentMode)name=contentModes[button.dataset.contentMode];
+  else if(button.dataset.layout)name=layouts[button.dataset.layout];
+  else if(button.dataset.sort)name=sorts[button.dataset.sort];
+  const slot=button.querySelector('.option-symbol');
+  if(name&&slot)slot.innerHTML=uiIcon(name);
+ });
+}
+
 let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
@@ -770,9 +829,7 @@ function mediaItemMarkup(x){
  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">'+uiIcon('more')+'</button></div>';
 }
 function setCurrentFolder(path){currentFolderPath=normalizeFolder(path);render()}
-function folderIconMarkup(){
- return '<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 12a5 5 0 0 1 5-5h15l7 7h24a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"></path></svg>';
-}
+function folderIconMarkup(){return uiIcon('folder')}
 function folderAbsolutePath(value){
  const normalized=normalizeFolder(value),parts=normalized.split('/').filter(Boolean);
  if(!parts.length)return 'Storage location unavailable';
@@ -919,7 +976,7 @@ function render(){
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
  const titleEl=$('mediaTitle'),currentParts=normalizeFolder(currentFolderPath).split('/').filter(Boolean),canGoUp=active==='video'&&folderBrowseActive&&currentParts.length>0;
  const sectionTitle=active==='audio'?'Music':(folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos');
- titleEl.textContent=active==='audio'?'Music':(canGoUp?'‹ '+currentParts[currentParts.length-1]:sectionTitle);
+ titleEl.innerHTML=active==='audio'?'Music':(canGoUp?uiIcon('chevronLeft')+'<span>'+escapeHtml(currentParts[currentParts.length-1])+'</span>':escapeHtml(sectionTitle));
  titleEl.style.cursor=canGoUp?'pointer':'';
  titleEl.setAttribute('role',canGoUp?'button':'heading');
  titleEl.setAttribute('aria-label',canGoUp?'Go to parent folder from '+currentParts[currentParts.length-1]:sectionTitle);
@@ -970,4 +1027,4 @@ function render(){
 }
 function openItem(key){const x=findMediaByKey(key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=findMediaByKey(key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
-initLumioTheme();choosePage('videos');refreshLibraryState();render();setTimeout(scan,350);</script></body></html>
+mountChatStyleIcons();initLumioTheme();choosePage('videos');refreshLibraryState();render();setTimeout(scan,350);</script></body></html>
