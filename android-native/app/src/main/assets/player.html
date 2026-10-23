@@ -905,7 +905,7 @@ function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';saveViewPr
 function openAppearancePage(){
  currentPage='appearance';
  $('mediaPage').hidden=true;$('streamPage').hidden=true;$('settingsPage').hidden=true;$('appearancePage').hidden=false;
- $('appFooter').hidden=true;$('videosFab').hidden=true;$('videoToolbar').hidden=true;
+ $('appFooter').hidden=false;$('videosFab').hidden=true;$('videoToolbar').hidden=true;
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page==='settings';button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  document.documentElement.scrollTop=0;
 }
@@ -936,7 +936,7 @@ function choosePage(page){
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
   syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  // Swap to the selected tab's own cached content immediately. Never leave the
  // previous tab's rows visible while the selected tab is being refreshed.
