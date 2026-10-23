@@ -506,7 +506,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
 /* Music category-first layout: remove legacy cards and duplicate controls. */
-#musicPage .music-greeting,#musicPage .music-feature,#musicPage .music-shortcuts,#musicPage .music-library-header,#musicPage .music-sort-row{display:none!important}
+#musicPage .music-greeting,#musicPage .music-feature,#musicPage .music-shortcuts,#musicPage .music-library-header,#musicPage .music-sort-row,#musicPage .music-browse-tabs,#musicPage .music-chip{display:none!important}
 #musicPage .music-browse-tabs{display:flex;gap:22px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:8px 2px 11px;margin:0 0 12px;border-bottom:1px solid var(--music-border);position:relative;background:var(--bg);touch-action:pan-x pan-y}
 #musicPage .music-browse-tabs::-webkit-scrollbar{display:none}
 #musicPage .music-browse-tab{flex:0 0 auto;min-height:42px;padding:8px 1px 10px;touch-action:manipulation}
@@ -576,11 +576,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 
 /* Music library navigation and collection controls */
-.music-browse-tabs{display:flex;gap:24px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:8px 2px 13px;margin:2px 0 14px;border-bottom:1px solid var(--music-border)}
-.music-browse-tabs::-webkit-scrollbar{display:none}
-.music-browse-tab{position:relative;flex:0 0 auto;border:0;background:transparent;color:var(--muted);padding:8px 1px 12px;font:600 15px/1.2 "Space Grotesk",system-ui,sans-serif;white-space:nowrap}
-.music-browse-tab.active{color:var(--text);font-size:19px;font-weight:800}
-.music-browse-tab.active:after{content:"";position:absolute;height:3px;border-radius:4px;background:var(--accent);left:0;right:0;bottom:0}
 .music-library-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px}
 .music-library-tools .music-count-label{font-size:13px;color:var(--muted)}
 .music-library-tools .music-tools-actions{display:flex;gap:7px}
@@ -602,7 +597,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .music-playlist-track .music-playlist-copy strong,.music-playlist-track .music-playlist-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .music-playlist-track .music-playlist-copy small{color:var(--muted);margin-top:4px;font-size:12px}
 .music-playlist-track button{border:0;background:transparent;color:var(--muted);padding:8px}
-@media(max-width:420px){.music-browse-tabs{gap:19px}.music-browse-tab{font-size:14px}.music-browse-tab.active{font-size:18px}}
 </style></head>
 <body>
 <main>
@@ -694,13 +688,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <section class="page-panel music-experience" id="musicPage" hidden>
  <div class="music-greeting"><div><div class="music-brand"><span class="music-brand-mark">♫</span> LUMIO</div><h2 id="musicTitle">Good evening</h2><p>Music for your moment.</p></div><div class="music-header-actions"><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></div></div>
  <div class="music-feature" id="musicFeature"><div class="music-feature-copy"><span class="music-eyebrow">YOUR LIBRARY</span><strong>Every track, one place.</strong><small>Local music. Always yours.</small></div><div class="music-feature-actions"><button id="musicPlayAll" type="button">▶ Play all</button><button id="musicShuffle" type="button" aria-label="Shuffle all">⤨</button></div></div>
- <nav class="music-browse-tabs" id="musicBrowseTabs" aria-label="Browse music">
-  <button class="music-browse-tab active" type="button" data-music-view="all" aria-pressed="true">Songs</button>
-  <button class="music-browse-tab" type="button" data-music-view="playlists" aria-pressed="false">Playlists</button>
-  <button class="music-browse-tab" type="button" data-music-view="folders" aria-pressed="false">Folders</button>
-  <button class="music-browse-tab" type="button" data-music-view="albums" aria-pressed="false">Albums</button>
-  <button class="music-browse-tab" type="button" data-music-view="artists" aria-pressed="false">Artists</button>
- </nav>
  <div class="music-shortcuts" aria-label="Music categories">
   <button class="music-shortcut" type="button" data-music-view="favorites"><span class="music-shortcut-symbol">♡</span><strong>Favorites</strong><small id="favoriteMusicCount">0 tracks</small></button>
   <button class="music-shortcut" type="button" data-music-view="recent"><span class="music-shortcut-symbol">◷</span><strong>Recent</strong><small id="recentMusicCount">0 tracks</small></button>
