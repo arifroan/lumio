@@ -1,0 +1,90 @@
+name: Build Lumio Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["draft/android-player"]
+    paths:
+      - "android-native/**"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: write
+
+# Each source edit triggers CI; keep only the newest branch build running.
+concurrency:
+  group: lumio-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Check embedded player JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("android-native/app/src/main/assets/player.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected one inline player script, found {len(scripts)}")
+          Path("/tmp/lumio-player-inline.js").write_text(scripts[0], encoding="utf-8")
+          PY
+          node --check /tmp/lumio-player-inline.js
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+      # Require the persistent keystore; never publish a preview signed by a disposable runner key.
+      - name: Restore persistent Lumio preview signing key
+        env:
+          LUMIO_KEYSTORE_BASE64: ${{ secrets.LUMIO_KEYSTORE_BASE64 }}
+          LUMIO_KEYSTORE_PASSWORD: ${{ secrets.LUMIO_KEYSTORE_PASSWORD }}
+          LUMIO_KEY_ALIAS: ${{ secrets.LUMIO_KEY_ALIAS }}
+          LUMIO_KEY_PASSWORD: ${{ secrets.LUMIO_KEY_PASSWORD }}
+        run: |
+          if [ -z "$LUMIO_KEYSTORE_BASE64" ] || [ -z "$LUMIO_KEYSTORE_PASSWORD" ] || [ -z "$LUMIO_KEY_ALIAS" ] || [ -z "$LUMIO_KEY_PASSWORD" ]; then
+            echo "::error::Persistent signing is not configured. Add LUMIO_KEYSTORE_BASE64, LUMIO_KEYSTORE_PASSWORD, LUMIO_KEY_ALIAS, and LUMIO_KEY_PASSWORD under GitHub Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          printf '%s' "$LUMIO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/lumio-preview.keystore"
+          test -s "$RUNNER_TEMP/lumio-preview.keystore"
+          echo "LUMIO_KEYSTORE_PATH=$RUNNER_TEMP/lumio-preview.keystore" >> "$GITHUB_ENV"
+      - name: Build debug APK with persistent signing identity
+        working-directory: android-native
+        env:
+          LUMIO_KEYSTORE_PASSWORD: ${{ secrets.LUMIO_KEYSTORE_PASSWORD }}
+          LUMIO_KEY_ALIAS: ${{ secrets.LUMIO_KEY_ALIAS }}
+          LUMIO_KEY_PASSWORD: ${{ secrets.LUMIO_KEY_PASSWORD }}
+        run: gradle --no-daemon assembleDebug
+      - name: Report APK size
+        run: |
+          ls -lh android-native/app/build/outputs/apk/debug/app-debug.apk
+          du -b android-native/app/build/outputs/apk/debug/app-debug.apk
+      - name: Prepare direct APK download
+        run: cp android-native/app/build/outputs/apk/debug/app-debug.apk Lumio-Android-Preview.apk
+      - name: Publish direct APK download (no ZIP)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-preview
+          name: Lumio Android Preview
+          target_commitish: ${{ github.sha }}
+          body: |
+            Direct APK download for the Lumio Android preview.
+            Download Lumio-Android-Preview.apk and install it on your Android device.
+            This is an early development preview; it has not been comprehensively device-tested.
+          prerelease: true
+          make_latest: false
+          files: Lumio-Android-Preview.apk
+          overwrite_files: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
