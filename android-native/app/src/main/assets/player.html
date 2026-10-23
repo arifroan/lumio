@@ -1013,14 +1013,13 @@ function pageCacheKey(page){
 }
 function choosePage(page){
  const previousPage=currentPage,library=$('library');
- // Keep each tab's last completed view separate and cancel any pending list batches
- // before changing the selected section.
- if(previousPage==='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading')){
-  pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
- }
+ if(previousPage==='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading'))pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
  ++libraryRenderGeneration;
  const ticket=++pendingPageRender;
- if(!['videos','music','stream','settings'].includes(page))page='videos';currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos';const isMusic=page==='music';folderNavigationHistory=[];
+ if(!['videos','music','stream','settings'].includes(page))page='videos';
+ currentPage=page;active=page==='music'?'audio':'video';
+ const isMedia=page==='videos',isMusic=page==='music';
+ folderNavigationHistory=[];
  if(page!=='videos'){
   if(active==='video')videoContentModePreference=mediaContentMode;
   folderBrowseActive=false;currentFolderPath='';
@@ -1030,28 +1029,15 @@ function choosePage(page){
  }else{
   mediaContentMode=videoContentModePreference||'folders';
   folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
-  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
-  syncOptionsSelection();
+  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';syncOptionsSelection();
  }
  $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!(isMusic&&musicSearchExpanded);
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
- // Swap to the selected tab's own cached content immediately. Never leave the
- // previous tab's rows visible while the selected tab is being refreshed.
- if(isMusic){renderMusic();}
+ if(isMusic){renderMusic();if(musicBrowseView==='playlists')renderMusicPlaylists();if(musicBrowseView==='searches'){renderMusicSearches();$('musicLibrary').hidden=true;$('musicSearchHistory').hidden=false}}
  if(isMedia){
   const cached=pageRenderCache[page].get(pageCacheKey(page));
-  if(cached!==undefined){
-   // A valid cached view is already rendered. Do not immediately run the
-   // expensive filter/sort/folder pass again; that defeats the cache.
-   library.innerHTML=cached;
-   library.dataset.renderComplete='true';
-   bindMediaRows(library);
-   if(active==='video')observeThumbnails();
-  }else{
-   library.dataset.renderComplete='false';
-    library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Loading videos…</strong><p>Preparing your media list.</p></div>';
-   requestAnimationFrame(()=>setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},16));
-  }
+  if(cached!==undefined){library.innerHTML=cached;library.dataset.renderComplete='true';bindMediaRows(library);if(active==='video')observeThumbnails()}
+  else{library.dataset.renderComplete='false';library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Loading videos…</strong><p>Preparing your media list.</p></div>';requestAnimationFrame(()=>setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},16))}
  }
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
