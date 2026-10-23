@@ -1369,6 +1369,15 @@ function bindMusicActions(){
  $('showAllMusic').onclick=()=>setMusicBrowseView('all');$('showRecentMusic').onclick=()=>setMusicBrowseView('recent');$('showFavoriteMusic').onclick=()=>setMusicBrowseView('favorites');
  $('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});
  $('musicPlayAll').onclick=()=>playMusicCollection(false);$('musicShuffle').onclick=()=>playMusicCollection(true);
+
+ /* Swipe the Music content area like a native player; preserve vertical scroll and controls. */
+ const swipeSurface=$('musicPage');
+ if(swipeSurface&&!swipeSurface.dataset.contentSwipeBound){
+  swipeSurface.dataset.contentSwipeBound='true';let sx=0,sy=0,eligible=false;
+  swipeSurface.addEventListener('touchstart',e=>{eligible=false;if(e.touches.length!==1)return;const t=e.target;if(t.closest('button,input,select,textarea,a,[contenteditable="true"],.music-browse-tabs'))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;eligible=true},{passive:true});
+  swipeSurface.addEventListener('touchend',e=>{if(!eligible||!e.changedTouches.length)return;eligible=false;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.35)return;const order=['all','playlists','folders','albums','artists','genres'];const i=order.indexOf(musicBrowseView);if(i<0)return;const j=Math.max(0,Math.min(order.length-1,i+(dx<0?1:-1)));if(j!==i)setMusicBrowseView(order[j])},{passive:true});
+ }
+
  const tabs=$('musicBrowseTabs');
  if(tabs&&!tabs.dataset.swipeBound){
   tabs.dataset.swipeBound='true';let sx=0,sy=0,tracking=false;
@@ -1442,18 +1451,19 @@ function setMusicBrowseView(view){
  currentMusicGroup=null;
  musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
  const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel'),searches=$('musicSearchHistory');
- if(playlists)playlists.hidden=view!=='playlists';if(searches)searches.hidden=view!=='searches';
+ if(playlists)playlists.hidden=view!=='playlists';
+ if(searches)searches.hidden=view!=='searches';
  if(lib)lib.hidden=['playlists','searches'].includes(view);
  const labels={all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',genres:'Genres',searches:'Search history'};
  const heading=$('musicLibraryHeading');if(heading)heading.textContent=labels[view]||'Songs';
- document.querySelectorAll('.music-browse-tab').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
- document.querySelectorAll('.music-chip').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
- if(view==='folders'){showMusicInfo('folders');return}
+ document.querySelectorAll('#musicPage [data-music-view]').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
  if(['albums','artists','genres'].includes(view)){showMusicGrouping(view,items.filter(x=>x.type==='audio'));return}
  if(view==='searches'){renderMusicSearches();return}
+ if(view==='folders'){showMusicInfo('folders');return}
  renderMusic();
  if(view==='playlists')renderMusicPlaylists();
 }
+
 function showMusicInfo(view){
  if(view!=='folders')return;
  const tracks=items.filter(x=>x.type==='audio');
@@ -1476,9 +1486,13 @@ function showMusicInfo(view){
  const scan=$('musicEmptyScan');if(scan)scan.onclick=()=>safeBridge('scanLocalMedia');
 }
 function renderMusic(){
- lumioBaseRenderMusic();
  if(musicBrowseView==='folders'){showMusicInfo('folders');return}
+ if(['albums','artists','genres'].includes(musicBrowseView)){showMusicGrouping(musicBrowseView,items.filter(x=>x.type==='audio'));return}
+ lumioBaseRenderMusic();
+ if(musicBrowseView==='playlists'){const lib=$('musicLibrary');if(lib)lib.hidden=true;renderMusicPlaylists()}
+ if(musicBrowseView==='searches'){const lib=$('musicLibrary');if(lib)lib.hidden=true;renderMusicSearches()}
 }
+
 function renderMusicPlaylists(){
  const box=$('musicPlaylistsList');if(!box)return;
  if(currentMusicPlaylistId){
