@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#071321" android:pathData="M0,0h108v108h-108z"/>
-    <path android:fillColor="#0B1D30" android:pathData="M12,12h84v84h-84z"/>
-    <path android:fillColor="#35C8FF" android:pathData="M54,19a26,26 0,1 0,26 26h-9a17,17 0,1 1,-17 -17z"/>
-    <path android:fillColor="#F5FBFF" android:pathData="M54,31a14,14 0,0 0,-14 14v18a14,14 0,0 0,28 0v-5h-9v5a5,5 0,0 1,-10 0v-18a5,5 0,0 1,5 -5z"/>
-    <path android:fillColor="#35C8FF" android:pathData="M56,12h-4v32h4z"/>
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Transparent adaptive foreground: the navy field is supplied by the icon background. -->
+    <!-- Cyan open ring, matching the LUMIO mark rather than a generic power symbol. -->
+    <path android:fillColor="#32C8FF"
+        android:pathData="M54,12 A42,42 0,1 0,96 54 L76,54 A22,22 0,1 1,54 32 Z"/>
+    <!-- Open the right side of the ring cleanly. -->
+    <path android:fillColor="#07182A" android:pathData="M65,8 L108,8 L108,57 L76,57 L76,47 L65,47 Z"/>
+    <!-- White L/U monogram from the LUMIO identity. -->
+    <path android:fillColor="#F5FBFF"
+        android:pathData="M42,18 L55,18 L55,62 C55,69 59,73 65,73 L72,73 L72,87 L64,87 C49,87 42,78 42,63 Z"/>
+    <path android:fillColor="#32C8FF"
+        android:pathData="M72,73 L91,73 C89,88 78,97 63,97 L57,97 L57,83 L63,83 C68,83 71,79 72,73 Z"/>
 </vector>
