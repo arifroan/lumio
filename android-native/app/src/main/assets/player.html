@@ -319,6 +319,11 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .nav-item .nav-icon svg{width:24px;height:24px;stroke-width:1.85}
 .nav-item.active{color:var(--accent);background:var(--accent-soft);border-color:var(--line)}
 .appearance-sectionhead{margin:22px 2px 10px}
+.appearance-pagehead{margin:6px 2px 14px;align-items:center}
+.appearance-page-title{display:flex;align-items:center;gap:8px;min-width:0}
+.appearance-page-title h2{margin:0}
+.appearance-back{width:38px;height:38px;flex:0 0 38px;padding:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.setting-theme-summary{max-width:88px;flex:0 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appearance-card{padding:15px}
 .appearance-description{margin:0 1px 13px;color:var(--muted);font-size:12px;line-height:1.45}
 .appearance-status{flex:0 0 auto;padding:5px 8px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);color:var(--accent);font-size:10px;font-weight:800}
@@ -351,6 +356,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .setting-arrow{display:grid;place-items:center}
 .setting-arrow .ui-icon{width:18px;height:18px}
 .theme-check .ui-icon{width:17px;height:17px;stroke-width:2.2}
+@media(max-width:380px){.setting-theme-summary{max-width:65px;font-size:9px}.appearance-page-title{gap:5px}.appearance-back{width:34px;height:34px;flex-basis:34px}}
 .emptyicon .ui-icon{width:27px;height:27px;stroke-width:1.75}
 .thumb-fallback .ui-icon,.history-thumb-fallback .ui-icon{width:24px;height:24px;stroke-width:1.7}
 .video-thumb-actions button .ui-icon,.history-card .file-more .ui-icon,.file-more .ui-icon,.openfile .ui-icon{width:17px;height:17px;stroke-width:1.9}
@@ -470,19 +476,12 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 <section class="page-panel" id="settingsPage" hidden>
   <div class="sectionhead"><h2>Settings</h2><span>Manage Lumio</span></div>
-  <div class="sectionhead appearance-sectionhead"><h2>Appearance</h2><span class="appearance-status" id="activeThemeName">Obsidian</span></div>
-  <div class="setting-card appearance-card" id="appearanceSection">
-    <p class="appearance-description">Choose the colors used across your library and player.</p>
-    <div class="theme-grid" id="themeGrid" role="group" aria-label="Color theme">
-      <button class="theme-option active" type="button" data-theme-choice="obsidian" aria-pressed="true"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1016"></i><i style="background:#18232e"></i><i style="background:#69b4ff"></i></span><span class="theme-option-copy"><strong>Obsidian</strong><small>Graphite · Blue</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-      <button class="theme-option" type="button" data-theme-choice="midnight" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0a0b16"></i><i style="background:#1b2040"></i><i style="background:#a99bff"></i></span><span class="theme-option-copy"><strong>Midnight</strong><small>Navy · Violet</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-      <button class="theme-option" type="button" data-theme-choice="mint" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1512"></i><i style="background:#1b2d25"></i><i style="background:#79e0b0"></i></span><span class="theme-option-copy"><strong>Mint</strong><small>Forest · Mint</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-      <button class="theme-option" type="button" data-theme-choice="ember" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#17100d"></i><i style="background:#30201a"></i><i style="background:#ffb66b"></i></span><span class="theme-option-copy"><strong>Ember</strong><small>Espresso · Amber</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-      <button class="theme-option" type="button" data-theme-choice="porcelain" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#f3f5f8"></i><i style="background:#ffffff"></i><i style="background:#276ef1"></i></span><span class="theme-option-copy"><strong>Porcelain</strong><small>Soft light · Blue</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-      <button class="theme-option" type="button" data-theme-choice="mono" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#090909"></i><i style="background:#242424"></i><i style="background:#f2f2f2"></i></span><span class="theme-option-copy"><strong>Mono</strong><small>Black · White</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
-    </div>
-    <p class="appearance-footnote">Saved on this device. Works offline.</p>
-  </div>
+  <button class="setting-row" id="appearanceSettings" type="button">
+    <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/><path d="M14 2v4M8 10v4M16 18v4"/></svg></span>
+    <span class="setting-copy"><strong>Appearance</strong><small>Theme, colors and visual style</small></span>
+    <span class="appearance-status setting-theme-summary" id="appearanceSettingSummary">Obsidian</span>
+    <span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
+  </button>
   <button class="setting-row" id="vaultSettings">
     <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="setting-copy"><strong>Private Vault</strong><small>Open your protected local media</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
   </button>
@@ -509,6 +508,29 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
     <p style="margin:5px 0 0;color:var(--muted);font-size:12px">Your local library stays on this device. Stream URLs are opened directly by the media player.</p>
   </div>
 </section>
+
+<section class="page-panel appearance-page" id="appearancePage" hidden>
+  <div class="sectionhead appearance-pagehead">
+    <div class="appearance-page-title">
+      <button class="icon-button appearance-back" id="appearanceBack" type="button" aria-label="Back to Settings"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M20 12H9"/></svg></button>
+      <h2>Appearance</h2>
+    </div>
+    <span class="appearance-status" id="activeThemeName">Obsidian</span>
+  </div>
+  <div class="setting-card appearance-card" id="appearanceSection">
+    <p class="appearance-description">Choose the colors used across your library and player.</p>
+    <div class="theme-grid" id="themeGrid" role="group" aria-label="Color theme">
+      <button class="theme-option active" type="button" data-theme-choice="obsidian" aria-pressed="true"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1016"></i><i style="background:#18232e"></i><i style="background:#69b4ff"></i></span><span class="theme-option-copy"><strong>Obsidian</strong><small>Graphite · Blue</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+      <button class="theme-option" type="button" data-theme-choice="midnight" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0a0b16"></i><i style="background:#1b2040"></i><i style="background:#a99bff"></i></span><span class="theme-option-copy"><strong>Midnight</strong><small>Navy · Violet</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+      <button class="theme-option" type="button" data-theme-choice="mint" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#0b1512"></i><i style="background:#1b2d25"></i><i style="background:#79e0b0"></i></span><span class="theme-option-copy"><strong>Mint</strong><small>Forest · Mint</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+      <button class="theme-option" type="button" data-theme-choice="ember" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#17100d"></i><i style="background:#30201a"></i><i style="background:#ffb66b"></i></span><span class="theme-option-copy"><strong>Ember</strong><small>Espresso · Amber</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+      <button class="theme-option" type="button" data-theme-choice="porcelain" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#f3f5f8"></i><i style="background:#ffffff"></i><i style="background:#276ef1"></i></span><span class="theme-option-copy"><strong>Porcelain</strong><small>Soft light · Blue</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+      <button class="theme-option" type="button" data-theme-choice="mono" aria-pressed="false"><span class="theme-palette" aria-hidden="true"><i style="background:#090909"></i><i style="background:#242424"></i><i style="background:#f2f2f2"></i></span><span class="theme-option-copy"><strong>Mono</strong><small>Black · White</small></span><span class="theme-check" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg></span></button>
+    </div>
+    <p class="appearance-footnote">Saved on this device. Works offline.</p>
+  </div>
+</section>
+
 
 <div class="footer" id="appFooter"><span class="privacydot"></span><span>OFFLINE FIRST · NO ACCOUNT · NO UPLOADS</span></div>
 </main>
@@ -548,6 +570,7 @@ function applyLumioTheme(themeName,save=true){
   button.setAttribute('aria-pressed',String(current));
  });
  const label=$('activeThemeName');if(label)label.textContent=meta.name;
+ const summary=$('appearanceSettingSummary');if(summary)summary.textContent=meta.name;
  if(save){try{localStorage.setItem('lumio-theme-v1',selected)}catch(e){}}
 }
 function initLumioTheme(){
@@ -563,6 +586,7 @@ const LUMIO_ICON_PATHS=Object.freeze({
  play:'<path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/>',
  refresh:'<path d="M20 11a8 8 0 1 0 1.7 5.2"/><path d="M20 4v7h-7"/>',
  close:'<path d="m6 6 12 12M18 6 6 18"/>',
+ arrowLeft:'<path d="m15 18-6-6 6-6"/><path d="M20 12H9"/>',
  arrowUp:'<path d="M12 19V5M6 11l6-6 6 6"/>',
  arrowDown:'<path d="M12 5v14m-6-6 6 6 6-6"/>',
  star:'<path d="m12 3.4 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
@@ -616,6 +640,8 @@ function mountChatStyleIcons(){
  put('#videosFab','folderPlus');
  put('#optionsClose','close');
  put('.setting-arrow','chevronRight');
+ put('#appearanceSettings .setting-icon','slidersHorizontal');
+ put('#appearanceBack','arrowLeft');
  put('#vaultSettings .setting-icon','lock');
  put('#settingsAdd .setting-icon','plus');
  put('#settingsScan .setting-icon','refresh');
@@ -708,7 +734,8 @@ function observeThumbnails(){
  });
 }
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function pickFolder(){safeBridge('pickFolder')} function openVault(){safeBridge('openVault')}
-$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('videosFab').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('scanAgain').onclick=scan;$('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
+$('settingsScan').onclick=scan;$('settingsAddFolder').onclick=pickFolder;$('addFolderButton').onclick=pickFolder;$('videosFab').onclick=pickFolder;$('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 let searchRenderFrame=0;
 $('videoSearch').addEventListener('input',()=>{if(searchRenderFrame)cancelAnimationFrame(searchRenderFrame);searchRenderFrame=requestAnimationFrame(()=>{searchRenderFrame=0;videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()})});
@@ -748,6 +775,13 @@ function setContentMode(mode){
 function setSortField(field){videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(field)?field:'title';syncOptionsSelection();render()}
 function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'asc';syncOptionsSelection();render()}
 function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
+function openAppearancePage(){
+ currentPage='appearance';
+ $('mediaPage').hidden=true;$('streamPage').hidden=true;$('settingsPage').hidden=true;$('appearancePage').hidden=false;
+ $('appFooter').hidden=true;$('videosFab').hidden=true;$('videoToolbar').hidden=true;
+ document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page==='settings';button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+ document.documentElement.scrollTop=0;
+}
 function choosePage(page){
  currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';folderNavigationHistory=[];
  if(page!=='videos'){
@@ -762,7 +796,7 @@ function choosePage(page){
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
   syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
@@ -831,7 +865,7 @@ function mediaItemMarkup(x){
 }
 function setCurrentFolder(path){const nextPath=normalizeFolder(path),previousPath=normalizeFolder(currentFolderPath);if(nextPath===previousPath)return;if(folderNavigationHistory.length>=96)folderNavigationHistory.shift();folderNavigationHistory.push(previousPath);currentFolderPath=nextPath;render()}
 function returnToPreviousFolder(){if(!currentFolderPath)return false;currentFolderPath=normalizeFolder(folderNavigationHistory.length?folderNavigationHistory.pop():'');render();return true}
-window.handleLumioBack=function(){const options=$('optionsBackdrop');if(options&&!options.hidden){closeOptions();return true}if(currentPage!=='videos'){choosePage('videos');return true}if(searchExpanded){if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}searchExpanded=false;render();return true}if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}if(currentFolderPath)return returnToPreviousFolder();return false};
+window.handleLumioBack=function(){const options=$('optionsBackdrop');if(options&&!options.hidden){closeOptions();return true}if(currentPage==='appearance'){choosePage('settings');return true}if(currentPage!=='videos'){choosePage('videos');return true}if(searchExpanded){if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}searchExpanded=false;render();return true}if(videoSearchText){videoSearchText='';$('videoSearch').value='';render();return true}if(currentFolderPath)return returnToPreviousFolder();return false};
 function folderIconMarkup(){return uiIcon('folder')}
 function folderAbsolutePath(value){
  const normalized=normalizeFolder(value),parts=normalized.split('/').filter(Boolean);
