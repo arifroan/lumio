@@ -788,7 +788,10 @@ function mountChatStyleIcons(){
  });
 }
 
-let items=[],active='video',selectedKey=null,currentPage='videos',videoSort='title',videoViewMode='grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode='folders',videoContentModePreference='folders',sortDirection='asc',searchExpanded=false;
+function readViewPreferences(){try{const raw=localStorage.getItem('lumio.viewPreferences');const value=raw?JSON.parse(raw):{};return value&&typeof value==='object'?value:{}}catch(e){return {}}}
+const savedViewPreferences=readViewPreferences();
+function saveViewPreferences(){try{localStorage.setItem('lumio.viewPreferences',JSON.stringify({videoSort,videoViewMode,sortDirection,mediaContentMode}))}catch(e){}}
+let items=[],active='video',selectedKey=null,currentPage='videos',videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='list'?'list':'grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'folders',videoContentModePreference='folders',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
@@ -879,16 +882,18 @@ document.querySelectorAll('[data-direction]').forEach(button=>button.addEventLis
 $('showAllVideos').onclick=()=>setVideoLibraryFilter('all');$('showFavoriteVideos').onclick=()=>setVideoLibraryFilter('favorites');
 function setVideoLibraryFilter(filter){videoLibraryFilter=filter;$('showAllVideos').classList.toggle('active',filter==='all');$('showFavoriteVideos').classList.toggle('active',filter==='favorites');$('showAllVideos').setAttribute('aria-pressed',String(filter==='all'));$('showFavoriteVideos').setAttribute('aria-pressed',String(filter==='favorites'));render()}
 function syncOptionsSelection(){
- document.querySelectorAll('[data-content-mode]').forEach(button=>button.classList.toggle('active',button.dataset.contentMode===mediaContentMode));
- document.querySelectorAll('[data-layout]').forEach(button=>button.classList.toggle('active',button.dataset.layout===videoViewMode));
- document.querySelectorAll('[data-sort]').forEach(button=>button.classList.toggle('active',button.dataset.sort===videoSort));
- document.querySelectorAll('[data-direction]').forEach(button=>button.classList.toggle('active',button.dataset.direction===sortDirection));
+ document.querySelectorAll('[data-content-mode]').forEach(button=>{const selected=button.dataset.contentMode===mediaContentMode;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});
+ document.querySelectorAll('[data-layout]').forEach(button=>{const selected=button.dataset.layout===videoViewMode;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});
+ document.querySelectorAll('[data-sort]').forEach(button=>{const selected=button.dataset.sort===videoSort;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});
+ document.querySelectorAll('[data-direction]').forEach(button=>{const selected=button.dataset.direction===sortDirection;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});
+ const ascending=$('.sort-direction-toggle [data-direction="asc"] span'),descending=$('.sort-direction-toggle [data-direction="desc"] span');
+ if(ascending&&descending){const titleSort=videoSort==='title'||videoSort==='path'||videoSort==='type';ascending.textContent=videoSort==='title'?'A to Z':(videoSort==='date'||videoSort==='played'?'Oldest first':videoSort==='status'?'Less watched':titleSort?'Ascending':'Lowest first');descending.textContent=videoSort==='title'?'Z to A':(videoSort==='date'||videoSort==='played'?'Newest first':videoSort==='status'?'Completed first':titleSort?'Descending':'Highest first')}
  $('videoSort').value=videoSort;
 }
 function openOptions(){syncOptionsSelection();$('optionsBackdrop').hidden=false;$('optionsClose').focus()}
 function closeOptions(){$('optionsBackdrop').hidden=true;$('viewOptionsToggle').focus()}
 function setContentMode(mode){
- mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';
+ mediaContentMode=['all','files','folders'].includes(mode)?mode:'all';saveViewPreferences();
  if(active==='video')videoContentModePreference=mediaContentMode;
  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
  folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';folderNavigationHistory=[];currentFolderPath='';
@@ -898,9 +903,9 @@ function setContentMode(mode){
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
  syncOptionsSelection();render();
 }
-function setSortField(field){videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(field)?field:'title';syncOptionsSelection();render()}
-function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'asc';syncOptionsSelection();render()}
-function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
+function setSortField(field){videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(field)?field:'title';saveViewPreferences();syncOptionsSelection();render()}
+function setSortDirection(direction){sortDirection=direction==='desc'?'desc':'asc';saveViewPreferences();syncOptionsSelection();render()}
+function setVideoView(mode){videoViewMode=mode==='list'?'list':'grid';saveViewPreferences();$('videoGridView').classList.toggle('active',videoViewMode==='grid');$('videoListView').classList.toggle('active',videoViewMode==='list');$('videoGridView').setAttribute('aria-pressed',String(videoViewMode==='grid'));$('videoListView').setAttribute('aria-pressed',String(videoViewMode==='list'));syncOptionsSelection();render()}
 function openAppearancePage(){
  currentPage='appearance';
  $('mediaPage').hidden=true;$('streamPage').hidden=true;$('settingsPage').hidden=true;$('appearancePage').hidden=false;
@@ -981,8 +986,9 @@ function mediaComparator(a,b){
   case 'title':default:va=String(a.name||'').toLocaleLowerCase();vb=String(b.name||'').toLocaleLowerCase();
  }
  if(typeof va==='string')result=va.localeCompare(vb,undefined,{numeric:true,sensitivity:'base'});else result=va-vb;
- if(result!==0)return result*(sortDirection==='asc'?1:-1);
- return String(a.name||'').localeCompare(String(b.name||''),undefined,{numeric:true,sensitivity:'base'});
+ const direction=sortDirection==='asc'?1:-1;
+  if(result!==0)return result*direction;
+  return String(a.name||'').localeCompare(String(b.name||''),undefined,{numeric:true,sensitivity:'base'})*direction;
 }
 function resolutionPixels(value){const match=String(value||'').match(/(\d{3,5})\s*[x×]\s*(\d{3,5})/i);return match?Number(match[1])*Number(match[2]):0}
 function isLocalVideoHistory(row){const uri=String(row&&row.uri||'');return !!uri&&!row.isAudio&&(uri.startsWith('content://')||uri.startsWith('file://'))}
