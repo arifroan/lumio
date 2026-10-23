@@ -505,60 +505,84 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item,.bottom-nav .nav-item.active,.bottom-nav .nav-item[aria-current="page"]{color:inherit!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;transform:none}
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
-/* Music category-first layout: remove legacy cards and duplicate controls. */
-#musicPage .music-greeting,#musicPage .music-feature,#musicPage .music-shortcuts,#musicPage .music-library-header,#musicPage .music-sort-row,#musicPage .music-browse-tabs,#musicPage .music-chip{display:none!important}
-#musicPage .music-browse-tabs{display:flex;gap:22px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:8px 2px 11px;margin:0 0 12px;border-bottom:1px solid var(--music-border);position:relative;background:var(--bg);touch-action:pan-x pan-y}
-#musicPage .music-browse-tabs::-webkit-scrollbar{display:none}
-#musicPage .music-browse-tab{flex:0 0 auto;min-height:42px;padding:8px 1px 10px;touch-action:manipulation}
-#musicPage .music-browse-tab.active:after{height:2px}
+/* Music library: one simple track list, no category tabs or decorative browse controls. */
+#musicPage .music-greeting,
+#musicPage .music-feature,
+#musicPage .music-shortcuts,
+#musicPage .music-library-header,
+#musicPage .music-sort-row,
+#musicPage .music-browse-tabs,
+#musicPage .music-chip,
+#musicPage .music-group-row[data-group-kind="genres"] {
+ display:none!important;
+}
+#musicPage .music-browse-tabs,
+#musicPage .music-browse-tab {display:none!important}
 #musicPage .music-track-list .file{border-radius:0}
 #musicPage .music-group-row{width:100%;text-align:left}
 #musicPage .music-playlists-panel,#musicPage .music-search-history{margin-top:12px}
 #musicPage .music-playlists-panel[hidden],#musicPage .music-search-history[hidden],#musicPage #musicLibrary[hidden]{display:none!important}
-/* Horizontal category swipes preserve vertical list scrolling. */
 
-/* Porcelain theme: keep every Music component on the active global palette. */
-:root[data-theme="porcelain"] #musicPage,
-:root[data-theme="porcelain"] #musicPage .music-track-list,
-:root[data-theme="porcelain"] #musicPage .library,
-:root[data-theme="porcelain"] #musicPage .file,
-:root[data-theme="porcelain"] #musicPage .music-playlist-row,
-:root[data-theme="porcelain"] #musicPage .music-search-row,
-:root[data-theme="porcelain"] #musicPage .music-playlist-art {
+/* Music surfaces and controls must always use the active app theme tokens. */
+#musicPage .music-track-list,
+#musicPage .library,
+#musicPage .file,
+#musicPage .music-playlist-row,
+#musicPage .music-search-row,
+#musicPage .music-playlist-art,
+#musicPage .music-search-history,
+#musicPage .music-playlists-panel {
  background:var(--surface)!important;
  color:var(--ink)!important;
  border-color:var(--line)!important;
 }
-:root[data-theme="porcelain"] #musicPage .file-name strong,
-:root[data-theme="porcelain"] #musicPage .music-library-header h3,
-:root[data-theme="porcelain"] #musicPage .music-playlist-copy strong,
-:root[data-theme="porcelain"] #musicPage .music-search-term {
+#musicPage .file-name strong,
+#musicPage .music-library-header h3,
+#musicPage .music-playlist-copy strong,
+#musicPage .music-search-term,
+#musicPage .music-search-row,
+#musicPage .music-playlist-row {
  color:var(--ink)!important;
 }
-:root[data-theme="porcelain"] #musicPage .file-name small,
-:root[data-theme="porcelain"] #musicPage .music-library-header span,
-:root[data-theme="porcelain"] #musicPage .music-playlist-copy small,
-:root[data-theme="porcelain"] #musicPage .music-count-label {
+#musicPage .file-name small,
+#musicPage .music-library-header span,
+#musicPage .music-playlist-copy small,
+#musicPage .music-count-label,
+#musicPage .music-search-history .sectionhead h3 {
  color:var(--muted)!important;
 }
-:root[data-theme="porcelain"] #musicPage .file-icon,
-:root[data-theme="porcelain"] #musicPage .music-playlist-art {
- background:var(--surface2)!important;color:var(--accent)!important;
-}
-:root[data-theme="porcelain"] #musicPage .music-favorite,
-:root[data-theme="porcelain"] #musicPage .openfile,
-:root[data-theme="porcelain"] #musicPage .music-playlist-row button,
-:root[data-theme="porcelain"] #musicPage .music-search-row button {
+#musicPage .file-icon,
+#musicPage .music-playlist-art {
+ background:var(--surface2)!important;
  color:var(--accent)!important;
 }
-:root[data-theme="porcelain"] #musicPage .music-sort-row select,
-:root[data-theme="porcelain"] #musicPage .music-sort-row button,
-:root[data-theme="porcelain"] #musicPage .music-playlists-panel .sectionhead button,
-:root[data-theme="porcelain"] #musicPage .music-search-history .sectionhead button {
- background:var(--surface2)!important;color:var(--ink)!important;border-color:var(--line)!important;
+#musicPage .music-favorite,
+#musicPage .openfile,
+#musicPage .music-playlist-row button,
+#musicPage .music-search-row button {
+ color:var(--accent)!important;
 }
-:root[data-theme="porcelain"] #musicPage .music-track-list .file {border-bottom:1px solid var(--line)!important}
-:root[data-theme="porcelain"] #musicPage .music-track-list {box-shadow:0 8px 28px #1823310a}
+#musicPage .music-sort-row select,
+#musicPage .music-sort-row button,
+#musicPage .music-playlists-panel .sectionhead button,
+#musicPage .music-search-history .sectionhead button {
+ background:var(--surface2)!important;
+ color:var(--ink)!important;
+ border-color:var(--line)!important;
+}
+#musicPage .music-track-list .file {border-bottom:1px solid var(--line)!important}
+#musicPage .music-track-list {box-shadow:0 8px 28px #1823310a}
+#musicPage .music-search-row input,
+#musicPage .music-search-row select {
+ background:var(--surface2)!important;
+ color:var(--ink)!important;
+ border-color:var(--line)!important;
+}
+#musicPage .music-search-row input::placeholder {color:var(--muted)!important}
+#musicPage .music-track-list .empty {background:var(--surface)!important;color:var(--muted)!important}
+#musicPage button:focus-visible,
+#musicPage input:focus-visible,
+#musicPage select:focus-visible {outline:2px solid var(--accent)!important;outline-offset:2px}
 
 /* LUMIO Music: local-first browse and library experience */
 .music-experience{--music-accent:#58c7ff;--music-surface:#111b2a;--music-border:#24364b}
