@@ -565,8 +565,10 @@ public final class MainActivity extends Activity {
         final boolean completeMediaStoreAccess = canReadVideo() && canReadAudio();
         scanExecutor.execute(() -> {
             JSONArray array = new JSONArray();
-            if (canReadVideo()) appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
-            if (canReadAudio()) appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
+            boolean videoScanFailed = canReadVideo()
+                    && !appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
+            boolean audioScanFailed = canReadAudio()
+                    && !appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
 
             int[] treeCount = new int[]{0};
             boolean treesComplete = appendSavedTreeMedia(array, treeCount);
@@ -577,6 +579,15 @@ public final class MainActivity extends Activity {
             }
 
             String warning = null;
+            if (videoScanFailed || audioScanFailed) {
+                if (videoScanFailed && audioScanFailed) {
+                    warning = "Android could not read the video or music library. Try Browse this device or Add folder, then scan again.";
+                } else if (videoScanFailed) {
+                    warning = "Android could not read the video library. Try Browse this device or Add folder, then scan again.";
+                } else {
+                    warning = "Android could not read the music library. Try Browse this device or Add folder, then scan again.";
+                }
+            }
             if (!completeMediaStoreAccess) {
                 warning = "Some storage permissions are unavailable. Existing library entries were preserved; grant access and scan again to fully refresh.";
             }
@@ -819,7 +830,7 @@ public final class MainActivity extends Activity {
                 || n.endsWith(".wmv") || n.endsWith(".vob") || n.endsWith(".asf");
     }
 
-    private void appendStore(JSONArray results, Uri collection, boolean video) {
+    private boolean appendStore(JSONArray results, Uri collection, boolean video) {
         List<String> columns = new ArrayList<>();
         columns.add(MediaStore.MediaColumns._ID);
         columns.add(MediaStore.MediaColumns.DISPLAY_NAME);
@@ -830,15 +841,15 @@ public final class MainActivity extends Activity {
         if (video) {
             columns.add(MediaStore.MediaColumns.WIDTH);
             columns.add(MediaStore.MediaColumns.HEIGHT);
-            columns.add(MediaStore.MediaColumns.CAPTURE_FRAMERATE);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             columns.add(MediaStore.MediaColumns.RELATIVE_PATH);
             columns.add(MediaStore.MediaColumns.VOLUME_NAME);
         }
-        String sort = MediaStore.MediaColumns.DISPLAY_NAME + " COLLATE NOCASE ASC";
-        try (Cursor cursor = getContentResolver().query(collection, columns.toArray(new String[0]), null, null, sort)) {
-            if (cursor == null) return;
+        // Do not ask MediaStore to sort the full library: LUMIO sorts the merged
+        // result once after scanning, avoiding a second potentially expensive sort.
+        try (Cursor cursor = getContentResolver().query(collection, columns.toArray(new String[0]), null, null, null)) {
+            if (cursor == null) return false;
             int idCol = cursor.getColumnIndex(MediaStore.MediaColumns._ID);
             int nameCol = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
             int sizeCol = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE);
@@ -849,7 +860,7 @@ public final class MainActivity extends Activity {
             int durationCol = cursor.getColumnIndex(video ? MediaStore.Video.Media.DURATION : MediaStore.Audio.Media.DURATION);
             int widthCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.WIDTH) : -1;
             int heightCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.HEIGHT) : -1;
-            int frameRateCol = video ? cursor.getColumnIndex(MediaStore.MediaColumns.CAPTURE_FRAMERATE) : -1;
+            int frameRateCol = -1;
             while (cursor.moveToNext()) {
                 long id = idCol >= 0 ? cursor.getLong(idCol) : -1;
                 if (id < 0) continue;
@@ -902,10 +913,13 @@ public final class MainActivity extends Activity {
                     results.put(entry);
                 } catch (JSONException ignored) { }
             }
+            return true;
         } catch (SecurityException ignored) {
             // A permission may have been revoked while scanning; the picker remains available.
+            return false;
         } catch (Exception ignored) {
-            // Other storage sources/results remain available when a media provider fails.
+            // Report a failed query rather than silently presenting an empty library.
+            return false;
         }
     }
 
