@@ -1,0 +1,49 @@
+name: Check Lumio Web App
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "app.js"
+      - "index.html"
+      - "styles.css"
+      - "manifest.webmanifest"
+      - "icon.svg"
+      - "sw.js"
+      - "scripts/**"
+      - "package.json"
+      - ".github/workflows/web-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lumio-web-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check sw.js
+          node --check scripts/copy-web.js
+      - name: Build web assets
+        run: npm run build:web
+      - name: Verify generated app shell
+        run: |
+          test -s www/index.html
+          test -s www/styles.css
+          test -s www/app.js
+          test -s www/manifest.webmanifest
+          test -s www/icon.svg
+          test -s www/sw.js
