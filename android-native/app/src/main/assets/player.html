@@ -379,6 +379,79 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .folder-entry .folder-entry-icon .ui-icon,.folder-overview-row .folder-entry-icon .ui-icon{width:27px;height:27px;min-width:27px;max-width:27px;min-height:27px;max-height:27px}
 .option-symbol .ui-icon{width:22px;height:22px;stroke-width:1.75}
 
+
+/* Keep the folder-first overview responsive when Grid layout is selected. */
+.library.folder-overview.video-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px;
+ padding:0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ overflow:visible;
+}
+.library.folder-overview.video-grid .folder-overview-row{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ justify-content:flex-start;
+ gap:9px;
+ width:100%;
+ min-width:0;
+ min-height:0;
+ padding:12px;
+ border:1px solid var(--line);
+ border-radius:15px;
+ background:var(--surface);
+ overflow:hidden;
+}
+.library.folder-overview.video-grid .folder-entry-icon{
+ display:grid;
+ place-items:center;
+ flex:0 0 58px;
+ width:100%;
+ min-width:0;
+ height:58px;
+ border-radius:11px;
+ background:var(--surface2);
+ color:var(--ink);
+}
+.library.folder-overview.video-grid .folder-entry-icon svg{
+ width:26px;
+ height:26px;
+ fill:currentColor;
+ stroke:none;
+}
+.library.folder-overview.video-grid .folder-entry-copy{width:100%;min-width:0;flex:initial}
+.library.folder-overview.video-grid .folder-entry-copy strong{
+ margin:0;
+ font-size:14px;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+.library.folder-overview.video-grid .folder-entry-meta{
+ display:flex;
+ justify-content:space-between;
+ gap:5px;
+ margin-top:5px;
+}
+.library.folder-overview.video-grid .folder-entry-meta>span:first-child{font-size:10px}
+.library.folder-overview.video-grid .folder-size{font-size:10px}
+.library.folder-overview.video-grid .folder-overview-row .folder-path{
+ display:block;
+ margin-top:5px;
+ font-size:10px;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+.library.folder-overview.video-grid .folder-entry-arrow{display:none}
+@media(min-width:620px){
+ .library.folder-overview.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
 </style></head>
 <body>
 <main>
