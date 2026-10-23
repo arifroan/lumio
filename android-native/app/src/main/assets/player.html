@@ -1111,13 +1111,8 @@ function renderFolderOverview(filtered){
  bindMediaRows(library);
 }
 function folderBreadcrumbMarkup(current){
- const parts=normalizeFolder(current).split('/').filter(Boolean);
- let path='',crumbs='<button type="button" data-open-folder=""'+(!parts.length?' class="current" aria-current="page"':'')+'>All folders</button>';
- for(let i=0;i<parts.length;i++){
-  path+=(path?'/':'')+parts[i];
-  crumbs+='<span class="crumb-sep" aria-hidden="true">›</span><button type="button" data-open-folder="'+escapeHtml(path)+'"'+(i===parts.length-1?' class="current" aria-current="page"':'')+'>'+escapeHtml(parts[i])+'</button>';
- }
- return '<div class="folder-browse-bar"><nav class="folder-breadcrumb" aria-label="Folder path">'+crumbs+'</nav><p>'+escapeHtml(folderAbsolutePath(current))+'</p></div>';
+ // Hide folder-path breadcrumbs and absolute storage paths in the folder contents view.
+ return '';
 }
 function renderFolderContents(filtered){
  const library=$('library'),current=normalizeFolder(currentFolderPath);
