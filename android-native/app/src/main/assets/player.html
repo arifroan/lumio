@@ -913,54 +913,56 @@ function openAppearancePage(){
  document.documentElement.scrollTop=0;
 }
 let pendingPageRender=0;
-const pageRenderCache={videos:new Map(),music:new Map()};
-function pageCacheKey(page){
- if(page==='music')return 'music|'+String(videoSearchText||'');
- return 'videos|'+String(mediaContentMode||'')+'|'+normalizeFolder(currentFolderPath||'')+'|'+String(videoSearchText||'')+'|'+String(videoLibraryFilter||'');
-}
 function choosePage(page){
- const previousPage=currentPage,library=$('library');
- // Keep each tab's last completed view separate and cancel any pending list batches
- // before changing the selected section.
- if((previousPage==='videos'||previousPage==='music')&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading')){
-  pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
- }
- ++libraryRenderGeneration;
+ if(!['videos','music','stream','settings'].includes(page))return;
+ const library=$('library'),isMedia=page==='videos'||page==='music';
+ // Invalidate every pending incremental render before changing the active media type.
  const ticket=++pendingPageRender;
- currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';folderNavigationHistory=[];
+ ++libraryRenderGeneration;
+ currentPage=page;
+ active=page==='music'?'audio':'video';
+ folderNavigationHistory=[];
  if(page!=='videos'){
-  if(active==='video')videoContentModePreference=mediaContentMode;
+  if(page==='music')videoContentModePreference=mediaContentMode;
   folderBrowseActive=false;currentFolderPath='';
   if(mediaContentMode==='folders')mediaContentMode='all';
   groupByFolder=mediaContentMode==='all';
-  $('browseFoldersButton').setAttribute('aria-pressed','false');$('browseFoldersButton').textContent='Browse folders';syncOptionsSelection();
+  $('browseFoldersButton').setAttribute('aria-pressed','false');
+  $('browseFoldersButton').textContent='Browse folders';
+  syncOptionsSelection();
  }else{
   mediaContentMode=videoContentModePreference||'folders';
-  folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
-  groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
+  folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';
+  currentFolderPath='';
+  groupByFolder=folderBrowseActive;
   syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
- document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
- // Swap to the selected tab's own cached content immediately. Never leave the
- // previous tab's rows visible while the selected tab is being refreshed.
+ $('mediaPage').hidden=!isMedia;
+ $('streamPage').hidden=page!=='stream';
+ $('settingsPage').hidden=page!=='settings';
+ $('appearancePage').hidden=true;
+ $('appFooter').hidden=!isMedia;
+ $('videosFab').hidden=page!=='videos';
+ $('videoToolbar').hidden=!(isMedia&&searchExpanded);
+ $('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');
+ $('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
+ document.querySelectorAll('.nav-item').forEach(button=>{
+  const selected=button.dataset.page===page;
+  button.classList.toggle('active',selected);
+  if(selected)button.setAttribute('aria-current','page');
+  else button.removeAttribute('aria-current');
+ });
  if(isMedia){
-  const cached=pageRenderCache[page].get(pageCacheKey(page));
-  if(cached!==undefined){
-   // A valid cached view is already rendered. Do not immediately run the
-   // expensive filter/sort/folder pass again; that defeats the cache.
-   library.innerHTML=cached;
-   library.dataset.renderComplete='true';
-   bindMediaRows(library);
-   if(active==='video')observeThumbnails();
-  }else{
-   library.dataset.renderComplete='false';
-   library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>Loading '+(active==='audio'?'music':'videos')+'…</strong><p>Preparing your media list.</p></div>';
-   requestAnimationFrame(()=>setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},16));
-  }
+  // Never reuse another tab's HTML. Show the right tab immediately, then render its own data.
+  library.dataset.renderComplete='false';
+  library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>Loading '+(active==='audio'?'music':'videos')+'…</strong><p>Preparing your media list.</p></div>';
+  requestAnimationFrame(()=>{
+   if(ticket!==pendingPageRender||currentPage!==page)return;
+   render();
+  });
  }
 }
-document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
+
 $('openStream').onclick=()=>{
  const raw=$('streamUrl').value.trim(),message=$('streamMessage');if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return}
  let url;try{url=new URL(raw)}catch(e){message.textContent='That does not look like a valid URL.';return}
