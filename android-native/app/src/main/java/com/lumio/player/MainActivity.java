@@ -12,6 +12,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.DocumentsContract;
+import android.provider.DocumentsContract.Document;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -616,12 +618,12 @@ public final class MainActivity extends Activity {
     }
 
     private static final class TreeFolder {
-        final DocumentFile directory;
+        final String documentId;
         final String folderPath;
         final int depth;
 
-        TreeFolder(DocumentFile directory, String folderPath, int depth) {
-            this.directory = directory;
+        TreeFolder(String documentId, String folderPath, int depth) {
+            this.documentId = documentId;
             this.folderPath = folderPath;
             this.depth = depth;
         }
@@ -654,64 +656,102 @@ public final class MainActivity extends Activity {
 
     private boolean appendTreeMedia(JSONArray results, Uri treeUri, DocumentFile root, int[] totalCount) {
         String initialPath = folderPathForTreeRoot(treeUri, root);
+        final String rootDocumentId;
+        try {
+            rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri);
+        } catch (Exception e) {
+            return false;
+        }
         Deque<TreeFolder> pending = new ArrayDeque<>();
-        pending.push(new TreeFolder(root, initialPath, 0));
+        pending.push(new TreeFolder(rootDocumentId, initialPath, 0));
         boolean complete = true;
         Map<String, String> identityUpdates = new HashMap<>();
+        final String[] projection = new String[] {
+                Document.COLUMN_DOCUMENT_ID,
+                Document.COLUMN_DISPLAY_NAME,
+                Document.COLUMN_MIME_TYPE,
+                Document.COLUMN_SIZE,
+                Document.COLUMN_LAST_MODIFIED
+        };
 
         while (!pending.isEmpty()) {
             if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
             TreeFolder current = pending.pop();
-            DocumentFile[] children;
+            Uri childrenUri;
             try {
-                children = current.directory.listFiles();
+                childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, current.documentId);
             } catch (Exception e) {
                 complete = false;
                 continue;
             }
-            for (DocumentFile child : children) {
-                if (child == null) continue;
-                String name = child.getName();
-                if (name == null || name.trim().isEmpty() || name.startsWith(".")) continue;
 
-                if (child.isDirectory()) {
-                    if (current.depth >= MAX_TREE_DEPTH) {
+            try (Cursor cursor = getContentResolver().query(childrenUri, projection, null, null, null)) {
+                if (cursor == null) {
+                    complete = false;
+                    continue;
+                }
+                int idCol = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID);
+                int nameCol = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME);
+                int mimeCol = cursor.getColumnIndex(Document.COLUMN_MIME_TYPE);
+                int sizeCol = cursor.getColumnIndex(Document.COLUMN_SIZE);
+                int modifiedCol = cursor.getColumnIndex(Document.COLUMN_LAST_MODIFIED);
+
+                while (cursor.moveToNext()) {
+                    String documentId = idCol >= 0 ? cursor.getString(idCol) : null;
+                    String name = nameCol >= 0 ? cursor.getString(nameCol) : null;
+                    String mime = mimeCol >= 0 ? cursor.getString(mimeCol) : null;
+                    if (documentId == null || name == null || name.trim().isEmpty() || name.startsWith(".")) continue;
+
+                    if (Document.MIME_TYPE_DIR.equals(mime)) {
+                        if (current.depth >= MAX_TREE_DEPTH) {
+                            complete = false;
+                            continue;
+                        }
+                        pending.push(new TreeFolder(documentId,
+                                appendPath(current.folderPath, name, true), current.depth + 1));
+                        continue;
+                    }
+
+                    boolean audio = isAudioMedia(name, mime);
+                    boolean video = isVideoMedia(name, mime);
+                    if (!audio && !video) continue;
+
+                    Uri mediaUri;
+                    try {
+                        mediaUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
+                    } catch (Exception e) {
                         complete = false;
                         continue;
                     }
-                    pending.push(new TreeFolder(child, appendPath(current.folderPath, name, true), current.depth + 1));
-                    continue;
+                    String identity = identityForDocumentUri(mediaUri);
+                    long size = sizeCol >= 0 && !cursor.isNull(sizeCol) ? Math.max(0L, cursor.getLong(sizeCol)) : 0L;
+                    long lastModified = modifiedCol >= 0 && !cursor.isNull(modifiedCol)
+                            ? Math.max(0L, cursor.getLong(modifiedCol)) : 0L;
+                    JSONObject entry = new JSONObject();
+                    try {
+                        entry.put("key", mediaUri.toString());
+                        entry.put("uri", mediaUri.toString());
+                        entry.put("name", name);
+                        entry.put("size", size);
+                        entry.put("mime", mime == null || mime.trim().isEmpty()
+                                ? (audio ? "audio/*" : "video/*") : mime);
+                        entry.put("type", audio ? "audio" : "video");
+                        entry.put("folder", current.folderPath);
+                        entry.put("lastModified", lastModified);
+                        entry.put("duration", 0L);
+                        entry.put("source", "folder");
+                        if (!identity.isEmpty()) {
+                            entry.put("identity", identity);
+                            identityUpdates.put(mediaUri.toString(), identity);
+                        }
+                        results.put(entry);
+                        totalCount[0]++;
+                    } catch (JSONException ignored) { }
+                    if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
                 }
-                if (!child.isFile()) continue;
-
-                String mime = child.getType();
-                boolean audio = isAudioMedia(name, mime);
-                boolean video = isVideoMedia(name, mime);
-                if (!audio && !video) continue;
-
-                Uri mediaUri = child.getUri();
-                String identity = identityForDocumentUri(mediaUri);
-                JSONObject entry = new JSONObject();
-                try {
-                    entry.put("key", mediaUri.toString());
-                    entry.put("uri", mediaUri.toString());
-                    entry.put("name", name);
-                    entry.put("size", Math.max(0L, child.length()));
-                    entry.put("mime", mime == null || mime.trim().isEmpty()
-                            ? (audio ? "audio/*" : "video/*") : mime);
-                    entry.put("type", audio ? "audio" : "video");
-                    entry.put("folder", current.folderPath);
-                    entry.put("lastModified", Math.max(0L, child.lastModified()));
-                    entry.put("duration", 0L);
-                    entry.put("source", "folder");
-                    if (!identity.isEmpty()) {
-                        entry.put("identity", identity);
-                        identityUpdates.put(mediaUri.toString(), identity);
-                    }
-                    results.put(entry);
-                    totalCount[0]++;
-                } catch (JSONException ignored) { }
-                if (totalCount[0] >= MAX_TREE_MEDIA_FILES) return false;
+            } catch (Exception e) {
+                // SAF providers vary; preserve existing entries if a folder cannot be read.
+                complete = false;
             }
         }
         rememberMediaIdentities(identityUpdates);
