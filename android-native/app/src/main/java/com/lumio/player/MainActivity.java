@@ -397,18 +397,6 @@ public final class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         publishLibraryState();
-        // Re-scan when returning to the library after granting permissions in
-        // Android Settings or returning from the media player. Do not trigger a
-        // permission dialog from onResume; the initial page-load scan handles that.
-        WebView current = webView;
-        if (current != null) {
-            String url = current.getUrl();
-            boolean libraryPageReady = url != null
-                    && url.startsWith("file:///android_asset/player.html");
-            if (libraryPageReady && hasAnyMediaReadPermission()) {
-                publishScannedMedia();
-            }
-        }
     }
 
     private byte[] loadOrCreateThumbnail(Uri uri) throws Exception {
