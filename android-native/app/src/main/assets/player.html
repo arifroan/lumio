@@ -326,6 +326,8 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .nav-item{min-height:60px;gap:4px;border:1px solid transparent;border-radius:15px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.01em}
 .nav-item .nav-icon svg{width:24px;height:24px;stroke-width:1.85}
 .nav-item.active{color:var(--accent);background:var(--accent-soft);border-color:var(--line)}
+/* Keep the bottom navigation hidden on non-media pages even when layout CSS sets display:flex. */
+#appFooter[hidden]{display:none!important}
 .appearance-sectionhead{margin:22px 2px 10px}
 .appearance-pagehead{margin:6px 2px 14px;align-items:center}
 .appearance-page-title{display:flex;align-items:center;gap:8px;min-width:0}
