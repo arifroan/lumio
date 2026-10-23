@@ -1204,8 +1204,7 @@ function renderMediaItemsIncrementally(library,filtered,generation){
  appendBatch();
 }
 function render(){
- const library=$('library');
- library.dataset.renderComplete='false';
+ $('library').dataset.renderComplete='false';
  const renderGeneration=++libraryRenderGeneration;
  let videoTotal=0,audioTotal=0,totalSize=0,favoritesTotal=0;
  for(const item of items){totalSize+=Math.max(0,Number(item.size)||0);if(item.type==='video'){videoTotal++;if(isFavorite(item))favoritesTotal++}else if(item.type==='audio')audioTotal++}
