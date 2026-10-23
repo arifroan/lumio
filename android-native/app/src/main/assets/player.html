@@ -1151,7 +1151,30 @@ function bindMediaRows(library){
   openItem(item.key);
  });
 }
+let libraryRenderGeneration=0;
+function renderMediaItemsIncrementally(library,filtered,generation){
+ const batchSize=24;
+ let index=0,lastFolder=null;
+ library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>Loading your library…</strong><p>Preparing your media list.</p></div>';
+ bindMediaRows(library);
+ const appendBatch=()=>{
+  if(generation!==libraryRenderGeneration||!library.isConnected)return;
+  let out='';
+  const end=Math.min(index+batchSize,filtered.length);
+  for(;index<end;index++){
+   const item=filtered[index];
+   if(mediaContentMode==='all'&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">'+uiIcon('folder')+escapeHtml(lastFolder)+'</div>'}
+   out+=mediaItemMarkup(item);
+  }
+  if(library.querySelector('.library-loading'))library.innerHTML='';
+  if(out)library.insertAdjacentHTML('beforeend',out);
+  if(index<filtered.length){setTimeout(appendBatch,0);return}
+  if(active==='video')observeThumbnails();
+ };
+ appendBatch();
+}
 function render(){
+ const renderGeneration=++libraryRenderGeneration;
  let videoTotal=0,audioTotal=0,totalSize=0,favoritesTotal=0;
  for(const item of items){totalSize+=Math.max(0,Number(item.size)||0);if(item.type==='video'){videoTotal++;if(isFavorite(item))favoritesTotal++}else if(item.type==='audio')audioTotal++}
  let filtered=items.filter(x=>x.type===active);
@@ -1203,12 +1226,7 @@ function render(){
  }
  if(active==='video'&&mediaContentMode==='all')filtered.sort((a,b)=>normalizeFolder(a.folder).localeCompare(normalizeFolder(b.folder),undefined,{numeric:true,sensitivity:'base'})||mediaComparator(a,b));
  else filtered.sort(mediaComparator);
- let out='',lastFolder=null;
- for(const item of filtered){
-  if(mediaContentMode==='all'&&item.folder!==lastFolder){lastFolder=item.folder;out+='<div class="folder-heading">'+uiIcon('folder')+escapeHtml(lastFolder)+'</div>'}
-  out+=mediaItemMarkup(item)
- }
- library.innerHTML=out;bindMediaRows(library);if(active==='video')observeThumbnails()
+ renderMediaItemsIncrementally(library,filtered,renderGeneration);
 }
 function openItem(key){const x=findMediaByKey(key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=findMediaByKey(key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
