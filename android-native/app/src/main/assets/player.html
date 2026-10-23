@@ -614,7 +614,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
     <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="setting-copy"><strong>Private Vault</strong><small>Open your protected local media</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
   </button>
   <button class="setting-row" id="settingsAdd">
-    <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="setting-copy"><strong>Add media</strong><small>Choose videos or music from your device</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
+    <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="setting-copy"><strong>Add media</strong><small>Choose videos from your device</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
   </button>
   <button class="setting-row" id="settingsScan">
     <span class="setting-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1.7 5.2"/><path d="M20 4v7h-7"/></svg></span><span class="setting-copy"><strong>Scan phone</strong><small>Refresh the local media library</small></span><span class="setting-arrow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
@@ -626,7 +626,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
     <div class="sectionhead" style="margin:0 0 8px"><h2>Info</h2><span>Library overview</span></div>
     <div class="info-stats">
       <div class="stat"><strong id="videoCount">0</strong><span>VIDEOS</span></div>
-      <div class="stat"><strong id="audioCount">0</strong><span>AUDIO TRACKS</span></div>
       <div class="stat"><strong id="totalSize">0 MB</strong><span>IN THIS SESSION</span></div>
     </div>
     <p style="margin:12px 0 0;color:var(--muted);font-size:12px">These totals update as Lumio scans and indexes media on your device.</p>
@@ -665,9 +664,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <nav class="bottom-nav" aria-label="Main navigation">
   <button class="nav-item active" data-page="videos" aria-current="page" aria-label="Videos">
     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h18a1.8 1.8 0 0 1 1.8 1.8v9.2a2 2 0 0 1-2 2H3.2a2 2 0 0 1-2-2V9.5a2 2 0 0 1 1.8-2Z"/><path d="M2 11.5h20"/><path d="m4.5 7.5 2.1-5 4.6 5"/><path d="m12.5 7.5 2.1-5 4.6 5"/><path d="M4.5 2.5h14"/></svg></span><span>Videos</span>
-  </button>
-  <button class="nav-item" data-page="music" aria-label="Music">
-    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span>Music</span>
   </button>
   <button class="nav-item" data-page="stream" aria-label="Stream">
     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8.5 21 3.5-8 3.5 8"/><path d="M12 13V7"/><circle cx="12" cy="5" r="1.8"/><path d="M7.7 9.1a6 6 0 0 0 0 8.5"/><path d="M16.3 9.1a6 6 0 0 1 0 8.5"/><path d="M4.8 6.1a10 10 0 0 0 0 14.2"/><path d="M19.2 6.1a10 10 0 0 1 0 14.2"/></svg></span><span>Stream</span>
@@ -811,7 +807,7 @@ function fmtSize(bytes){return bytes>=1073741824?(bytes/1073741824).toFixed(2)+'
 function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll(String.fromCharCode(39),'&#39;')}
 function mergeMedia(records,replaceExisting=false,shouldRender=true){
  // A changed library invalidates cached HTML for both tabs.
- pageRenderCache.videos.clear();pageRenderCache.music.clear();
+ pageRenderCache.videos.clear();
  if(replaceExisting){items=[];mediaLookup.clear()}
  else if(!mediaLookup.size&&items.length)rebuildMediaLookup();
  for(const raw of records||[]){
@@ -832,7 +828,7 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(items.length)clearMessage();
  if(shouldRender)render()
 }
-window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage(record.type==='audio'?'music':'videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
+window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
 window.onNativeMediaScan=function(records,error){mergeMedia(records,!error,false);if(!refreshLibraryState())render();if(error)showMessage(error);else if(!records||!records.length)showMessage('No indexed media was found yet. Use Add media or Add folder to choose storage locations.')};
 window.onNativeFolderPicked=function(name,path){const previousPath=currentPage==='videos'?normalizeFolder(currentFolderPath):'';const nextPath=normalizeFolder(path||'');choosePage('videos');mediaContentMode='folders';videoContentModePreference='folders';groupByFolder=true;folderBrowseActive=true;folderNavigationHistory=previousPath===nextPath?['']:[previousPath];currentFolderPath=nextPath;$('browseFoldersButton').setAttribute('aria-pressed','true');$('browseFoldersButton').textContent='All videos';syncOptionsSelection();render();showMessage('Added folder access for '+String(name||'selected folder')+'. Scanning its media…')};
 function applyLibraryState(raw){try{const state=typeof raw==='string'?JSON.parse(raw):raw||{};favoriteUris=new Set(Array.isArray(state.favorites)?state.favorites.filter(Boolean):[]);favoriteIdentities=new Set(Array.isArray(state.favoriteIdentities)?state.favoriteIdentities.filter(Boolean):[]);watchHistory=Array.isArray(state.history)?state.history.filter(row=>row&&row.uri).sort((a,b)=>(Number(b.lastPlayedAt)||0)-(Number(a.lastPlayedAt)||0)):[]}catch(e){favoriteUris=new Set();favoriteIdentities=new Set();watchHistory=[]}rebuildHistoryLookup();render()}
@@ -913,21 +909,20 @@ function openAppearancePage(){
  document.documentElement.scrollTop=0;
 }
 let pendingPageRender=0;
-const pageRenderCache={videos:new Map(),music:new Map()};
+const pageRenderCache={videos:new Map()};
 function pageCacheKey(page){
- if(page==='music')return 'music|'+String(videoSearchText||'');
  return 'videos|'+String(mediaContentMode||'')+'|'+normalizeFolder(currentFolderPath||'')+'|'+String(videoSearchText||'')+'|'+String(videoLibraryFilter||'');
 }
 function choosePage(page){
  const previousPage=currentPage,library=$('library');
  // Keep each tab's last completed view separate and cancel any pending list batches
  // before changing the selected section.
- if((previousPage==='videos'||previousPage==='music')&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading')){
+ if(previousPage==='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading')){
   pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
  }
  ++libraryRenderGeneration;
  const ticket=++pendingPageRender;
- currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';folderNavigationHistory=[];
+ if(!['videos','stream','settings'].includes(page))page='videos';currentPage=page;active='video';const isMedia=page==='videos';folderNavigationHistory=[];
  if(page!=='videos'){
   if(active==='video')videoContentModePreference=mediaContentMode;
   folderBrowseActive=false;currentFolderPath='';
@@ -940,7 +935,7 @@ function choosePage(page){
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';
   syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
+ $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  // Swap to the selected tab's own cached content immediately. Never leave the
  // previous tab's rows visible while the selected tab is being refreshed.
@@ -955,7 +950,7 @@ function choosePage(page){
    if(active==='video')observeThumbnails();
   }else{
    library.dataset.renderComplete='false';
-   library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>Loading '+(active==='audio'?'music':'videos')+'…</strong><p>Preparing your media list.</p></div>';
+    library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Loading videos…</strong><p>Preparing your media list.</p></div>';
    requestAnimationFrame(()=>setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},16));
   }
  }
@@ -1184,7 +1179,7 @@ function renderMediaItemsIncrementally(library,filtered,generation){
  const batchSize=24;
  library.dataset.renderComplete='false';
  let index=0,lastFolder=null;
- library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>Loading your library…</strong><p>Preparing your media list.</p></div>';
+ library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Loading your library…</strong><p>Preparing your media list.</p></div>';
  bindMediaRows(library);
  const appendBatch=()=>{
   if(generation!==libraryRenderGeneration||!library.isConnected)return;
@@ -1206,14 +1201,12 @@ function renderMediaItemsIncrementally(library,filtered,generation){
 function render(){
  $('library').dataset.renderComplete='false';
  const renderGeneration=++libraryRenderGeneration;
- let videoTotal=0,audioTotal=0,totalSize=0,favoritesTotal=0;
- for(const item of items){totalSize+=Math.max(0,Number(item.size)||0);if(item.type==='video'){videoTotal++;if(isFavorite(item))favoritesTotal++}else if(item.type==='audio')audioTotal++}
- let filtered=items.filter(x=>x.type===active);
+ let videoTotal=0,totalSize=0,favoritesTotal=0;for(const item of items){if(item.type==='video'){videoTotal++;totalSize+=Math.max(0,Number(item.size)||0);if(isFavorite(item))favoritesTotal++}}let filtered=items.filter(x=>x.type==='video');
  if(videoSearchText)filtered=filtered.filter(x=>(x.searchText||'').includes(videoSearchText));
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
  const titleEl=$('mediaTitle'),currentParts=normalizeFolder(currentFolderPath).split('/').filter(Boolean),canGoUp=active==='video'&&folderBrowseActive&&currentParts.length>0;
- const sectionTitle=active==='audio'?'Music':(folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos');
- titleEl.innerHTML=active==='audio'?'Music':(canGoUp?uiIcon('chevronLeft')+'<span>'+escapeHtml(currentParts[currentParts.length-1])+'</span>':escapeHtml(sectionTitle));
+ const sectionTitle=folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos';
+ titleEl.innerHTML=canGoUp?uiIcon('chevronLeft')+'<span>'+escapeHtml(currentParts[currentParts.length-1])+'</span>':escapeHtml(sectionTitle);
  titleEl.style.cursor=canGoUp?'pointer':'';
  titleEl.setAttribute('role',canGoUp?'button':'heading');
  titleEl.setAttribute('aria-label',canGoUp?'Return to previous folder from '+currentParts[currentParts.length-1]:sectionTitle);
@@ -1222,12 +1215,12 @@ function render(){
  titleEl.onkeydown=canGoUp?event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();returnToPreviousFolder()}}:null;
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
  $('videoCount').textContent=videoTotal;
- $('audioCount').textContent=audioTotal;
+
  $('totalSize').textContent=fmtSize(totalSize);
  $('allVideoCount').textContent=videoTotal;
  $('favoriteVideoCount').textContent=favoritesTotal;
  $('videoLibraryFilters').hidden=active!=='video';
- $('videoToolbar').hidden=!((active==='video'||active==='audio')&&searchExpanded);
+ $('videoToolbar').hidden=!((active==='video')&&searchExpanded);
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
@@ -1242,16 +1235,16 @@ function render(){
  }
  if(active==='video'&&folderBrowseActive&&currentFolderPath){renderFolderContents(filtered);return}
  if(!items.length){
-  const sectionName=active==='audio'?'music':'video';
-  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>'+(active==='audio'?'Your music library is ready':'Your video library is ready')+'</strong><p>LUMIO scans your phone automatically. If your files are not listed, scan again or add selected media.</p><button id="emptyScan" type="button">Scan phone</button><button id="emptyAdd" type="button">Add media</button></div>';
+  const sectionName='video';
+  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('library')+'</div><strong>'+('Your video library is ready')+'</strong><p>LUMIO scans your phone automatically. If your files are not listed, scan again or add selected media.</p><button id="emptyScan" type="button">Scan phone</button><button id="emptyAdd" type="button">Add media</button></div>';
   $('emptyScan').onclick=scan;$('emptyAdd').onclick=pick;return
  }
  if(!filtered.length){
   const searching=active==='video'&&!!videoSearchText,favoritesOnly=active==='video'&&videoLibraryFilter==='favorites';
-  const title=searching?'No matching videos':favoritesOnly?'No favorites yet':('No '+(active==='video'?'videos':'music')+' found');
+  const title=searching?'No matching videos':favoritesOnly?'No favorites yet':('No '+('videos')+' found');
   const description=searching?'Try another title or clear your search.':favoritesOnly?'Mark videos with the star button to build your Favorites list.':'Scan your phone again, or add selected media if the files are not indexed.';
   const buttonLabel=searching?'Clear search':favoritesOnly?'Show all videos':'Scan phone';
-  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon(active==='audio'?'music':'library')+'</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse" type="button">'+buttonLabel+'</button>'+(searching||favoritesOnly?'':'<button id="emptyAdd" type="button">Add media</button>')+'</div>';
+  library.innerHTML='<div class="empty"><div class="emptyicon">'+uiIcon('library')+'</div><strong>'+title+'</strong><p>'+description+'</p><button id="emptyBrowse" type="button">'+buttonLabel+'</button>'+(searching||favoritesOnly?'':'<button id="emptyAdd" type="button">Add media</button>')+'</div>';
   $('emptyBrowse').onclick=()=>{if(searching){videoSearchText='';$('videoSearch').value='';render()}else if(favoritesOnly)setVideoLibraryFilter('all');else scan()};
   const addButton=$('emptyAdd');if(addButton)addButton.onclick=pick;return
  }
