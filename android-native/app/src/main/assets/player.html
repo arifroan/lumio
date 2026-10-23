@@ -124,8 +124,16 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .folder-entry .folder-entry-copy strong{font-size:13px}
 .folder-entry .folder-entry-copy small{margin-top:3px;color:var(--muted);font-size:10px}
 .folder-entry .folder-entry-arrow{color:var(--muted);font-size:23px}
-.video-grid .folder-entry{grid-column:1/-1;border:1px solid var(--line);border-radius:14px}
-.video-grid .folder-entry+.folder-entry{margin-top:-2px}
+.video-grid .folder-entry{grid-column:auto;display:flex;min-width:0;min-height:142px;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:9px;padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--surface);overflow:hidden}
+.video-grid .folder-entry+.folder-entry{margin-top:0}
+.video-grid .folder-entry .folder-entry-icon{width:100%;height:58px;flex-basis:58px;border-radius:11px;font-size:25px}
+.video-grid .folder-entry .folder-entry-copy{width:100%;min-width:0}
+.video-grid .folder-entry .folder-entry-copy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-grid .folder-entry .folder-entry-copy small{overflow-wrap:anywhere}
+.video-grid .folder-entry .folder-entry-arrow{display:none}
+.video-grid .folder-entry .folder-entry-meta{display:flex;justify-content:space-between;gap:6px;margin-top:5px;color:var(--muted);font-size:10px}
+.video-grid .folder-entry .folder-path{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-list .folder-entry{display:flex}
 .file.unavailable{opacity:.72}
 .file .availability-note{display:block;color:var(--pink);font-size:10px;margin-top:3px}
 .video-toolbar-row #browseFoldersButton[aria-pressed="true"]{border-color:#8b78b8;color:#e2d6ff;background:#302842}
@@ -1047,8 +1055,8 @@ function render(){
  $('videoGroupToggle').textContent='Folders: '+(groupByFolder?'On':'Off');
  renderWatchSections();
  const library=$('library');
- library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid'&&!folderBrowseActive&&mediaContentMode!=='folders');
- library.classList.toggle('video-list',active==='video'&&(!folderBrowseActive)&&videoViewMode==='list'&&mediaContentMode!=='folders');
+ library.classList.toggle('video-grid',active==='video'&&videoViewMode==='grid');
+ library.classList.toggle('video-list',active==='video'&&videoViewMode==='list');
  library.classList.toggle('folder-overview',active==='video'&&folderBrowseActive&&(mediaContentMode==='all'||mediaContentMode==='folders')&&!currentFolderPath);
  if(active==='video'&&folderBrowseActive&&(mediaContentMode==='all'||mediaContentMode==='folders')){
   if(currentFolderPath){renderFolderContents(filtered);return}
