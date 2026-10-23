@@ -1040,6 +1040,8 @@ function folderOverviewGroups(filtered){
  for(const item of filtered){
   const value=normalizeFolder(item.folder);
   if(!value)continue;
+  // Individually selected videos remain in All videos, but must not appear as a fake folder.
+  if(value.split('/').filter(Boolean)[0]==='Chosen files')continue;
   const parts=value.split('/').filter(Boolean),head=parts[0];
   const storageRoot=head==='Internal storage'||/^External storage \\(.+\\)$/.test(head);
   let folderPath=value;
