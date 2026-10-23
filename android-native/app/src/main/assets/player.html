@@ -452,6 +452,34 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
  .library.folder-overview.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
+
+/* Grid layout correction: folder overview must switch from its default flex
+   layout to a true responsive grid when Grid view is selected. */
+.library.folder-overview.video-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;
+ gap:10px;padding:0;border:0;background:transparent;overflow:visible
+}
+.library.folder-overview.video-grid .folder-overview-row{
+ display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+ gap:10px;width:100%;min-width:0;min-height:0;height:100%;padding:12px;
+ border:1px solid var(--line)!important;border-radius:16px;background:var(--surface);overflow:hidden
+}
+.library.folder-overview.video-grid .folder-entry-icon{
+ flex:0 0 58px;width:100%;min-width:0;height:58px;padding:10px;border-radius:12px
+}
+.library.folder-overview.video-grid .folder-entry-copy{display:block;width:100%;min-width:0;flex:1}
+.library.folder-overview.video-grid .folder-entry-copy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.library.folder-overview.video-grid .folder-entry-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.library.folder-overview.video-grid .folder-overview-row .folder-path{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.library.folder-overview.video-grid .folder-entry-arrow{display:none}
+@media(min-width:620px){.library.folder-overview.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){
+ .library.folder-overview.video-grid{gap:8px}
+ .library.folder-overview.video-grid .folder-overview-row{padding:9px;gap:8px;border-radius:14px}
+ .library.folder-overview.video-grid .folder-entry-icon{flex-basis:50px;height:50px}
+ .library.folder-overview.video-grid .folder-size{font-size:9px;padding:2px 5px}
+}
+
 </style></head>
 <body>
 <main>
