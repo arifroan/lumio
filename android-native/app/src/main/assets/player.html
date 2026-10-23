@@ -978,7 +978,7 @@ function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',i
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
 function removeMediaItemFromLookup(item,index){for(const [prefix,value] of mediaLookupTokens(item)){const token=prefix+value;if(value&&mediaLookup.get(token)===index)mediaLookup.delete(token)}}
 function rebuildMediaLookup(){mediaLookup.clear();items.forEach((item,index)=>indexMediaItem(item,index))}
-function refreshSearchText(item){item.searchText=[item.name,item.folder,item.mime,item.type].map(value=>String(value||'')).join(' ').toLocaleLowerCase();return item}
+function refreshSearchText(item){item.searchText=[item.name,item.title,item.artist,item.album,item.genre,item.folder,item.mime,item.type].map(value=>String(value||'')).join(' ').toLocaleLowerCase();return item}
 function rebuildHistoryLookup(){
  historyLookup.clear();
  for(const row of watchHistory){if(!row)continue;
