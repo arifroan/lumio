@@ -910,6 +910,7 @@ function openAppearancePage(){
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page==='settings';button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  document.documentElement.scrollTop=0;
 }
+let pendingPageRender=0;
 function choosePage(page){
  currentPage=page;active=page==='music'?'audio':'video';const isMedia=page==='videos'||page==='music';folderNavigationHistory=[];
  if(page!=='videos'){
@@ -925,7 +926,11 @@ function choosePage(page){
   syncOptionsSelection();
  }
  $('mediaPage').hidden=!isMedia;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=!isMedia;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=page==='music'?'Music':(folderBrowseActive?'Folders':'Videos');$('videoSearch').placeholder=page==='music'?'Search music by name…':'Search videos by name…';
- document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});if(isMedia)render()
+ document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+ // Let WebView paint the selected page before building a potentially large media list.
+ // This prevents synchronous rendering from making the previous tab appear stuck.
+ const ticket=++pendingPageRender;
+ if(isMedia)setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},0);
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
 $('openStream').onclick=()=>{
