@@ -1128,6 +1128,9 @@ function renderFolderContents(filtered){
   const path=normalizeFolder(item.folder);
   if(path===current){directCandidates.push(item);continue}
   if(!path.startsWith(prefix))continue;
+  // In All Folders mode, every media-containing folder is listed at the Videos root.
+  // Do not repeat descendant folders inside the folder currently being viewed.
+  if(mediaContentMode==='all')continue;
   const rest=path.slice(prefix.length),next=rest.split('/')[0];
   if(!next)continue;
   const childPath=(current?current+'/':'')+next;
