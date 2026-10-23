@@ -2,15 +2,14 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Transparent adaptive foreground: the navy field is supplied by the icon background. -->
-    <!-- Cyan open ring, matching the LUMIO mark rather than a generic power symbol. -->
+    <!-- LUMIO's original split power-ring: cool silver on the left, electric blue on the right. -->
+    <path android:fillColor="#F4F7FB"
+        android:pathData="M51,13 C29,14 12,31 12,53 C12,75 29,92 51,96 L51,83 C36,81 25,68 25,53 C25,38 36,27 51,26 Z"/>
+    <path android:fillColor="#087DFF"
+        android:pathData="M57,13 C79,14 96,31 96,53 C96,75 79,92 57,96 L57,83 C72,81 83,68 83,53 C83,38 72,27 57,26 Z"/>
+    <!-- Central luminous power stem. -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M46,10 L59,2 L59,63 C59,69 55,73 49,73 L46,73 Z"/>
     <path android:fillColor="#32C8FF"
-        android:pathData="M54,12 A42,42 0,1 0,96 54 L76,54 A22,22 0,1 1,54 32 Z"/>
-    <!-- Open the right side of the ring cleanly. -->
-    <path android:fillColor="#07182A" android:pathData="M65,8 L108,8 L108,57 L76,57 L76,47 L65,47 Z"/>
-    <!-- White L/U monogram from the LUMIO identity. -->
-    <path android:fillColor="#F5FBFF"
-        android:pathData="M42,18 L55,18 L55,62 C55,69 59,73 65,73 L72,73 L72,87 L64,87 C49,87 42,78 42,63 Z"/>
-    <path android:fillColor="#32C8FF"
-        android:pathData="M72,73 L91,73 C89,88 78,97 63,97 L57,97 L57,83 L63,83 C68,83 71,79 72,73 Z"/>
+        android:pathData="M55,6 L59,3 L59,63 C59,68 57,71 55,72 Z"/>
 </vector>
