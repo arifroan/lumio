@@ -525,7 +525,7 @@ public final class MainActivity extends Activity {
     }
 
     private boolean hasAnyMediaReadPermission() {
-        return canReadVideo();
+        return canReadVideo() || canReadAudio();
     }
 
     private void beginMediaScan() {
@@ -534,6 +534,7 @@ public final class MainActivity extends Activity {
             // missing permission instead of treating one granted permission as full access.
             List<String> missingPermissions = new ArrayList<>();
             if (!canReadVideo()) missingPermissions.add(Manifest.permission.READ_MEDIA_VIDEO);
+            if (!canReadAudio()) missingPermissions.add(Manifest.permission.READ_MEDIA_AUDIO);
             if (missingPermissions.isEmpty()) {
                 publishScannedMedia();
                 return;
@@ -568,12 +569,13 @@ public final class MainActivity extends Activity {
 
     private void publishScannedMedia() {
         final int generation = scanGeneration.incrementAndGet();
-        final boolean completeMediaStoreAccess = canReadVideo();
+        final boolean completeMediaStoreAccess = canReadVideo() && canReadAudio();
         scanExecutor.execute(() -> {
             JSONArray array = new JSONArray();
             boolean videoScanFailed = canReadVideo()
                     && !appendStore(array, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true);
-            boolean audioScanFailed = false;
+            boolean audioScanFailed = canReadAudio()
+                    && !appendStore(array, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, false);
 
             int[] treeCount = new int[]{0};
             boolean treesComplete = appendSavedTreeMedia(array, treeCount);
@@ -586,7 +588,7 @@ public final class MainActivity extends Activity {
             String warning = null;
             if (videoScanFailed || audioScanFailed) {
                 if (videoScanFailed && audioScanFailed) {
-                    warning = "Android could not read the video library. Try Browse this device or Add folder, then scan again.";
+                    warning = "Android could not read the video or music library. Check permissions, then scan again.";
                 } else if (videoScanFailed) {
                     warning = "Android could not read the video library. Try Browse this device or Add folder, then scan again.";
                 } else {
