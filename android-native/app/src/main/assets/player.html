@@ -1314,7 +1314,13 @@ function choosePage(page){
   else{library.dataset.renderComplete='false';library.innerHTML='<div class="empty library-loading" role="status"><div class="emptyicon">'+uiIcon('library')+'</div><strong>Loading videos…</strong><p>Preparing your media list.</p></div>';requestAnimationFrame(()=>setTimeout(()=>{if(ticket===pendingPageRender&&currentPage===page)render()},16))}
  }
 }
-document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
+document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
+  if(button.dataset.page==='music' && window.LumioNative && typeof window.LumioNative.openNativeMusic==='function'){
+   window.LumioNative.openNativeMusic();
+   return;
+  }
+  choosePage(button.dataset.page);
+ }));
  $('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();renderMusic()});$('showAllMusic').onclick=()=>{musicLibraryFilter='all';renderMusic()};$('showRecentMusic').onclick=()=>{musicLibraryFilter='recent';renderMusic()};$('showFavoriteMusic').onclick=()=>{musicLibraryFilter='favorites';renderMusic()};$('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});$('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
 $('openStream').onclick=()=>{
  const raw=$('streamUrl').value.trim(),message=$('streamMessage');if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return}
