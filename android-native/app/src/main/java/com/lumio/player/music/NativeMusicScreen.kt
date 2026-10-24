@@ -42,10 +42,11 @@ fun NativeMusicScreen(
     var selectedFolder by remember { mutableStateOf<String?>(null) }
     var showFolders by remember { mutableStateOf(false) }
 
+    val activeFolder = selectedFolder
     val normalizedQuery = query.trim().lowercase(Locale.ROOT)
     val visibleTracks = tracks.filter { track ->
-        (selectedFolder == null || track.folderPath.trimEnd('/') == selectedFolder ||
-            track.folderPath.trimEnd('/').startsWith("$selectedFolder/")) &&
+        (activeFolder == null || track.folderPath.trimEnd('/') == activeFolder ||
+            track.folderPath.trimEnd('/').startsWith("$activeFolder/")) &&
             (normalizedQuery.isEmpty() ||
                 track.title.lowercase(Locale.ROOT).contains(normalizedQuery) ||
                 track.artist.lowercase(Locale.ROOT).contains(normalizedQuery) ||
@@ -58,19 +59,19 @@ fun NativeMusicScreen(
         .distinct()
         .sortedBy { it.lowercase(Locale.ROOT) }
 
-    val childFolders = if (selectedFolder == null) {
+    val childFolders = if (activeFolder == null) {
         allFolders
     } else {
-        allFolders.filter { it.startsWith("$selectedFolder/") }
-            .map { it.removePrefix("$selectedFolder/").substringBefore('/') }
+        allFolders.filter { it.startsWith("$activeFolder/") }
+            .map { it.removePrefix("$activeFolder/").substringBefore('/') }
             .filter { it.isNotBlank() }
             .distinct()
-            .map { "$selectedFolder/$it" }
+            .map { "$activeFolder/$it" }
             .sortedBy { it.lowercase(Locale.ROOT) }
     }
 
-    val directTracks = visibleTracks.filter { it.folderPath.trimEnd('/') == selectedFolder }
-    val folderTracks = if (selectedFolder == null) emptyList() else visibleTracks
+    val directTracks = visibleTracks.filter { it.folderPath.trimEnd('/') == activeFolder }
+    val folderTracks = if (activeFolder == null) emptyList() else visibleTracks
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -91,8 +92,8 @@ fun NativeMusicScreen(
                 }
             }
             Text(
-                text = if (selectedFolder == null) "Your local audio library"
-                    else selectedFolder.substringAfterLast('/'),
+                text = if (activeFolder == null) "Your local audio library"
+                    else activeFolder.substringAfterLast('/'),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -114,8 +115,8 @@ fun NativeMusicScreen(
 
             if (showFolders) {
                 Text(
-                    if (selectedFolder == null) "Folders · ${childFolders.size}" else
-                        "${selectedFolder.substringAfterLast('/')} · ${directTracks.size} tracks · ${childFolders.size} subfolders",
+                    if (activeFolder == null) "Folders · ${childFolders.size}" else
+                        "${activeFolder.substringAfterLast('/')} · ${directTracks.size} tracks · ${childFolders.size} subfolders",
                     style = MaterialTheme.typography.titleMedium
                 )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
