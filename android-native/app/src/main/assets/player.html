@@ -1305,7 +1305,7 @@ function choosePage(page){
   folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!(isMusic&&musicSearchExpanded);
+ $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!isMusic;
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  if(isMusic){requestInvisibleMusicScan();renderMusic();if(musicBrowseView==='playlists')renderMusicPlaylists();}
  if(isMedia){
