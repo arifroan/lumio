@@ -517,6 +517,18 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 /* Compact Music layout: remove greeting/hero blocks while keeping core actions accessible. */
 #musicPage .music-greeting,
 #musicPage .music-feature {display:none!important}
+#musicPage .music-brand,
+#musicPage .music-title,
+#musicPage .music-header {display:none!important}
+/* Refined music shortcut icons: consistent optical size, stroke, and contrast. */
+#musicPage .music-shortcut-symbol {width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:color-mix(in srgb,var(--accent) 13%,var(--surface2));color:var(--accent)!important;flex:0 0 42px}
+#musicPage .music-shortcut-symbol svg {width:24px;height:24px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#musicPage .music-shortcut:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
+#musicPage .music-shortcut:active .music-shortcut-symbol {transform:scale(.94)}
+#musicPage .music-shortcut-symbol {transition:transform .16s ease,background-color .16s ease}
+@media(prefers-reduced-motion:reduce){#musicPage .music-shortcut-symbol{transition:none}}
+#musicPage .music-greeting,
+#musicPage .music-feature {display:none!important}
 #musicPage .music-library-header {display:flex!important;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
 #musicPage .music-header-actions {display:flex;align-items:center;gap:7px}
 #musicPage .music-header-actions .icon-button {width:42px;height:42px;flex-shrink:0}
