@@ -708,7 +708,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 /* Music header rebuilt to match the compact tab-and-playback layout reference. */
 #musicPage .music-modern-header{display:flex;flex-direction:column;gap:15px;margin:0 0 18px;min-width:0}
-#musicPage .music-category-tabs{display:flex;align-items:center;gap:25px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--line);min-height:54px}
+#musicPage .music-category-tabs{display:flex;align-items:center;gap:25px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--line);min-height:54px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
 #musicPage .music-category-tabs::-webkit-scrollbar{display:none}
 #musicPage .music-category-tab{position:relative;flex:0 0 auto;border:0;background:transparent;color:var(--muted);padding:13px 0 15px;font-size:15px;font-weight:600;white-space:nowrap}
 #musicPage .music-category-tab.active{color:var(--ink);font-weight:800}
@@ -893,6 +893,9 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
    <button type="button" class="music-category-tab" data-music-view="folders" aria-pressed="false">Folders</button>
    <button type="button" class="music-category-tab" data-music-view="albums" aria-pressed="false">Albums</button>
    <button type="button" class="music-category-tab" data-music-view="artists" aria-pressed="false">Artists</button>
+   <button type="button" class="music-category-tab" data-music-view="recent" aria-pressed="false">Recently played</button>
+   <button type="button" class="music-category-tab" data-music-view="favorites" aria-pressed="false">Favorites</button>
+   <button type="button" class="music-category-tab" data-music-view="searches" aria-pressed="false">Search history</button>
    <button class="music-header-search" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false" title="Search music"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button>
   </nav>
   <div class="music-library-header"><div class="music-count-line"><h3 id="musicLibraryHeading">All music</h3><span id="musicCount">0 tracks</span></div>
@@ -1623,6 +1626,7 @@ const MusicNavigation = (() => {
    const selected=tab.dataset.musicView===view;
    tab.classList.toggle('active',selected);
    tab.setAttribute('aria-pressed',String(selected));
+   if(selected && tab.classList.contains('music-category-tab'))tab.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});
   });
  }
 
