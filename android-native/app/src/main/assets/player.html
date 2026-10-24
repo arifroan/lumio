@@ -939,7 +939,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
    <button type="button" class="music-category-tab" data-lumio-music-tab="artists" aria-pressed="false">Artist</button>
   </nav>
   <div class="music-list-tools"><span id="musicCount">0 tracks</span><label class="music-sort-control" for="musicSort" aria-label="Sort music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><select class="video-sort" id="musicSort"><option value="title">Title</option><option value="recent">Recently played</option><option value="date">Date added</option><option value="duration">Duration</option><option value="size">File size</option></select></label><button class="music-density-toggle" id="musicDensityToggle" type="button" aria-label="Toggle compact track list" aria-pressed="false" title="Toggle compact track list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M3.5 6h.1M3.5 12h.1M3.5 18h.1" stroke-width="3"/></svg></button></div>
-  <div class="music-legacy-controls" hidden><button id="musicCreatePlaylist" type="button">New playlist</button><button id="showAllMusic" type="button">All</button><button id="showRecentMusic" type="button">Recent</button><button id="showFavoriteMusic" type="button">Favorites</button></div>
  </div>
  <section class="library music-track-list" id="musicLibrary"><div class="empty"><div class="emptyicon">♫</div><strong>Your music library is ready</strong><p>Your audio and music files appear here automatically.</p></div></section>
  <section class="music-playlists-panel" id="musicPlaylistsPanel" hidden><div class="sectionhead"><h3>Your playlists</h3><button id="musicCreatePlaylistPanel" type="button">＋ Create playlist</button></div><div id="musicPlaylistsList"></div></section>
@@ -1621,16 +1620,14 @@ function addToMusicPlaylist(item){if(!item)return;if(!musicPlaylists.length){sho
 function showMusicActionsMenu(item){if(!item)return;const actions=[{title:'Play',run:()=>playMusicItem(item.key)},{title:isFavorite(item)?'Remove favorite':'Add to favorites',run:()=>toggleFavorite(item)},{title:'Add to playlist',run:()=>addToMusicPlaylist(item)},{title:'File details',run:()=>safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,true,item.identity||'')}];const choice=prompt('Actions for '+item.name+'\n'+actions.map((a,i)=>(i+1)+'. '+a.title).join('\n')+'\nEnter a number:');const action=actions[Number(choice)-1];if(action)action.run()}
 function showMediaActions(item){if(!item)return;if(item.type==='audio'&&typeof showMusicActionsMenu==='function'){showMusicActionsMenu(item);return}safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,false,item.identity||'')}
 function bindMusicActions(){
- $('musicCreatePlaylist').onclick=createMusicPlaylist;$('musicCreatePlaylistPanel').onclick=createMusicPlaylist;
- 
- 
- $('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();$('musicLibrary').hidden=false;renderMusic()});
- $('showAllMusic').onclick=()=>setMusicBrowseView('all');$('showRecentMusic').onclick=()=>setMusicBrowseView('recent');$('showFavoriteMusic').onclick=()=>setMusicBrowseView('favorites');
- $('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});
- 
-
-
+ const create=$('musicCreatePlaylistPanel');
+ if(create)create.onclick=()=>{createMusicPlaylist()};
+ const search=$('musicSearch');
+ if(search)search.addEventListener('input',()=>{musicSearchText=search.value.trim().toLocaleLowerCase();renderMusic()});
+ const sort=$('musicSort');
+ if(sort)sort.addEventListener('change',()=>{musicSort=sort.value;renderMusic()});
 }
+
 function playMusicCollection(shuffle){let list=musicTracksForCurrentView().slice();if(!list.length)return;if(shuffle)for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}const first=list[0];selectedKey=first.key;safeBridge('playMedia',first.uri,first.name,true,JSON.stringify(list.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playMusicItem(key){const x=items.find(y=>y.key===key&&y.type==='audio');if(x){const list=musicTracksForCurrentView(),ordered=[x,...list.filter(y=>y.key!==x.key)];selectedKey=x.key;safeBridge('playMedia',x.uri,x.name,true,JSON.stringify(ordered.slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}}
 function render(){
@@ -1686,121 +1683,24 @@ function render(){
 function openItem(key){const x=findMediaByKey(key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=findMediaByKey(key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 /* App initialization is performed after MusicNavigation is defined. */
-/* LUMIO Music navigation: one authoritative controller and one delegated tab handler. */
+/* Music compatibility bridge: the four-tab controller below owns visible Music navigation. */
 let currentMusicPlaylistId='';
-const MusicNavigation = (() => {
- const views = new Set(['all','playlists','folders','albums','artists','recent','favorites']);
- const labels = {all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders'};
- let current = 'all';
- let bound = false;
+const MusicNavigation = {
+ bind(){},
+ navigate(view){
+  if(view==='playlists')lumioMusicV2View='playlists';
+  else if(view==='albums'||view==='artists')lumioMusicV2View=view;
+  else lumioMusicV2View='songs';
+  currentMusicFolder='';currentMusicGroup=null;
+  renderMusic();
+ },
+ render(){renderMusic()},
+ getCurrent(){return lumioMusicV2View==='songs'?'all':lumioMusicV2View},
+ step(){}
+};
 
- function syncChrome(view){
-  const page=$('musicPage'),lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel');
-  if(playlists)playlists.hidden=view!=='playlists';
-  if(lib)lib.hidden=view==='playlists';
-  if(page)page.querySelectorAll('[data-music-view]').forEach(tab=>{
-   const selected=tab.dataset.musicView===view;
-   tab.classList.toggle('active',selected);
-   tab.setAttribute('aria-pressed',String(selected));
-   if(selected && tab.classList.contains('music-category-tab'))tab.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});
-  });
- }
-
- function render(view=current){
-  const page=$('musicPage');
-  if(!page)return;
-  current=view;musicBrowseView=view;
-  syncChrome(view);
-  const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel');
-  if(view==='all'||view==='recent'||view==='favorites'){
-   currentMusicFolder='';currentMusicGroup=null;
-   if(lib)lib.hidden=false;
-   if(playlists)playlists.hidden=true;
-   musicLibraryFilter=view==='recent'?'recent':view==='favorites'?'favorites':'all';
-   lumioBaseRenderMusic();
-   return;
-  }
-  if(view==='albums'||view==='artists'){
-   currentMusicFolder='';currentMusicGroup=null;
-   if(lib)lib.hidden=false;
-   if(playlists)playlists.hidden=true;
-   showMusicGrouping(view,items.filter(item=>item&&item.type==='audio'));
-   return;
-  }
-  if(view==='folders'){
-   if(lib)lib.hidden=false;
-   if(playlists)playlists.hidden=true;
-   showMusicInfo('folders');
-   return;
-  }
-  if(view==='playlists'){
-   if(lib)lib.hidden=true;
-   if(playlists)playlists.hidden=false;
-   renderMusicPlaylists();
-  }
- }
-
- function navigate(requestedView){
-  const view=views.has(requestedView)?requestedView:'all';
-  current=view;
-  musicBrowseView=view;
-  if(view!=='folders')currentMusicFolder='';
-  if(view!=='playlists')currentMusicPlaylistId='';
-  currentMusicGroup=null;
-  musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
-  syncChrome(view);
-  render(view);
- }
-
- function bind(){
-  if(bound)return;
-  const page=$('musicPage');
-  if(!page)return;
-  bound=true;
-  page.addEventListener('click',event=>{
-   const tab=event.target&&event.target.closest?event.target.closest('[data-music-view]'):null;
-   if(!tab||!page.contains(tab))return;
-   const view=tab.getAttribute('data-music-view');
-   if(!views.has(view))return;
-   event.preventDefault();
-   navigate(view);
-  });
- }
-
- function getCurrent(){return current;}
- function step(delta){
-  const order=['all','playlists','folders','albums','artists','recent','favorites'];
-  const index=order.indexOf(current),next=index+delta;
-  if(next>=0&&next<order.length)navigate(order[next]);
- }
- return {bind,navigate,render,getCurrent,step};
-})();
-
-function showMusicInfo(view){
- if(view!=='folders'||MusicNavigation.getCurrent()!=='folders')return;
- const tracks=items.filter(item=>item.type==='audio');
- const folders=Array.from(new Set(tracks.map(item=>String(item.folder||'Device storage').replace(/\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
- const lib=$('musicLibrary');if(!lib)return;
- $('musicCount').textContent=currentMusicFolder?tracks.filter(item=>String(item.folder||'Device storage').replace(/\\/g,'/')===currentMusicFolder).length+' tracks':folders.length+' folders';
- lib.hidden=false;$('musicPlaylistsPanel').hidden=true;
- if(currentMusicFolder){
-  const list=tracks.filter(item=>String(item.folder||'Device storage').replace(/\\/g,'/')===currentMusicFolder);
-  lib.className='library music-track-list';
-  lib.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicFolderBack">← Folders</button><strong>'+escapeHtml(currentMusicFolder)+'</strong><button type="button" id="musicFolderPlay">▶ Play</button></div>'+list.map(item=>'<div class="file" data-mkey="'+escapeHtml(item.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(item.name)+'</strong><small>'+escapeHtml(item.artist||item.album||fmtSize(item.size))+'</small></div><button class="openfile" data-ma="favorite" aria-label="Toggle favorite">'+uiIcon(isFavorite(item)?'starFilled':'star')+'</button><button class="openfile" data-ma="play" aria-label="Play">'+uiIcon('play')+'</button><button class="openfile" data-ma="more" aria-label="More actions">'+uiIcon('more')+'</button></div>').join('')||'<div class="empty"><strong>No tracks in this folder</strong><p>Try scanning your music library again.</p></div>';
-  $('musicFolderBack').onclick=()=>{currentMusicFolder='';MusicNavigation.render('folders')};
-  $('musicFolderPlay').disabled=!list.length;
-  $('musicFolderPlay').onclick=()=>{if(list.length){selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(item=>({uri:item.uri,name:item.name,type:item.type}))))}};
-  bindMusicTrackRows(lib);return;
- }
- lib.className='library music-track-list';
- lib.innerHTML=folders.map(folder=>{const count=tracks.filter(item=>String(item.folder||'Device storage').replace(/\\/g,'/')===folder).length;return '<button class="music-group-row" type="button" data-folder-name="'+escapeHtml(folder)+'"><span class="music-playlist-art">▰</span><span class="music-playlist-copy"><strong>'+escapeHtml(folder.split('/').filter(Boolean).pop()||folder)+'</strong><small>'+count+' tracks · '+escapeHtml(folder)+'</small></span><span>›</span></button>'}).join('')||'<div class="empty"><strong>No music folders found</strong><p>Scan music or select a folder with audio files.</p><button id="musicEmptyScan" type="button">Scan music</button></div>';
- lib.querySelectorAll('[data-folder-name]').forEach(button=>button.onclick=()=>{currentMusicFolder=button.dataset.folderName;MusicNavigation.render('folders')});
- const scan=$('musicEmptyScan');if(scan)scan.onclick=()=>safeBridge('scanLocalMedia');
-}
-
-/* Compatibility entry points route into the single controller; no independent navigation logic. */
+/* Compatibility entry point used by playlist helpers. */
 function setMusicBrowseView(view){MusicNavigation.navigate(view)}
-function renderMusic(){MusicNavigation.render(musicBrowseView)}
 
 function renderMusicPlaylists(){
  const box=$('musicPlaylistsList');if(!box)return;
