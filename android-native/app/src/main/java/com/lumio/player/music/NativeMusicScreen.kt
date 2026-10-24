@@ -35,6 +35,7 @@ import java.util.Locale
 fun NativeMusicScreen(
     tracks: List<NativeMusicTrack>,
     onPlay: (NativeMusicTrack) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
@@ -85,8 +86,8 @@ fun NativeMusicScreen(
                     Text("LUMIO", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Text("Music", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
                 }
-                Button(onClick = { /* system Back returns to the existing LUMIO home */ }) {
-                    Text("Offline")
+                Button(onClick = onBack) {
+                    Text("Back")
                 }
             }
             Text(
