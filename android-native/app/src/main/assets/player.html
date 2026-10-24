@@ -708,7 +708,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 /* Compact, grouped Music controls; the song list starts immediately below. */
 /* Replace the legacy category header with the clean reference-style title row. */
-#musicPage .music-search-top{display:block!important;margin:0 0 14px!important;padding:0 1px;min-width:0} #musicPage .music-search-top .video-search{min-height:48px;border-radius:14px}
+#musicPage .music-search-top{display:block!important;margin:0 0 14px!important;padding:0 1px;min-width:0} #musicPage .music-search-top .video-search{min-height:48px;border-radius:14px;outline:none!important;box-shadow:none!important} #musicPage .music-search-top .video-search:focus,#musicPage .music-search-top .video-search:focus-visible{outline:1px solid var(--accent)!important;outline-offset:2px;box-shadow:none!important}
 #musicPage .music-modern-header{display:flex;flex-direction:column;gap:0;margin:0 0 14px;min-width:0}
 #musicPage .music-modern-header>.music-category-tabs{margin-bottom:8px}
 #musicPage .music-category-tabs{border-bottom:0!important;min-height:48px!important;gap:20px!important;align-items:center!important}
@@ -1711,21 +1711,33 @@ const MusicNavigation = (() => {
   if(!page)return;
   current=view;musicBrowseView=view;
   syncChrome(view);
+  const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel');
+  if(view==='all'||view==='recent'||view==='favorites'){
+   currentMusicFolder='';currentMusicGroup=null;
+   if(lib)lib.hidden=false;
+   if(playlists)playlists.hidden=true;
+   musicLibraryFilter=view==='recent'?'recent':view==='favorites'?'favorites':'all';
+   lumioBaseRenderMusic();
+   return;
+  }
   if(view==='albums'||view==='artists'){
-   currentMusicGroup=null;
-   showMusicGrouping(view,items.filter(item=>item.type==='audio'));
+   currentMusicFolder='';currentMusicGroup=null;
+   if(lib)lib.hidden=false;
+   if(playlists)playlists.hidden=true;
+   showMusicGrouping(view,items.filter(item=>item&&item.type==='audio'));
    return;
   }
   if(view==='folders'){
+   if(lib)lib.hidden=false;
+   if(playlists)playlists.hidden=true;
    showMusicInfo('folders');
    return;
   }
   if(view==='playlists'){
-   const lib=$('musicLibrary');if(lib)lib.hidden=true;
+   if(lib)lib.hidden=true;
+   if(playlists)playlists.hidden=false;
    renderMusicPlaylists();
-   return;
   }
-  lumioBaseRenderMusic();
  }
 
  function navigate(requestedView){
@@ -1765,7 +1777,7 @@ const MusicNavigation = (() => {
 })();
 
 function showMusicInfo(view){
- if(view!=='folders')return;
+ if(view!=='folders'||MusicNavigation.getCurrent()!=='folders')return;
  const tracks=items.filter(item=>item.type==='audio');
  const folders=Array.from(new Set(tracks.map(item=>String(item.folder||'Device storage').replace(/\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  const lib=$('musicLibrary');if(!lib)return;
