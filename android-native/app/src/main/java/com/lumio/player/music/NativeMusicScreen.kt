@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,9 +33,8 @@ import java.util.Locale
 
 /**
  * Isolated Compose implementation for LUMIO's Music library.
- *
- * It intentionally does not replace MainActivity/WebView yet. Wire it into the
- * existing navigation only after the app builds and the native library is tested.
+ * It intentionally does not replace MainActivity/WebView until the branch builds
+ * and the native library is tested on-device.
  */
 @Composable
 fun NativeMusicScreen(
@@ -48,7 +48,8 @@ fun NativeMusicScreen(
 
     val normalizedQuery = query.trim().lowercase(Locale.ROOT)
     val visibleTracks = tracks.filter { track ->
-        (selectedFolder == null || track.folderPath.trimEnd('/') == selectedFolder) &&
+        (selectedFolder == null || track.folderPath.trimEnd('/') == selectedFolder ||
+            track.folderPath.trimEnd('/').startsWith("$selectedFolder/")) &&
             (normalizedQuery.isEmpty() ||
                 track.title.lowercase(Locale.ROOT).contains(normalizedQuery) ||
                 track.artist.lowercase(Locale.ROOT).contains(normalizedQuery) ||
@@ -71,16 +72,15 @@ fun NativeMusicScreen(
             .sortedBy { it.lowercase(Locale.ROOT) }
     }
 
+    val directTracks = visibleTracks.filter { it.folderPath.trimEnd('/') == selectedFolder }
+    val folderTracks = if (selectedFolder == null) emptyList() else visibleTracks
+
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Music",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("Music", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Text(
                 text = if (selectedFolder == null) "Offline library" else selectedFolder!!.substringAfterLast('/'),
                 style = MaterialTheme.typography.bodyMedium,
@@ -92,10 +92,10 @@ fun NativeMusicScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
-                label = { Text("Search songs, artists, albums") }
+                label = { Text("Search songs, artists, albums, folders") }
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { showFolders = false }) { Text("Songs") }
+                Button(onClick = { showFolders = false; selectedFolder = null }) { Text("Songs") }
                 Button(onClick = { showFolders = true }) { Text("Folders") }
                 if (selectedFolder != null) {
                     Button(onClick = { selectedFolder = null; showFolders = true }) { Text("All folders") }
@@ -103,9 +103,13 @@ fun NativeMusicScreen(
             }
 
             if (showFolders) {
-                Text("Folders · ${childFolders.size}", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (selectedFolder == null) "Folders · ${childFolders.size}" else
+                        "${selectedFolder!!.substringAfterLast('/')} · ${directTracks.size} tracks · ${childFolders.size} subfolders",
+                    style = MaterialTheme.typography.titleMedium
+                )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(childFolders, key = { it }) { folder ->
+                    items(childFolders, key = { "folder:$it" }) { folder ->
                         Card(
                             modifier = Modifier.fillMaxWidth().clickable {
                                 selectedFolder = folder
@@ -131,40 +135,47 @@ fun NativeMusicScreen(
                             }
                         }
                     }
+                    items(folderTracks, key = { "track:${it.id}" }) { track ->
+                        TrackRow(track = track, onClick = { onPlay(track) })
+                    }
                 }
             } else {
                 Text("Songs · ${visibleTracks.size}", style = MaterialTheme.typography.titleMedium)
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(visibleTracks, key = { it.id }) { track ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                                .clickable { onPlay(track) }
-                                .padding(vertical = 10.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    track.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    "${track.artist}  ·  ${track.album}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            Spacer(Modifier.padding(2.dp))
-                            Text(formatDuration(track.durationMs), style = MaterialTheme.typography.labelMedium)
-                        }
+                        TrackRow(track = track, onClick = { onPlay(track) })
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TrackRow(track: NativeMusicTrack, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                track.title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                "${track.artist}  ·  ${track.album}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(Modifier.padding(2.dp))
+        Text(formatDuration(track.durationMs), style = MaterialTheme.typography.labelMedium)
     }
 }
 
