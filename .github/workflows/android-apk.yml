@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["main", "feature/native-music-migration"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
@@ -11,7 +11,6 @@ on:
 permissions:
   contents: write
 
-# Each source edit triggers CI; keep only the newest branch build running.
 concurrency:
   group: lumio-android-${{ github.ref }}
   cancel-in-progress: true
@@ -43,8 +42,23 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
-      # Require the persistent keystore; never publish a preview signed by a disposable runner key.
+      - name: Build APK
+        working-directory: android-native
+        run: gradle --no-daemon assembleDebug
+      - name: Report APK size
+        run: |
+          ls -lh android-native/app/build/outputs/apk/debug/app-debug.apk
+          du -b android-native/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload branch test APK
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-native-music-migration-apk
+          path: android-native/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Restore persistent Lumio preview signing key
+        if: github.ref == 'refs/heads/main'
         env:
           LUMIO_KEYSTORE_BASE64: ${{ secrets.LUMIO_KEYSTORE_BASE64 }}
           LUMIO_KEYSTORE_PASSWORD: ${{ secrets.LUMIO_KEYSTORE_PASSWORD }}
@@ -58,20 +72,20 @@ jobs:
           printf '%s' "$LUMIO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/lumio-preview.keystore"
           test -s "$RUNNER_TEMP/lumio-preview.keystore"
           echo "LUMIO_KEYSTORE_PATH=$RUNNER_TEMP/lumio-preview.keystore" >> "$GITHUB_ENV"
-      - name: Build debug APK with persistent signing identity
+      - name: Rebuild main APK with persistent signing identity
+        if: github.ref == 'refs/heads/main'
         working-directory: android-native
         env:
+          LUMIO_KEYSTORE_PATH: ${{ env.LUMIO_KEYSTORE_PATH }}
           LUMIO_KEYSTORE_PASSWORD: ${{ secrets.LUMIO_KEYSTORE_PASSWORD }}
           LUMIO_KEY_ALIAS: ${{ secrets.LUMIO_KEY_ALIAS }}
           LUMIO_KEY_PASSWORD: ${{ secrets.LUMIO_KEY_PASSWORD }}
         run: gradle --no-daemon assembleDebug
-      - name: Report APK size
-        run: |
-          ls -lh android-native/app/build/outputs/apk/debug/app-debug.apk
-          du -b android-native/app/build/outputs/apk/debug/app-debug.apk
       - name: Prepare direct APK download
+        if: github.ref == 'refs/heads/main'
         run: cp android-native/app/build/outputs/apk/debug/app-debug.apk Lumio-Android-Preview.apk
       - name: Publish direct APK download (no ZIP)
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-preview
