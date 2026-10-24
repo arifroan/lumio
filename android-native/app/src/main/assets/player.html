@@ -1762,7 +1762,34 @@ const MusicNavigation = (() => {
  }
 
  function getCurrent(){return current;}
- return {bind,navigate,render,getCurrent};
+ function step(delta){
+  const order=['all','playlists','folders','albums','artists','recent','favorites','searches'];
+  const index=order.indexOf(current),next=index+delta;
+  if(next>=0&&next<order.length)navigate(order[next]);
+ }
+ return {bind,navigate,render,getCurrent,step};
+})();
+
+/* Music swipe navigation: horizontal gestures change categories; vertical scrolling remains native. */
+(function bindMusicSwipeNavigation(){
+ const page=$('musicPage');if(!page)return;
+ let startX=0,startY=0,startAt=0,tracking=false;
+ page.addEventListener('touchstart',event=>{
+  if(event.touches.length!==1)return;
+  const target=event.target;
+  if(target.closest('input,textarea,select,button,a,[contenteditable="true"],.music-category-tabs,.music-track-list [data-mkey],.music-playlist-row,.music-group-row')){tracking=false;return}
+  const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();tracking=true;
+ },{passive:true});
+ page.addEventListener('touchend',event=>{
+  if(!tracking||!event.changedTouches.length)return;
+  tracking=false;
+  const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY;
+  if(Date.now()-startAt>700||Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.35)return;
+  const active=document.activeElement;
+  if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName))return;
+  MusicNavigation.step(dx<0?1:-1);
+ },{passive:true});
+ page.addEventListener('touchcancel',()=>{tracking=false},{passive:true});
 })();
 
 function showMusicInfo(view){
