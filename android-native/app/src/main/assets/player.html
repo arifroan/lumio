@@ -1782,27 +1782,31 @@ const MusicNavigation = (() => {
  return {bind,navigate,render,getCurrent,step};
 })();
 
-/* Music swipe navigation: track gestures over content rows too, while preserving vertical scroll and controls. */
+/* Music swipe navigation: use Pointer Events (WebView-friendly) with touch fallback. */
 (function bindMusicSwipeNavigation(){
  const page=$('musicPage');if(!page)return;
- let startX=0,startY=0,startAt=0,tracking=false;
- page.addEventListener('touchstart',event=>{
-  if(event.touches.length!==1){tracking=false;return}
-  const target=event.target;
-  /* Exclude only controls where a horizontal gesture should retain its normal meaning. */
-  if(target.closest('input,textarea,select,button,a,[contenteditable="true"],.music-category-tabs,.music-header-search')){tracking=false;return}
-  const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();tracking=true;
- },{passive:true});
- page.addEventListener('touchend',event=>{
-  if(!tracking||!event.changedTouches.length)return;
-  tracking=false;
-  const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY;
-  if(Date.now()-startAt>900||Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy)*1.25)return;
+ let startX=0,startY=0,startAt=0,tracking=false,pointerId=null;
+ function begin(x,y,target,id){
+  if(target&&target.closest&&target.closest('input,textarea,select,button,a,[contenteditable="true"],.music-category-tabs,.music-header-search')){tracking=false;return}
+  startX=x;startY=y;startAt=Date.now();tracking=true;pointerId=id==null?null:id;
+ }
+ function finish(x,y,id){
+  if(!tracking||(pointerId!==null&&id!==pointerId))return;
+  tracking=false;pointerId=null;
+  const dx=x-startX,dy=y-startY;
+  if(Date.now()-startAt>1200||Math.abs(dx)<42||Math.abs(dx)<Math.abs(dy)*1.2)return;
   const active=document.activeElement;
   if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName))return;
-  MusicNavigation.step(dx<0?1:-1);
- },{passive:true});
- page.addEventListener('touchcancel',()=>{tracking=false},{passive:true});
+  if(typeof MusicNavigation!=='undefined')MusicNavigation.step(dx<0?1:-1);
+ }
+ if(window.PointerEvent){
+  page.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;begin(e.clientX,e.clientY,e.target,e.pointerId)},{passive:true});
+  page.addEventListener('pointerup',e=>finish(e.clientX,e.clientY,e.pointerId),{passive:true});
+  page.addEventListener('pointercancel',()=>{tracking=false;pointerId=null},{passive:true});
+ }
+ page.addEventListener('touchstart',e=>{if(e.touches.length!==1){tracking=false;return}const t=e.touches[0];begin(t.clientX,t.clientY,e.target,null)},{passive:true});
+ page.addEventListener('touchend',e=>{if(!e.changedTouches.length)return;const t=e.changedTouches[0];finish(t.clientX,t.clientY,null)},{passive:true});
+ page.addEventListener('touchcancel',()=>{tracking=false;pointerId=null},{passive:true});
 })();
 
 function showMusicInfo(view){
