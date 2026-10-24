@@ -708,13 +708,13 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 /* Compact, grouped Music controls; the song list starts immediately below. */
 /* Replace the legacy category header with the clean reference-style title row. */
+#musicPage .music-search-top{display:block!important;margin:0 0 14px!important;padding:0 1px;min-width:0} #musicPage .music-search-top .video-search{min-height:48px;border-radius:14px}
 #musicPage .music-modern-header{display:flex;flex-direction:column;gap:0;margin:0 0 14px;min-width:0}
 #musicPage .music-modern-header>.music-category-tabs{margin-bottom:8px}
 #musicPage .music-category-tabs{border-bottom:0!important;min-height:48px!important;gap:20px!important;align-items:center!important}
 #musicPage .music-category-tab{font-size:17px!important;font-weight:500!important;color:var(--muted)!important;padding:10px 0 12px!important;letter-spacing:0!important}
 #musicPage .music-category-tab.active{font-size:19px!important;font-weight:750!important;color:var(--ink)!important}
 #musicPage .music-category-tab.active:after{height:2px!important;left:0;right:0;bottom:3px!important;background:var(--ink)!important}
-#musicPage .music-category-tabs .music-header-search{margin:0 3px 0 0!important;flex-shrink:0!important;width:34px!important;height:34px!important}
 #musicPage .music-category-tabs{padding:0 0 6px!important}
 #musicPage .music-modern-header{gap:0!important;margin-bottom:8px!important}
 #musicPage .music-list-tools{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:0 1px;min-width:0} #musicPage .music-list-tools #musicCount{margin-right:auto;color:var(--muted);font-size:12px;white-space:nowrap} #musicPage .music-list-tools .music-sort-control{display:flex;align-items:center;gap:5px;min-width:0} #musicPage .music-list-tools .music-density-toggle{flex-shrink:0}
@@ -930,9 +930,9 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 </section>
 
 <section class="page-panel music-experience" id="musicPage" hidden>
+ <div class="library-toolbar music-search-top" id="musicToolbar"><input class="video-search" id="musicSearch" type="search" placeholder="Search songs, artists, folders…" autocomplete="off" aria-label="Search music"></div>
  <div class="music-modern-header">
   <nav class="music-category-tabs" aria-label="Music library">
-   <button class="music-header-search" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false" title="Search music"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button>
    <button type="button" class="music-category-tab active" data-music-view="all" aria-pressed="true">Songs</button>
    <button type="button" class="music-category-tab" data-music-view="playlists" aria-pressed="false">Playlists</button>
    <button type="button" class="music-category-tab" data-music-view="folders" aria-pressed="false">Folders</button>
@@ -945,7 +945,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
   <div class="music-list-tools"><span id="musicCount">0 tracks</span><label class="music-sort-control" for="musicSort" aria-label="Sort music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><select class="video-sort" id="musicSort"><option value="title">Title</option><option value="recent">Recently played</option><option value="date">Date added</option><option value="duration">Duration</option><option value="size">File size</option></select></label><button class="music-density-toggle" id="musicDensityToggle" type="button" aria-label="Toggle compact track list" aria-pressed="false" title="Toggle compact track list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M3.5 6h.1M3.5 12h.1M3.5 18h.1" stroke-width="3"/></svg></button></div>
   <div class="music-legacy-controls" hidden><button id="musicCreatePlaylist" type="button">New playlist</button><button id="showAllMusic" type="button" data-music-view="all">All</button><button id="showRecentMusic" type="button" data-music-view="recent">Recent</button><button id="showFavoriteMusic" type="button" data-music-view="favorites">Favorites</button></div>
  </div>
- <div class="library-toolbar" id="musicToolbar" hidden><input class="video-search" id="musicSearch" type="search" placeholder="Search songs, artists, folders…" autocomplete="off" aria-label="Search music"></div>
  <section class="library music-track-list" id="musicLibrary"><div class="empty"><div class="emptyicon">♫</div><strong>Your music library is ready</strong><p>Your audio and music files appear here automatically.</p></div></section>
  <section class="music-playlists-panel" id="musicPlaylistsPanel" hidden><div class="sectionhead"><h3>Your playlists</h3><button id="musicCreatePlaylistPanel" type="button">＋ Create playlist</button></div><div id="musicPlaylistsList"></div></section>
 </section>
@@ -1316,7 +1315,7 @@ function choosePage(page){
  }
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>choosePage(button.dataset.page)));
- $('musicSearchToggle').onclick=()=>{musicSearchExpanded=!musicSearchExpanded;$('musicToolbar').hidden=!musicSearchExpanded;$('musicSearchToggle').setAttribute('aria-expanded',String(musicSearchExpanded));if(musicSearchExpanded)$('musicSearch').focus();else{$('musicSearch').value='';musicSearchText='';renderMusic()}};$('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();renderMusic()});$('showAllMusic').onclick=()=>{musicLibraryFilter='all';renderMusic()};$('showRecentMusic').onclick=()=>{musicLibraryFilter='recent';renderMusic()};$('showFavoriteMusic').onclick=()=>{musicLibraryFilter='favorites';renderMusic()};$('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});$('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
+ $('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();renderMusic()});$('showAllMusic').onclick=()=>{musicLibraryFilter='all';renderMusic()};$('showRecentMusic').onclick=()=>{musicLibraryFilter='recent';renderMusic()};$('showFavoriteMusic').onclick=()=>{musicLibraryFilter='favorites';renderMusic()};$('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});$('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
 $('openStream').onclick=()=>{
  const raw=$('streamUrl').value.trim(),message=$('streamMessage');if(!raw){message.textContent='Enter a direct HTTPS media URL first.';return}
  let url;try{url=new URL(raw)}catch(e){message.textContent='That does not look like a valid URL.';return}
@@ -1624,7 +1623,7 @@ function showMediaActions(item){if(!item)return;if(item.type==='audio'&&typeof s
 function bindMusicActions(){
  $('musicCreatePlaylist').onclick=createMusicPlaylist;$('musicCreatePlaylistPanel').onclick=createMusicPlaylist;
  
- $('musicSearchToggle').onclick=()=>{musicSearchExpanded=!musicSearchExpanded;$('musicToolbar').hidden=!musicSearchExpanded;$('musicSearchToggle').setAttribute('aria-expanded',String(musicSearchExpanded));if(musicSearchExpanded){setMusicBrowseView('all');$('musicSearch').focus()}else{$('musicSearch').value='';musicSearchText='';renderMusic()}};
+ 
  $('musicSearch').addEventListener('input',()=>{musicSearchText=$('musicSearch').value.trim().toLocaleLowerCase();$('musicLibrary').hidden=false;renderMusic()});
  $('showAllMusic').onclick=()=>setMusicBrowseView('all');$('showRecentMusic').onclick=()=>setMusicBrowseView('recent');$('showFavoriteMusic').onclick=()=>setMusicBrowseView('favorites');
  $('musicSort').addEventListener('change',()=>{musicSort=$('musicSort').value;renderMusic()});
