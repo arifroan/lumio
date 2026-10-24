@@ -1555,59 +1555,88 @@ function render(){
 }
 function openItem(key){const x=findMediaByKey(key);if(!x)return;selectedKey=x.key;$('player').classList.add('visible');$('title').textContent=x.name;$('meta').textContent=x.type.toUpperCase()+' · '+fmtSize(x.size)+' · Local playback';safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function playKey(key){const x=findMediaByKey(key);if(x)safeBridge('playMedia',x.uri,x.name,x.type==='audio',JSON.stringify(items.filter(y=>y.folder===x.folder&&y.type===x.type).slice(0,500).map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
-mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();choosePage('videos');refreshLibraryState();render();
-/* LUMIO Music library upgrade: switchable collections, folder browser and playlist details. */
+mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();MusicNavigation.bind();choosePage('videos');refreshLibraryState();render();
+/* LUMIO Music navigation: one authoritative controller and one delegated tab handler. */
 let currentMusicPlaylistId='';
-function setMusicBrowseView(view){
- const allowed=['all','playlists','folders','albums','artists','recent','favorites','searches'];
- if(!allowed.includes(view))view='all';
- musicBrowseView=view;
- if(view!=='folders')currentMusicFolder='';
- if(view!=='playlists')currentMusicPlaylistId='';
- currentMusicGroup=null;
- musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
- const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel'),searches=$('musicSearchHistory');
- if(playlists)playlists.hidden=view!=='playlists';
- if(searches)searches.hidden=view!=='searches';
- if(lib)lib.hidden=['playlists','searches'].includes(view);
- const labels={all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',searches:'Search history'};
- const heading=$('musicLibraryHeading');if(heading)heading.textContent=labels[view]||'Songs';
- document.querySelectorAll('#musicPage [data-music-view]').forEach(b=>{const selected=b.dataset.musicView===view;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
- if(['albums','artists'].includes(view)){showMusicGrouping(view,items.filter(x=>x.type==='audio'));return}
- if(view==='searches'){renderMusicSearches();return}
- if(view==='folders'){showMusicInfo('folders');return}
- renderMusic();
- if(view==='playlists')renderMusicPlaylists();
-}
+const MusicNavigation = (() => {
+ const views = new Set(['all','playlists','folders','albums','artists','recent','favorites','searches']);
+ const labels = {all:'Songs',favorites:'Favorites',recent:'Recently played',playlists:'Playlists',albums:'Albums',artists:'Artists',folders:'Folders',searches:'Search history'};
+ let current = 'all';
+ let bound = false;
 
-function showMusicInfo(view){
- if(view!=='folders')return;
- const tracks=items.filter(x=>x.type==='audio');
- const folders=Array.from(new Set(tracks.map(x=>String(x.folder||'Device storage').replace(/\\/g,'/')))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
- const lib=$('musicLibrary');if(!lib)return;
- $('musicLibraryHeading').textContent=currentMusicFolder||'Folders';
- $('musicCount').textContent=currentMusicFolder?tracks.filter(x=>(x.folder||'Device storage')===currentMusicFolder).length+' tracks':folders.length+' folders';
- $('musicLibrary').hidden=false;$('musicPlaylistsPanel').hidden=true;$('musicSearchHistory').hidden=true;
- if(currentMusicFolder){
-  const list=tracks.filter(x=>(x.folder||'Device storage')===currentMusicFolder);
-  lib.className='library music-track-list';
-  lib.innerHTML='<div class="music-playlist-detail-head"><button type="button" id="musicFolderBack">← Folders</button><strong>'+escapeHtml(currentMusicFolder)+'</strong><button type="button" id="musicFolderPlay">▶ Play</button></div>'+list.map(x=>'<div class="file" data-mkey="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.artist||x.album||fmtSize(x.size))+'</small></div><button class="openfile" data-ma="favorite" aria-label="Toggle favorite">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button class="openfile" data-ma="play" aria-label="Play">'+uiIcon('play')+'</button><button class="openfile" data-ma="more" aria-label="More actions">'+uiIcon('more')+'</button></div>').join('')||'<div class="empty"><strong>No tracks in this folder</strong><p>Try scanning your music library again.</p></div>';
-  $('musicFolderBack').onclick=()=>{currentMusicFolder='';showMusicInfo('folders')};
-  $('musicFolderPlay').disabled=!list.length;$('musicFolderPlay').onclick=()=>{if(list.length){selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))}};
-  bindMusicTrackRows(lib);return;
+ function syncChrome(view){
+  const page=$('musicPage'),lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel'),searches=$('musicSearchHistory');
+  if(playlists)playlists.hidden=view!=='playlists';
+  if(searches)searches.hidden=view!=='searches';
+  if(lib)lib.hidden=['playlists','searches'].includes(view);
+  const heading=$('musicLibraryHeading');if(heading)heading.textContent=labels[view]||'Songs';
+  if(page)page.querySelectorAll('[data-music-view]').forEach(tab=>{
+   const selected=tab.dataset.musicView===view;
+   tab.classList.toggle('active',selected);
+   tab.setAttribute('aria-pressed',String(selected));
+  });
  }
- lib.className='library music-track-list';
- lib.innerHTML=folders.map(folder=>{const count=tracks.filter(x=>(x.folder||'Device storage').replace(/\\/g,'/')===folder).length;return '<button class="music-group-row" type="button" data-folder-name="'+escapeHtml(folder)+'"><span class="music-playlist-art">▰</span><span class="music-playlist-copy"><strong>'+escapeHtml(folder.split('/').filter(Boolean).pop()||folder)+'</strong><small>'+count+' tracks · '+escapeHtml(folder)+'</small></span><span>›</span></button>'}).join('')||'<div class="empty"><strong>No music folders found</strong><p>Scan music or select a folder with audio files.</p><button id="musicEmptyScan" type="button">Scan music</button></div>';
- lib.querySelectorAll('[data-folder-name]').forEach(b=>b.onclick=()=>{currentMusicFolder=b.dataset.folderName;showMusicInfo('folders')});
- const scan=$('musicEmptyScan');if(scan)scan.onclick=()=>safeBridge('scanLocalMedia');
-}
-function renderMusic(){
- if(musicBrowseView==='folders'){showMusicInfo('folders');return}
- if(['albums','artists'].includes(musicBrowseView)){showMusicGrouping(musicBrowseView,items.filter(x=>x.type==='audio'));return}
- lumioBaseRenderMusic();
- if(musicBrowseView==='playlists'){const lib=$('musicLibrary');if(lib)lib.hidden=true;renderMusicPlaylists()}
- if(musicBrowseView==='searches'){const lib=$('musicLibrary');if(lib)lib.hidden=true;renderMusicSearches()}
-}
+
+ function render(view=current){
+  const page=$('musicPage');
+  if(!page)return;
+  syncChrome(view);
+  if(view==='albums'||view==='artists'){
+   currentMusicGroup=null;
+   showMusicGrouping(view,items.filter(item=>item.type==='audio'));
+   return;
+  }
+  if(view==='folders'){
+   showMusicInfo('folders');
+   return;
+  }
+  if(view==='playlists'){
+   const lib=$('musicLibrary');if(lib)lib.hidden=true;
+   renderMusicPlaylists();
+   return;
+  }
+  if(view==='searches'){
+   const lib=$('musicLibrary');if(lib)lib.hidden=true;
+   renderMusicSearches();
+   return;
+  }
+  lumioBaseRenderMusic();
+ }
+
+ function navigate(requestedView){
+  const view=views.has(requestedView)?requestedView:'all';
+  current=view;
+  musicBrowseView=view;
+  if(view!=='folders')currentMusicFolder='';
+  if(view!=='playlists')currentMusicPlaylistId='';
+  currentMusicGroup=null;
+  musicLibraryFilter=['favorites','recent'].includes(view)?view:'all';
+  syncChrome(view);
+  render(view);
+ }
+
+ function bind(){
+  if(bound)return;
+  const page=$('musicPage');
+  if(!page)return;
+  bound=true;
+  page.addEventListener('click',event=>{
+   const tab=event.target&&event.target.closest?event.target.closest('[data-music-view]'):null;
+   if(!tab||!page.contains(tab))return;
+   const view=tab.getAttribute('data-music-view');
+   if(!views.has(view))return;
+   event.preventDefault();
+   navigate(view);
+  });
+ }
+
+ function getCurrent(){return current;}
+ return {bind,navigate,render,getCurrent};
+})();
+
+/* Compatibility entry points route into the single controller; no independent navigation logic. */
+function setMusicBrowseView(view){MusicNavigation.navigate(view)}
+function renderMusic(){MusicNavigation.render(musicBrowseView)}
 
 function renderMusicPlaylists(){
  const box=$('musicPlaylistsList');if(!box)return;
@@ -1717,20 +1746,5 @@ function renderMusicGroupDetail(allTracks){
 }
 
 
-// LUMIO MUSIC TAB TAP FIX: handle category taps at the page level in capture phase.
-// This avoids stale/overwritten per-button listeners from older Music navigation code.
-(function installMusicTabTapHandler(){
- const page=document.getElementById('musicPage');
- if(!page||page.dataset.musicTapHandlerInstalled==='true')return;
- page.dataset.musicTapHandlerInstalled='true';
- page.addEventListener('click',function(event){
-  const tab=event.target&&event.target.closest?event.target.closest('#musicPage [data-music-view]'):null;
-  if(!tab)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  const view=tab.getAttribute('data-music-view');
-  if(typeof setMusicBrowseView==='function')setMusicBrowseView(view);
- },true);
-})();
 
 </script></body></html>
