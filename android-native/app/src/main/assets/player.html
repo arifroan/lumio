@@ -707,7 +707,10 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .music-playlist-track button{border:0;background:transparent;color:var(--muted);padding:8px}
 
 /* Compact, grouped Music controls; the song list starts immediately below. */
-#musicPage .music-modern-header{display:flex;flex-direction:column;gap:12px;margin:0 0 14px;min-width:0}
+#musicPage .music-modern-header{display:flex;flex-direction:column;gap:0;margin:0 0 14px;min-width:0}
+#musicPage .music-modern-header>.music-category-tabs{margin-bottom:12px}
+#musicPage .music-modern-header>.music-library-header{display:none!important}
+#musicPage .music-modern-header>.music-playback-actions{display:none!important}
 #musicPage .music-library-header{display:flex!important;align-items:center;justify-content:space-between;gap:10px;margin:0!important;min-width:0;padding:14px 15px;border:1px solid var(--line);border-radius:16px 16px 0 0;background:var(--surface2)}
 #musicPage .music-count-line{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
 #musicPage .music-count-line h3{margin:0;font-size:18px;font-weight:800;line-height:1.25;color:var(--ink)}
