@@ -930,20 +930,16 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 </section>
 
 <section class="page-panel music-experience" id="musicPage" hidden>
- <div class="library-toolbar music-search-top" id="musicToolbar"><input class="video-search" id="musicSearch" type="search" placeholder="Search songs, artists, folders…" autocomplete="off" aria-label="Search music"></div>
+ <div class="library-toolbar music-search-top" id="musicToolbar"><input class="video-search" id="musicSearch" type="search" placeholder="Search songs, albums, or artists…" autocomplete="off" aria-label="Search music"></div>
  <div class="music-modern-header">
-  <nav class="music-category-tabs" aria-label="Music library">
-   <button type="button" class="music-category-tab active" data-music-view="all" aria-pressed="true">Songs</button>
-   <button type="button" class="music-category-tab" data-music-view="playlists" aria-pressed="false">Playlists</button>
-   <button type="button" class="music-category-tab" data-music-view="folders" aria-pressed="false">Folders</button>
-   <button type="button" class="music-category-tab" data-music-view="albums" aria-pressed="false">Albums</button>
-   <button type="button" class="music-category-tab" data-music-view="artists" aria-pressed="false">Artists</button>
-   <button type="button" class="music-category-tab" data-music-view="recent" aria-pressed="false">Recently played</button>
-   <button type="button" class="music-category-tab" data-music-view="favorites" aria-pressed="false">Favorites</button>
-
+  <nav class="music-category-tabs lumio-music-tabs" aria-label="Music library">
+   <button type="button" class="music-category-tab active" data-lumio-music-tab="songs" aria-pressed="true">All Songs</button>
+   <button type="button" class="music-category-tab" data-lumio-music-tab="playlists" aria-pressed="false">Playlist</button>
+   <button type="button" class="music-category-tab" data-lumio-music-tab="albums" aria-pressed="false">Albums</button>
+   <button type="button" class="music-category-tab" data-lumio-music-tab="artists" aria-pressed="false">Artist</button>
   </nav>
   <div class="music-list-tools"><span id="musicCount">0 tracks</span><label class="music-sort-control" for="musicSort" aria-label="Sort music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><select class="video-sort" id="musicSort"><option value="title">Title</option><option value="recent">Recently played</option><option value="date">Date added</option><option value="duration">Duration</option><option value="size">File size</option></select></label><button class="music-density-toggle" id="musicDensityToggle" type="button" aria-label="Toggle compact track list" aria-pressed="false" title="Toggle compact track list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M3.5 6h.1M3.5 12h.1M3.5 18h.1" stroke-width="3"/></svg></button></div>
-  <div class="music-legacy-controls" hidden><button id="musicCreatePlaylist" type="button">New playlist</button><button id="showAllMusic" type="button" data-music-view="all">All</button><button id="showRecentMusic" type="button" data-music-view="recent">Recent</button><button id="showFavoriteMusic" type="button" data-music-view="favorites">Favorites</button></div>
+  <div class="music-legacy-controls" hidden><button id="musicCreatePlaylist" type="button">New playlist</button><button id="showAllMusic" type="button">All</button><button id="showRecentMusic" type="button">Recent</button><button id="showFavoriteMusic" type="button">Favorites</button></div>
  </div>
  <section class="library music-track-list" id="musicLibrary"><div class="empty"><div class="emptyicon">♫</div><strong>Your music library is ready</strong><p>Your audio and music files appear here automatically.</p></div></section>
  <section class="music-playlists-panel" id="musicPlaylistsPanel" hidden><div class="sectionhead"><h3>Your playlists</h3><button id="musicCreatePlaylistPanel" type="button">＋ Create playlist</button></div><div id="musicPlaylistsList"></div></section>
@@ -1915,5 +1911,43 @@ function renderMusicGroupDetail(allTracks){
 
 
 
-mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();MusicNavigation.bind();choosePage('videos');refreshLibraryState();render();
+
+/* LUMIO Music V2: fresh four-section in-page library controller. */
+let lumioMusicV2View = 'songs';
+function renderMusic(){
+ const page=$('musicPage'),lib=$('musicLibrary'),panel=$('musicPlaylistsPanel');
+ if(!page||!lib||!panel)return;
+ page.querySelectorAll('[data-lumio-music-tab]').forEach(tab=>{
+  const selected=tab.dataset.lumioMusicTab===lumioMusicV2View;
+  tab.classList.toggle('active',selected);
+  tab.setAttribute('aria-pressed',String(selected));
+ });
+ const search=$('musicSearch');
+ if(search)musicSearchText=search.value.trim().toLocaleLowerCase();
+ currentMusicFolder='';currentMusicGroup=null;
+ if(lumioMusicV2View==='playlists'){
+  lib.hidden=true;panel.hidden=false;renderMusicPlaylists();return;
+ }
+ panel.hidden=true;lib.hidden=false;
+ if(lumioMusicV2View==='albums'||lumioMusicV2View==='artists'){
+  const tracks=items.filter(item=>item&&item.type==='audio');
+  const needle=musicSearchText;
+  const filtered=needle?tracks.filter(item=>[item.name,item.artist,item.album].some(v=>String(v||'').toLocaleLowerCase().includes(needle))):tracks;
+  showMusicGrouping(lumioMusicV2View,filtered);return;
+ }
+ musicBrowseView='all';musicLibraryFilter='all';
+ lumioBaseRenderMusic();
+}
+function bindLumioMusicV2(){
+ const page=$('musicPage');if(!page||page.dataset.musicV2Bound==='true')return;
+ page.dataset.musicV2Bound='true';
+ page.addEventListener('click',event=>{
+  const tab=event.target.closest('[data-lumio-music-tab]');if(!tab||!page.contains(tab))return;
+  event.preventDefault();lumioMusicV2View=tab.dataset.lumioMusicTab;
+  if(lumioMusicV2View==='playlists')currentMusicPlaylistId='';
+  renderMusic();
+ });
+}
+
+mountChatStyleIcons();initLumioTheme();restoreMediaCache();bindMusicActions();bindLumioMusicV2();MusicNavigation.bind();choosePage('videos');refreshLibraryState();render();
 </script></body></html>
