@@ -29,6 +29,10 @@
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true" />
         <activity
+            android:name=".NativeMusicActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
+        <activity
             android:name=".VaultActivity"
             android:exported="false"
             android:screenOrientation="unspecified" />
