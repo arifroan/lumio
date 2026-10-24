@@ -506,7 +506,6 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .bottom-nav .nav-item::before{content:none!important;display:none!important}
 .bottom-nav .nav-item .nav-icon{transform:none!important}
 /* Music library: one simple track list, no category tabs or decorative browse controls. */
-#musicPage .music-library-header,
 #musicPage .music-sort-row,
 #musicPage .music-browse-tabs,
 #musicPage .music-chip,
@@ -515,10 +514,21 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 #musicPage .music-group-row[data-group-kind="genres"] {
  display:none!important;
 }
-/* Keep essential actions reachable while removing the broken category-tab strip. */
+/* Compact Music layout: remove greeting/hero blocks while keeping core actions accessible. */
 #musicPage .music-greeting,
-#musicPage .music-feature,
-#musicPage .music-shortcuts {display:flex}
+#musicPage .music-feature {display:none!important}
+#musicPage .music-library-header {display:flex!important;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
+#musicPage .music-header-actions {display:flex;align-items:center;gap:7px}
+#musicPage .music-header-actions .icon-button {width:42px;height:42px;flex-shrink:0}
+#musicPage .music-quick-actions {display:flex;align-items:center;gap:6px}
+#musicPage .music-quick-actions button {width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--accent);display:grid;place-items:center}
+#musicPage .music-quick-actions svg {width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#musicPage .music-shortcuts {display:flex;flex-wrap:wrap;gap:9px;margin:0 0 18px}
+#musicPage .music-shortcut {flex:1 1 100px;min-height:100px;gap:9px;padding:13px;border-radius:18px}
+#musicPage .music-shortcut-symbol {width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:var(--accent-soft);color:var(--accent)!important}
+#musicPage .music-shortcut-symbol svg {width:23px;height:23px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#musicPage .music-shortcut strong {font-size:13px}
+#musicPage .music-shortcut small {font-size:10px}
 #musicPage .music-browse-tabs,
 #musicPage .music-browse-tab {display:none!important}
 #musicPage .music-track-list .file{border-radius:0}
@@ -772,15 +782,14 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 </section>
 
 <section class="page-panel music-experience" id="musicPage" hidden>
- <div class="music-greeting"><div><div class="music-brand"><span class="music-brand-mark">♫</span> LUMIO</div><h2 id="musicTitle">Good evening</h2><p>Music for your moment.</p></div><div class="music-header-actions"><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></div></div>
- <div class="music-feature" id="musicFeature"><div class="music-feature-copy"><span class="music-eyebrow">YOUR LIBRARY</span><strong>Every track, one place.</strong><small>Local music. Always yours.</small></div><div class="music-feature-actions"><button id="musicPlayAll" type="button">▶ Play all</button><button id="musicShuffle" type="button" aria-label="Shuffle all">⤨</button></div></div>
+ <div class="music-quick-actions" aria-label="Playback actions"><button id="musicPlayAll" type="button" aria-label="Play all" title="Play all"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z" fill="currentColor" stroke="none"/></svg></button><button id="musicShuffle" type="button" aria-label="Shuffle all" title="Shuffle all"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button><button class="icon-button" id="musicSearchToggle" type="button" aria-label="Search music" aria-expanded="false" title="Search music"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></div>
  <div class="music-shortcuts" aria-label="Music categories">
-  <button class="music-shortcut" type="button" data-music-view="favorites"><span class="music-shortcut-symbol">♡</span><strong>Favorites</strong><small id="favoriteMusicCount">0 tracks</small></button>
-  <button class="music-shortcut" type="button" data-music-view="recent"><span class="music-shortcut-symbol">◷</span><strong>Recent</strong><small id="recentMusicCount">0 tracks</small></button>
-  <button class="music-shortcut" type="button" data-music-view="playlists"><span class="music-shortcut-symbol">♫</span><strong>Playlists</strong><small id="playlistMusicCount">0 playlists</small></button>
+  <button class="music-shortcut" type="button" data-music-view="favorites"><span class="music-shortcut-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5-8.8 11-8.8 11s-8.8-6-8.8-11A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.6Z"/></svg></span><strong>Favorites</strong><small id="favoriteMusicCount">0 tracks</small></button>
+  <button class="music-shortcut" type="button" data-music-view="recent"><span class="music-shortcut-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><strong>Recent</strong><small id="recentMusicCount">0 tracks</small></button>
+  <button class="music-shortcut" type="button" data-music-view="playlists"><span class="music-shortcut-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><strong>Playlists</strong><small id="playlistMusicCount">0 playlists</small></button>
   <button class="music-shortcut" type="button" data-music-view="albums"><span class="music-shortcut-symbol">◉</span><strong>Albums</strong><small>From tags &amp; folders</small></button>
   <button class="music-shortcut" type="button" data-music-view="artists"><span class="music-shortcut-symbol">♬</span><strong>Artists</strong><small>Browse by file metadata</small></button>
-  <button class="music-shortcut" type="button" data-music-view="folders"><span class="music-shortcut-symbol">▱</span><strong>Folders</strong><small>Browse local folders</small></button>
+  <button class="music-shortcut" type="button" data-music-view="folders"><span class="music-shortcut-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 10h18"/></svg></span><strong>Folders</strong><small>Browse local folders</small></button>
  </div>
  <div class="music-library-header"><div><h3 id="musicLibraryHeading">All music</h3><span id="musicCount">0 tracks</span></div><div class="music-list-actions"><button class="music-chip active" data-music-view="all" id="showAllMusic" aria-pressed="true">All</button><button class="music-chip" data-music-view="recent" id="showRecentMusic" aria-pressed="false">Recent</button><button class="music-chip" data-music-view="favorites" id="showFavoriteMusic" aria-pressed="false">Favorites</button></div></div>
  <div class="library-toolbar" id="musicToolbar" hidden><input class="video-search" id="musicSearch" type="search" placeholder="Search songs, artists, folders…" autocomplete="off" aria-label="Search music"></div>
