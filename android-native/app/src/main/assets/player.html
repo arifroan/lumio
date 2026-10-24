@@ -1782,21 +1782,22 @@ const MusicNavigation = (() => {
  return {bind,navigate,render,getCurrent,step};
 })();
 
-/* Music swipe navigation: horizontal gestures change categories; vertical scrolling remains native. */
+/* Music swipe navigation: track gestures over content rows too, while preserving vertical scroll and controls. */
 (function bindMusicSwipeNavigation(){
  const page=$('musicPage');if(!page)return;
  let startX=0,startY=0,startAt=0,tracking=false;
  page.addEventListener('touchstart',event=>{
-  if(event.touches.length!==1)return;
+  if(event.touches.length!==1){tracking=false;return}
   const target=event.target;
-  if(target.closest('input,textarea,select,button,a,[contenteditable="true"],.music-category-tabs,.music-track-list [data-mkey],.music-playlist-row,.music-group-row')){tracking=false;return}
+  /* Exclude only controls where a horizontal gesture should retain its normal meaning. */
+  if(target.closest('input,textarea,select,button,a,[contenteditable="true"],.music-category-tabs,.music-header-search')){tracking=false;return}
   const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();tracking=true;
  },{passive:true});
  page.addEventListener('touchend',event=>{
   if(!tracking||!event.changedTouches.length)return;
   tracking=false;
   const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY;
-  if(Date.now()-startAt>700||Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.35)return;
+  if(Date.now()-startAt>900||Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy)*1.25)return;
   const active=document.activeElement;
   if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName))return;
   MusicNavigation.step(dx<0?1:-1);
