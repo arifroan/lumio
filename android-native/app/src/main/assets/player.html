@@ -1716,4 +1716,21 @@ function renderMusicGroupDetail(allTracks){
  bindMusicTrackRows(lib);
 }
 
+
+// LUMIO MUSIC TAB TAP FIX: handle category taps at the page level in capture phase.
+// This avoids stale/overwritten per-button listeners from older Music navigation code.
+(function installMusicTabTapHandler(){
+ const page=document.getElementById('musicPage');
+ if(!page||page.dataset.musicTapHandlerInstalled==='true')return;
+ page.dataset.musicTapHandlerInstalled='true';
+ page.addEventListener('click',function(event){
+  const tab=event.target&&event.target.closest?event.target.closest('#musicPage [data-music-view]'):null;
+  if(!tab)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const view=tab.getAttribute('data-music-view');
+  if(typeof setMusicBrowseView==='function')setMusicBrowseView(view);
+ },true);
+})();
+
 </script></body></html>
