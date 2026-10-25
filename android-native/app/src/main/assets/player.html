@@ -844,8 +844,8 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 
 /* Music uses the shared LUMIO design tokens so every appearance stays in sync. */
 #musicPage{color:var(--ink);background:transparent}
-#musicPage .music-modern-header{display:block!important}
-#musicPage .music-category-tabs{display:none!important}
+#musicPage .music-modern-header{display:flex!important;flex-direction:column!important}
+#musicPage .music-category-tabs{display:flex!important;visibility:visible!important;opacity:1!important}
 #musicPage .music-list-tools{display:flex!important;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;color:var(--muted)}
 #musicPage .music-list-tools #musicCount{font-size:14px;font-weight:750;color:var(--muted)}
 #musicPage .music-sort-control{display:flex;align-items:center;gap:7px;color:var(--accent,var(--violet))}
@@ -961,6 +961,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
    <button type="button" class="music-category-tab" data-music-view="playlists" aria-pressed="false">Playlists</button>
    <button type="button" class="music-category-tab" data-music-view="albums" aria-pressed="false">Albums</button>
    <button type="button" class="music-category-tab" data-music-view="artists" aria-pressed="false">Artists</button>
+   <button type="button" class="music-category-tab" data-music-view="folders" aria-pressed="false">Folders</button>
    <button type="button" class="music-category-tab" data-music-view="recent" aria-pressed="false">Recently played</button>
    <button type="button" class="music-category-tab" data-music-view="favorites" aria-pressed="false">Favorites</button>
 
@@ -1252,6 +1253,9 @@ window.onNativeMediaScan=function(records,error,status){
  }
  mergeMedia(records,!error,false);
  if(!refreshLibraryState())render();
+ /* Keep the Music view synchronized when an asynchronous scan completes. */
+ renderMusic();
+ if(musicBrowseView==='playlists'&&typeof renderMusicPlaylists==='function')renderMusicPlaylists();
  if(!error){try{localStorage.setItem('lumio.lastSuccessfulScanAt',String(Date.now()))}catch(e){}}
  finishStartupGate();
  if(error&&!items.length)showMessage(error)
