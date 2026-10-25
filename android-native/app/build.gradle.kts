@@ -42,9 +42,15 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
+            // Keep the preview's application ID and signing identity, but shrink code/resources
+            // so the downloadable preview reflects realistic APK-size optimization.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             applicationIdSuffix = ".preview"
             versionNameSuffix = "-preview"
             if (usePersistentLumioSigning) {
