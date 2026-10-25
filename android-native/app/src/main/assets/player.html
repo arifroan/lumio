@@ -1381,8 +1381,24 @@ function choosePage(page){
  $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!isMusic;
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  if(isMusic){
+  /* The Songs pane must never inherit a hidden state from a prior tab/view. */
+  const musicLibrary=$('musicLibrary'),musicPlaylistsPanel=$('musicPlaylistsPanel');
+  if(musicBrowseView!=='playlists'){
+   if(musicLibrary)musicLibrary.hidden=false;
+   if(musicPlaylistsPanel)musicPlaylistsPanel.hidden=true;
+  }else{
+   if(musicLibrary)musicLibrary.hidden=true;
+   if(musicPlaylistsPanel)musicPlaylistsPanel.hidden=false;
+  }
   requestInvisibleMusicScan();
   renderMusic();
+  /* Reassert visibility after the controller render and browser's next layout pass. */
+  requestAnimationFrame(()=>{
+   if(currentPage!=='music')return;
+   if(musicBrowseView!=='playlists'&&musicLibrary)musicLibrary.hidden=false;
+   if(musicPlaylistsPanel)musicPlaylistsPanel.hidden=musicBrowseView!=='playlists';
+   renderMusic();
+  });
   if(musicBrowseView==='playlists')renderMusicPlaylists();
   scheduleMusicLibraryRedraw();
  }
