@@ -1576,7 +1576,7 @@ function musicTracksForCurrentView(){
  if(['albums','artists','playlists'].includes(musicBrowseView))return [];
  if(musicSearchText){
   const query=musicSearchText.trim().toLocaleLowerCase();
-  list=list.filter(x=>[x.name,x.artist,x.album,x.folder,x.uri,x.title,x.displayName].some(value=>String(value||'').toLocaleLowerCase().includes(query)));
+  list=list.filter(x=>[x.name,x.artist,x.album,x.title,x.displayName].some(value=>String(value||'').toLocaleLowerCase().includes(query)));
  }
  const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
  list.sort((a,b)=>{
@@ -1600,7 +1600,6 @@ function lumioBaseRenderMusic(){
  if($('musicSort')&&$('musicSort').value!==musicSort)$('musicSort').value=musicSort;
  const density=$('musicDensityToggle');if(density){const compact=$('musicPage').classList.contains('music-compact-list');density.setAttribute('aria-pressed',String(compact));density.setAttribute('aria-label',compact?'Use comfortable track list':'Use compact track list')}
  
- const feature=$('musicFeature');if(feature){feature.hidden=musicBrowseView!=='all';const copy=feature.querySelector('.music-feature-copy strong');if(copy)copy.textContent=tracks.length?'Your music, all together.':'Build your offline library'}
  if(!list.length){
   const msg=musicSearchText?'No matching tracks':musicBrowseView==='favorites'?'No favorite tracks yet':musicBrowseView==='recent'?'No recently played tracks':'No music found';
   const desc=musicSearchText?'Try another song, artist, album, or folder name.':tracks.length?'There are no tracks in this view yet.':'No audio files were found in accessible device storage. Check media permissions or refresh your library.';
@@ -1611,7 +1610,7 @@ function lumioBaseRenderMusic(){
  }
  lib.className='library music-track-list';
  lib.innerHTML=list.map((x,index)=>{
-  const title=x.name||x.title||'Unknown track',artist=x.artist||x.album||x.folder||'Unknown artist';
+  const title=x.name||x.title||'Unknown track',artist=x.artist||x.album||'Unknown artist';
   const detail=[artist,x.duration?formatDuration(x.duration):''].filter(Boolean).join(' · ');
   return '<div class="file" data-mkey="'+escapeHtml(x.key)+'" data-track-index="'+index+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(title)+'</strong><small>'+escapeHtml(detail)+'</small></div><button type="button" class="openfile music-favorite '+(isFavorite(x)?'favorited':'')+'" data-ma="favorite" aria-label="'+(isFavorite(x)?'Remove from favorites':'Add to favorites')+'">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button type="button" class="openfile" data-ma="play" aria-label="Play '+escapeHtml(title)+'">'+uiIcon('play')+'</button><button type="button" class="openfile" data-ma="more" aria-label="More actions for '+escapeHtml(title)+'">'+uiIcon('more')+'</button></div>';
  }).join('');
