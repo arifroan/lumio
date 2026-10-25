@@ -1216,9 +1216,12 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
 let lastInvisibleMusicScanRequest=0;
 function requestInvisibleMusicScan(){
- /* Reuse cached media on navigation; only scan automatically when no library is loaded. */
- if(items.length||lastInvisibleMusicScanRequest)return;
- lastInvisibleMusicScanRequest=Date.now();
+ /* Video-only cache must not suppress the initial Music scan. Cached songs render immediately;
+    when no audio entries exist, request a scan and allow a retry if the first scan stalls. */
+ if(items.some(item=>item&&item.type==='audio'))return;
+ const now=Date.now();
+ if(lastInvisibleMusicScanRequest&&now-lastInvisibleMusicScanRequest<15000)return;
+ lastInvisibleMusicScanRequest=now;
  safeBridge('scanLocalMedia');
 }
 function finishStartupGate(){}
