@@ -612,9 +612,16 @@ public final class MainActivity extends Activity {
                         : warning + " Some selected files remain unavailable.";
             }
             if (generation != scanGeneration.get()) return;
+            JSONObject scanStatus = new JSONObject();
+            try {
+                scanStatus.put("videoStoreComplete", canReadVideo() && !videoScanFailed);
+                scanStatus.put("audioStoreComplete", canReadAudio() && !audioScanFailed);
+                scanStatus.put("treesComplete", treesComplete);
+                scanStatus.put("savedPicksComplete", !incompleteSavedPicksScan);
+            } catch (JSONException ignored) { }
             String errorJson = warning == null ? "null" : JSONObject.quote(warning);
             callJs("window.onNativeMediaScan && window.onNativeMediaScan("
-                    + array.toString() + ", " + errorJson + ")");
+                    + array.toString() + ", " + errorJson + ", " + scanStatus.toString() + ")");
         });
     }
 

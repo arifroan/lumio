@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["main", "fix/pre-stream-videos-music"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
@@ -74,8 +74,8 @@ jobs:
       - name: Publish direct APK download (no ZIP)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-preview
-          name: Lumio Android Preview
+          tag_name: ${{ github.ref_name == 'main' && 'android-preview' || 'pre-stream-fixes-preview' }}
+          name: ${{ github.ref_name == 'main' && 'Lumio Android Preview' || 'Lumio Pre-Stream Fixes Preview' }}
           target_commitish: ${{ github.sha }}
           body: |
             Direct APK download for the Lumio Android preview.
