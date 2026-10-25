@@ -841,7 +841,30 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 #musicPage.music-compact-list .music-track-list .file-icon{width:36px;height:36px;flex-basis:36px;border-radius:10px}
 #musicPage.music-compact-list .music-track-list .file-name small{margin-top:1px}
 
-</style></head>
+
+/* Music uses the shared LUMIO design tokens so every appearance stays in sync. */
+#musicPage{color:var(--ink);background:transparent}
+#musicPage .music-modern-header{display:block!important}
+#musicPage .music-category-tabs{display:none!important}
+#musicPage .music-list-tools{display:flex!important;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;color:var(--muted)}
+#musicPage .music-list-tools #musicCount{font-size:14px;font-weight:750;color:var(--muted)}
+#musicPage .music-sort-control{display:flex;align-items:center;gap:7px;color:var(--accent,var(--violet))}
+#musicPage .music-sort-control svg{display:none}
+#musicPage #musicSort{width:auto;min-height:38px;padding:6px 3px;border:0;background:transparent;color:var(--accent,var(--violet));font-size:14px;font-weight:750}
+#musicPage #musicDensityToggle{display:none!important}
+#musicPage .music-search-top{margin:16px 0 20px}
+#musicPage #musicSearch{min-height:64px;padding:14px 20px;border:1px solid var(--line);border-radius:23px;background:var(--surface);color:var(--ink);font-size:17px}
+#musicPage #musicSearch::placeholder{color:var(--muted)}
+#musicPage #musicLibrary{border:0;background:transparent;border-radius:0;overflow:visible}
+#musicPage #musicLibrary .file{gap:13px;margin:0 0 8px;padding:14px;border:0;border-radius:22px;background:var(--surface);color:var(--ink)}
+#musicPage #musicLibrary .file-icon{flex:0 0 54px;width:54px;height:54px;border-radius:17px;background:var(--surface2);color:var(--accent,var(--violet));font-size:23px}
+#musicPage #musicLibrary .file-name strong{font-size:15px;font-weight:750;letter-spacing:-.15px}
+#musicPage #musicLibrary .file-name small{font-size:12px;color:var(--muted)}
+#musicPage #musicLibrary .openfile[data-ma="play"]{color:var(--accent,var(--violet));font-size:20px}
+#musicPage #musicLibrary .openfile[data-ma="favorite"],#musicPage #musicLibrary .openfile[data-ma="more"]{display:none!important}
+#musicPage .music-playlist-row,#musicPage .music-playlist-track,#musicPage .music-playlist-detail-head{background:var(--surface);color:var(--ink);border-color:var(--line)}
+@media(max-width:380px){#musicPage #musicSearch{min-height:56px;padding:12px 15px}#musicPage #musicLibrary .file{padding:11px;gap:10px}#musicPage #musicLibrary .file-icon{flex-basis:46px;width:46px;height:46px}}
+\n</style></head>
 <body>
 <main>
 <section id="mediaPage">
@@ -1315,16 +1338,6 @@ function choosePage(page){
 }
 
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
-  if(button.dataset.page==='music'){
-    try{
-      if(window.LumioNative&&typeof window.LumioNative.openNativeMusic==='function'){
-        window.LumioNative.openNativeMusic();
-        return;
-      }
-    }catch(error){console.error('Unable to open native Music screen',error)}
-    showMessage('Native Music could not be opened. Please restart LUMIO and try again.');
-    return;
-  }
   choosePage(button.dataset.page);
 }));
 
