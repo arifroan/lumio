@@ -1257,15 +1257,35 @@ window.requestNativeStartupScan=function(){
   safeBridge('scanLocalMedia');
  }
 };
+function redrawMusicIfVisible(reason){
+ if(currentPage!=='music'||!MusicNavigation||typeof MusicNavigation.render!=='function')return;
+ const page=$('musicPage');
+ if(!page||page.hidden)return;
+ lumioMusicDiagSnapshot('musicLifecycle:redraw',{reason,visibility:document.visibilityState});
+ MusicNavigation.render(MusicNavigation.getCurrent());
+}
 function scheduleMusicLibraryRedraw(){
- /* WebView can deliver the scan result while Music is entering; reconcile on the next
-    frames as well so the final DOM reflects the latest in-memory media list. */
- [0,120,400].forEach(delay=>setTimeout(()=>{
-  if(currentPage==='music'&&MusicNavigation&&typeof MusicNavigation.render==='function'){
-   MusicNavigation.render(MusicNavigation.getCurrent());
-  }
+ /* Android WebView may complete a page transition before its layout/render state settles.
+    Retry through later frames and short delays, but only while Music is the active page. */
+ [0,120,400,800,1500].forEach(delay=>setTimeout(()=>{
+  if(delay===0&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>redrawMusicIfVisible('scheduled-frame'));
+  else redrawMusicIfVisible('scheduled-'+delay+'ms');
  },delay));
 }
+let musicLifecycleHooksBound=false;
+function bindMusicLifecycleHooks(){
+ if(musicLifecycleHooksBound)return;
+ musicLifecycleHooksBound=true;
+ const refresh=reason=>{
+  if(document.visibilityState==='hidden')return;
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>redrawMusicIfVisible(reason));
+  setTimeout(()=>redrawMusicIfVisible(reason+'-delayed'),120);
+ };
+ document.addEventListener('visibilitychange',()=>refresh('visibilitychange'));
+ window.addEventListener('pageshow',()=>refresh('pageshow'));
+ window.addEventListener('focus',()=>refresh('focus'));
+}
+bindMusicLifecycleHooks();
 window.onNativeMediaScan=function(records,error,status){
  lumioMusicDiagSnapshot('nativeScan:received',{records:Array.isArray(records)?records.length:-1,error:error||null,audioIncoming:Array.isArray(records)?records.filter(x=>x&&(x.type==='audio'||String(x.mime||'').startsWith('audio/'))).length:-1,status:status||null});
  try{localStorage.setItem('lumio.lastScanAttemptAt',String(Date.now()))}catch(e){}
