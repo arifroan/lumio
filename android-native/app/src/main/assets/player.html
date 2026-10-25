@@ -968,7 +968,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
   <div class="music-list-tools"><span id="musicCount">0 tracks</span><label class="music-sort-control" for="musicSort" aria-label="Sort music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><select class="video-sort" id="musicSort"><option value="title">Title</option><option value="recent">Recently played</option><option value="date">Date added</option><option value="duration">Duration</option><option value="size">File size</option></select></label><button class="music-density-toggle" id="musicDensityToggle" type="button" aria-label="Toggle compact track list" aria-pressed="false" title="Toggle compact track list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M3.5 6h.1M3.5 12h.1M3.5 18h.1" stroke-width="3"/></svg></button></div>
   <div class="music-legacy-controls" hidden><button id="musicCreatePlaylist" type="button">New playlist</button><button id="showAllMusic" type="button" data-music-view="all">All</button><button id="showRecentMusic" type="button" data-music-view="recent">Recent</button><button id="showFavoriteMusic" type="button" data-music-view="favorites">Favorites</button></div>
  </div>
- <section class="library music-track-list" id="musicLibrary"><div class="empty"><div class="emptyicon">♫</div><strong>Your music library is ready</strong><p>Your audio and music files appear here automatically.</p></div></section>
+ <section class="library music-track-list" id="musicLibrary" aria-live="polite"></section>
  <section class="music-playlists-panel" id="musicPlaylistsPanel" hidden><div class="sectionhead"><h3>Your playlists</h3><button id="musicCreatePlaylistPanel" type="button">＋ Create playlist</button></div><div id="musicPlaylistsList"></div></section>
 </section>
 
@@ -1619,7 +1619,10 @@ function lumioBaseRenderMusic(){
  const recentCount=tracks.filter(x=>watchHistory.some(h=>h&&h.uri===x.uri)).length;
  const list=musicTracksForCurrentView();
  $('musicCount').textContent=musicSearchText?list.length+' results':list.length+' track'+(list.length===1?'':'s');
- $('audioCount').textContent=tracks.length;$('favoriteMusicCount').textContent=favs.length+' tracks';$('recentMusicCount').textContent=recentCount+' tracks';$('playlistMusicCount').textContent=musicPlaylists.length+' playlists';
+ const audioCountEl=$('audioCount');if(audioCountEl)audioCountEl.textContent=tracks.length;
+ const favoriteCountEl=$('favoriteMusicCount');if(favoriteCountEl)favoriteCountEl.textContent=favs.length+' tracks';
+ const recentCountEl=$('recentMusicCount');if(recentCountEl)recentCountEl.textContent=recentCount+' tracks';
+ const playlistCountEl=$('playlistMusicCount');if(playlistCountEl)playlistCountEl.textContent=musicPlaylists.length+' playlists';
  ['showAllMusic','showRecentMusic','showFavoriteMusic'].forEach(id=>{const el=$(id);if(el){const view=id==='showAllMusic'?'all':id==='showRecentMusic'?'recent':'favorites';el.classList.toggle('active',musicBrowseView===view);el.setAttribute('aria-pressed',String(musicBrowseView===view))}});
  if($('musicSort')&&$('musicSort').value!==musicSort)$('musicSort').value=musicSort;
  const density=$('musicDensityToggle');if(density){const compact=$('musicPage').classList.contains('music-compact-list');density.setAttribute('aria-pressed',String(compact));density.setAttribute('aria-label',compact?'Use comfortable track list':'Use compact track list')}
