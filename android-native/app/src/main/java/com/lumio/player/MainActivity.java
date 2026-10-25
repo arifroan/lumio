@@ -146,11 +146,6 @@ public final class MainActivity extends Activity {
 
     private final class LumioBridge {
         @JavascriptInterface
-        public void openNativeMusic() {
-            runOnUiThread(() -> startActivity(new Intent(MainActivity.this, NativeMusicActivity.class)));
-        }
-
-        @JavascriptInterface
         public void openVault() {
             runOnUiThread(() -> startActivity(new Intent(MainActivity.this, VaultActivity.class)));
         }
