@@ -1222,12 +1222,21 @@ function requestInvisibleMusicScan(){
 }
 function finishStartupGate(){}
 window.requestNativeStartupScan=function(){
- let lastSuccessful=0;
- try{lastSuccessful=Number(localStorage.getItem('lumio.lastSuccessfulScanAt'))||0}catch(e){}
- const cacheFresh=items.length>0&&lastSuccessful>0&&(Date.now()-lastSuccessful)<6*60*60*1000;
- if(!cacheFresh)safeBridge('scanLocalMedia');
+ const now=Date.now();let lastSuccessful=0,lastAttempt=0;
+ try{
+  lastSuccessful=Number(localStorage.getItem('lumio.lastSuccessfulScanAt'))||0;
+  lastAttempt=Number(localStorage.getItem('lumio.lastScanAttemptAt'))||0;
+ }catch(e){}
+ const hasCache=items.length>0;
+ const cacheFresh=hasCache&&lastSuccessful>0&&(now-lastSuccessful)<6*60*60*1000;
+ const recentlyAttempted=lastAttempt>0&&(now-lastAttempt)<60*60*1000;
+ if(!cacheFresh&&(!hasCache||!recentlyAttempted)){
+  try{localStorage.setItem('lumio.lastScanAttemptAt',String(now))}catch(e){}
+  safeBridge('scanLocalMedia');
+ }
 };
 window.onNativeMediaScan=function(records,error,status){
+ try{localStorage.setItem('lumio.lastScanAttemptAt',String(Date.now()))}catch(e){}
  if(error&&status&&typeof status==='object'){
   const incoming=new Set();
   (records||[]).forEach(item=>{if(!item)return;[item.uri,item.key,item.identity].forEach(value=>{if(value)incoming.add(String(value))})});
