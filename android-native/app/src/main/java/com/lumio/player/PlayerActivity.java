@@ -92,7 +92,9 @@ public final class PlayerActivity extends Activity {
     private Button playPauseButton;
     private boolean userSeeking;
     private boolean softwareFallbackAttempted;
-    private final Runnable bufferingFallback = () -> {
+    private final Runnable bufferingFallback = this::handleBufferingFallback;
+
+    private void handleBufferingFallback() {
         if (controller == null || isFinishing() || isDestroyed() || isInPictureInPicture()) return;
         if (controller.getPlaybackState() != Player.STATE_BUFFERING) return;
         if (softwareFallbackAttempted) {
@@ -102,7 +104,7 @@ public final class PlayerActivity extends Activity {
         softwareFallbackAttempted = true;
         showHint("Video decoder is stuck. Trying software decoding…");
         PlaybackService.setDecoderMode("software");
-    };
+    }
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
     private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
