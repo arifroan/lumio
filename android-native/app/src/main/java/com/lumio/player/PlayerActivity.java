@@ -247,6 +247,20 @@ public final class PlayerActivity extends Activity {
         tracks.setOnClickListener(v -> showTrackMenu());
         topBar.addView(tracks, new LinearLayout.LayoutParams(-2, dp(40)));
 
+        Button vlcButton = button("VLC");
+        vlcButton.setOnClickListener(v -> {
+            if (usingLibVlcFallback) showHint("Already using LibVLC");
+            else {
+                fallbackStartPositionMs = controller == null ? 0L : Math.max(0L, controller.getCurrentPosition());
+                startLibVlcFallback(new androidx.media3.common.PlaybackException(
+                        "Manually selected LibVLC compatibility engine",
+                        null, androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED));
+            }
+        });
+        LinearLayout.LayoutParams vlcParams = new LinearLayout.LayoutParams(-2, dp(40));
+        vlcParams.setMargins(dp(4), 0, 0, 0);
+        topBar.addView(vlcButton, vlcParams);
+
         pipButton = button("PiP");
         pipButton.setOnClickListener(v -> enterPipIfSupported());
         LinearLayout.LayoutParams pipParams = new LinearLayout.LayoutParams(-2, dp(40));
