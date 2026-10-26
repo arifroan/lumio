@@ -80,4 +80,6 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("androidx.media3:media3-session:1.11.1")
+    // Experimental secondary playback engine for the LibVLC compatibility test branch.
+    implementation("org.videolan.android:libvlc-all:3.7.7")
 }
