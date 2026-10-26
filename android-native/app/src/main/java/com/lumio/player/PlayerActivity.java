@@ -92,6 +92,18 @@ public final class PlayerActivity extends Activity {
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
     private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
+    private final Runnable updatePlaybackProgress = new Runnable() {
+        @Override public void run() {
+            if (controller != null && playbackSeekBar != null && !isFinishing() && !isDestroyed()) {
+                long duration = controller.getDuration(); long position = controller.getCurrentPosition();
+                if (duration > 0) { playbackSeekBar.setMax((int)Math.min(Integer.MAX_VALUE, duration)); if (!userSeeking) playbackSeekBar.setProgress((int)Math.min(Integer.MAX_VALUE, position)); }
+                if (currentTimeText != null) currentTimeText.setText(formatPlaybackTime(position));
+                if (durationTimeText != null) durationTimeText.setText(formatPlaybackTime(Math.max(0L, duration)));
+                if (playPauseButton != null) playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶");
+                controlsHandler.postDelayed(this, 500L);
+            }
+        }
+    };
     private final Runnable savePlaybackProgress = new Runnable() {
         @Override public void run() {
             if (controller != null && !isFinishing() && !isDestroyed()) {
@@ -103,6 +115,7 @@ public final class PlayerActivity extends Activity {
     private final Player.Listener playbackUiListener = new Player.Listener() {
         @Override public void onIsPlayingChanged(boolean isPlaying) {
             // Show controls on pause and resume; the shared timer hides them after two seconds.
+            if (playPauseButton != null) playPauseButton.setText(isPlaying ? "Ⅱ" : "▶");
             if (!requestedAudio) showPlaybackControlsTemporarily();
         }
         @Override public void onPlaybackStateChanged(int playbackState) {
@@ -365,9 +378,12 @@ public final class PlayerActivity extends Activity {
                 controller = connectedController;
                 playerView.setPlayer(connectedController);
                 connectedController.addListener(playbackUiListener);
+                controlsHandler.removeCallbacks(updatePlaybackProgress);
+                controlsHandler.post(updatePlaybackProgress);
                 syncSpeedButton(connectedController.getPlaybackParameters().speed);
                 initializeMedia();
                 controlsHandler.removeCallbacks(savePlaybackProgress);
+        controlsHandler.removeCallbacks(updatePlaybackProgress);
                 controlsHandler.postDelayed(savePlaybackProgress, PROGRESS_SAVE_INTERVAL_MS);
                 if (!requestedAudio) showPlaybackControlsTemporarily();
             } catch (Exception e) {
@@ -534,6 +550,21 @@ public final class PlayerActivity extends Activity {
         if (speedButton != null) speedButton.setText(trimSpeed(speed) + "×");
     }
 
+    private void seekBy(long deltaMs) {
+        if (controller == null || controller.getDuration() <= 0) return;
+        long target = Math.max(0L, Math.min(controller.getDuration(), controller.getCurrentPosition() + deltaMs));
+        controller.seekTo(target);
+        showHint((deltaMs > 0 ? "+" : "−") + Math.abs(deltaMs / 1000L) + " seconds");
+        showPlaybackControlsTemporarily();
+    }
+
+    private String formatPlaybackTime(long millis) {
+        long seconds = Math.max(0L, millis / 1000L); long hours = seconds / 3600L;
+        long minutes = (seconds % 3600L) / 60L; long remain = seconds % 60L;
+        return hours > 0 ? String.format(Locale.US, "%d:%02d:%02d", hours, minutes, remain)
+                : String.format(Locale.US, "%d:%02d", minutes, remain);
+    }
+
     private void cycleSpeed() {
         if (controller == null) return;
         speedIndex = (speedIndex + 1) % SPEEDS.length;
@@ -596,13 +627,13 @@ public final class PlayerActivity extends Activity {
     private void setPlaybackControlsVisible(boolean visible) {
         playbackControlsVisible = visible;
         if (topBar == null) return;
-        topBar.animate().cancel();
+        View[] layers = {topBar, centerControls, bottomControls};
+        for (View layer : layers) if (layer != null) layer.animate().cancel();
         if (visible) {
-            topBar.setVisibility(View.VISIBLE);
-            topBar.setAlpha(1f);
+            for (View layer : layers) if (layer != null) { layer.setVisibility(View.VISIBLE); layer.setAlpha(1f); }
         } else {
-            topBar.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
-                if (!playbackControlsVisible && topBar != null) topBar.setVisibility(View.GONE);
+            for (View layer : layers) if (layer != null) layer.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
+                if (!playbackControlsVisible && layer != null) layer.setVisibility(View.GONE);
             }).start();
         }
     }
