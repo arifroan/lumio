@@ -167,7 +167,9 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         }
     }
 
+    public boolean isAvailable() { return mpv != null && !released; }
     public void cycleAudioTrack() { command("cycle", "audio"); }
+    public void disableSubtitles() { command("set", "sid", "no"); }
     public void cycleSubtitleTrack() { command("cycle", "sub"); }
     public void setPlaybackSpeed(float value) {
         if (value < 0.25f || value > 4f) return;
