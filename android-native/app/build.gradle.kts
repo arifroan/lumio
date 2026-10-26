@@ -25,6 +25,11 @@ android {
         targetSdk = 35
         versionCode = 22
         versionName = "0.2.20"
+        // This experimental test APK targets the arm64 Android phone used for validation.
+        // Filtering ABIs avoids bundling unused native LibVLC binaries for x86 and 32-bit devices.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     signingConfigs {
