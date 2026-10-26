@@ -205,14 +205,15 @@ public final class PlayerActivity extends Activity {
 
         topBar = new LinearLayout(this);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(10), dp(10), dp(10), dp(10));
+        topBar.setPadding(dp(10), dp(8), dp(10), dp(8));
         topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setBackground(rounded(0xDD101018, 0, 0));
+        topBar.setBackground(rounded(0xB8101116, 0, 0));
         FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(62), Gravity.TOP);
         root.addView(topBar, topParams);
 
         Button back = button("‹");
-        back.setTextSize(26);
+        back.setContentDescription("Back");
+        back.setTextSize(27);
         back.setOnClickListener(v -> finish());
         topBar.addView(back, new LinearLayout.LayoutParams(dp(42), -1));
 
@@ -227,35 +228,53 @@ public final class PlayerActivity extends Activity {
         titleParams.setMargins(dp(9), 0, dp(4), 0);
         topBar.addView(titleText, titleParams);
 
-        Button tracks = button("Tracks");
+        Button tracks = button("≡♫");
+        tracks.setContentDescription("Audio and video tracks");
+        tracks.setTextSize(17);
+        tracks.setMinWidth(dp(38));
         tracks.setOnClickListener(v -> showTrackMenu());
         topBar.addView(tracks, new LinearLayout.LayoutParams(-2, dp(40)));
 
-        pipButton = button("PiP");
+        pipButton = button("▣");
+        pipButton.setContentDescription("Picture in picture");
+        pipButton.setTextSize(19);
+        pipButton.setMinWidth(dp(38));
         pipButton.setOnClickListener(v -> enterPipIfSupported());
         LinearLayout.LayoutParams pipParams = new LinearLayout.LayoutParams(-2, dp(40));
         pipParams.setMargins(dp(4), 0, 0, 0);
         topBar.addView(pipButton, pipParams);
 
         Button cc = button("CC");
+        cc.setContentDescription("Subtitles");
+        cc.setTextSize(13);
+        cc.setMinWidth(dp(38));
         cc.setOnClickListener(v -> showSubtitleMenu());
         LinearLayout.LayoutParams smallGap = new LinearLayout.LayoutParams(-2, dp(40));
         smallGap.setMargins(dp(4), 0, 0, 0);
         topBar.addView(cc, smallGap);
 
         speedButton = button("1×");
+        speedButton.setContentDescription("Playback speed");
+        speedButton.setTextSize(14);
+        speedButton.setMinWidth(dp(42));
         speedButton.setOnClickListener(v -> cycleSpeed());
         LinearLayout.LayoutParams speedParams = new LinearLayout.LayoutParams(-2, dp(40));
         speedParams.setMargins(dp(4), 0, 0, 0);
         topBar.addView(speedButton, speedParams);
 
-        zoomButton = button("Fit");
+        zoomButton = button("⛶");
+        zoomButton.setContentDescription("Video size and aspect ratio");
+        zoomButton.setTextSize(19);
+        zoomButton.setMinWidth(dp(38));
         zoomButton.setOnClickListener(v -> cycleZoom());
         LinearLayout.LayoutParams zoomParams = new LinearLayout.LayoutParams(-2, dp(40));
         zoomParams.setMargins(dp(4), 0, 0, 0);
         topBar.addView(zoomButton, zoomParams);
 
-        lockButton = button("Lock");
+        lockButton = button("♙");
+        lockButton.setContentDescription("Lock playback controls");
+        lockButton.setTextSize(19);
+        lockButton.setMinWidth(dp(38));
         lockButton.setOnClickListener(v -> toggleLock());
         LinearLayout.LayoutParams lockParams = new LinearLayout.LayoutParams(-2, dp(40));
         lockParams.setMargins(dp(4), 0, 0, 0);
