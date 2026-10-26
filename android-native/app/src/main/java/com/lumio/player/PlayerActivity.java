@@ -284,6 +284,44 @@ public final class PlayerActivity extends Activity {
         lockParams.setMargins(dp(4), 0, 0, 0);
         topBar.addView(lockButton, lockParams);
 
+        // LUMIO custom playback overlay replaces the stock Media3 controls.
+        centerControls = new LinearLayout(this);
+        centerControls.setGravity(Gravity.CENTER);
+        centerControls.setOrientation(LinearLayout.HORIZONTAL);
+        root.addView(centerControls, new FrameLayout.LayoutParams(-2, dp(64), Gravity.CENTER));
+        Button previous = button("|◀"); previous.setTextSize(20); previous.setBackgroundColor(Color.TRANSPARENT); previous.setContentDescription("Previous item");
+        previous.setOnClickListener(v -> { if (controller != null) controller.seekToPreviousMediaItem(); showPlaybackControlsTemporarily(); });
+        centerControls.addView(previous, new LinearLayout.LayoutParams(dp(52), dp(58)));
+        Button rewind = button("↶ 5"); rewind.setTextSize(15); rewind.setBackgroundColor(Color.TRANSPARENT); rewind.setContentDescription("Rewind 5 seconds");
+        rewind.setOnClickListener(v -> seekBy(-5000L));
+        LinearLayout.LayoutParams skip = new LinearLayout.LayoutParams(dp(64), dp(58)); skip.setMargins(dp(8), 0, dp(8), 0); centerControls.addView(rewind, skip);
+        playPauseButton = button("▶"); playPauseButton.setTextSize(25); playPauseButton.setContentDescription("Play or pause"); playPauseButton.setBackground(rounded(0x22FFFFFF, 0xCCFFFFFF, 40));
+        centerControls.addView(playPauseButton, new LinearLayout.LayoutParams(dp(62), dp(62)));
+        playPauseButton.setOnClickListener(v -> { if (controller == null) return; if (controller.isPlaying()) controller.pause(); else controller.play(); playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶"); showPlaybackControlsTemporarily(); });
+        Button forward = button("↷ 15"); forward.setTextSize(15); forward.setBackgroundColor(Color.TRANSPARENT); forward.setContentDescription("Forward 15 seconds");
+        forward.setOnClickListener(v -> seekBy(15000L)); centerControls.addView(forward, skip);
+        Button next = button("▶|"); next.setTextSize(20); next.setBackgroundColor(Color.TRANSPARENT); next.setContentDescription("Next item");
+        next.setOnClickListener(v -> { if (controller != null) controller.seekToNextMediaItem(); showPlaybackControlsTemporarily(); }); centerControls.addView(next, new LinearLayout.LayoutParams(dp(52), dp(58)));
+        bottomControls = new LinearLayout(this); bottomControls.setOrientation(LinearLayout.VERTICAL); bottomControls.setPadding(dp(18), dp(5), dp(18), dp(7)); bottomControls.setBackground(rounded(0x50101116, 0, 0));
+        root.addView(bottomControls, new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM));
+        playbackSeekBar = new SeekBar(this); playbackSeekBar.setMax(1000);
+        playbackSeekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.WHITE)); playbackSeekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.WHITE)); playbackSeekBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x99FFFFFF));
+        playbackSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) { if (fromUser && currentTimeText != null) currentTimeText.setText(formatPlaybackTime(progress)); }
+            @Override public void onStartTrackingTouch(SeekBar bar) { userSeeking = true; controlsHandler.removeCallbacks(hidePlaybackControls); }
+            @Override public void onStopTrackingTouch(SeekBar bar) { if (controller != null) controller.seekTo(bar.getProgress()); userSeeking = false; showPlaybackControlsTemporarily(); }
+        });
+        bottomControls.addView(playbackSeekBar, new LinearLayout.LayoutParams(-1, dp(24)));
+        LinearLayout footer = new LinearLayout(this); footer.setGravity(Gravity.CENTER_VERTICAL); footer.setOrientation(LinearLayout.HORIZONTAL); bottomControls.addView(footer, new LinearLayout.LayoutParams(-1, dp(36)));
+        currentTimeText = new TextView(this); currentTimeText.setTextColor(Color.WHITE); currentTimeText.setTextSize(11); currentTimeText.setTypeface(Typeface.DEFAULT, Typeface.BOLD); footer.addView(currentTimeText, new LinearLayout.LayoutParams(-2, -2));
+        durationTimeText = new TextView(this); durationTimeText.setTextColor(0xCCFFFFFF); durationTimeText.setTextSize(11); LinearLayout.LayoutParams dur = new LinearLayout.LayoutParams(-2, -2); dur.setMargins(dp(7),0,0,0); footer.addView(durationTimeText,dur);
+        View spacer = new View(this); footer.addView(spacer,new LinearLayout.LayoutParams(0,1,1f));
+        Button brightnessControl = button("☼"); brightnessControl.setTextSize(20); brightnessControl.setBackgroundColor(Color.TRANSPARENT); brightnessControl.setContentDescription("Brightness gesture help"); brightnessControl.setOnClickListener(v -> showHint("Swipe vertically on the left to adjust brightness")); footer.addView(brightnessControl,new LinearLayout.LayoutParams(dp(40),dp(34)));
+        Button settingsControl = button("⚙"); settingsControl.setTextSize(20); settingsControl.setBackgroundColor(Color.TRANSPARENT); settingsControl.setContentDescription("Playback settings"); settingsControl.setOnClickListener(v -> showTrackMenu()); footer.addView(settingsControl,new LinearLayout.LayoutParams(dp(40),dp(34)));
+        Button repeatControl = button("⇄"); repeatControl.setTextSize(20); repeatControl.setBackgroundColor(Color.TRANSPARENT); repeatControl.setContentDescription("Repeat mode");
+        repeatControl.setOnClickListener(v -> { if(controller==null)return; int m=controller.getRepeatMode(); controller.setRepeatMode(m==Player.REPEAT_MODE_OFF?Player.REPEAT_MODE_ALL:m==Player.REPEAT_MODE_ALL?Player.REPEAT_MODE_ONE:Player.REPEAT_MODE_OFF); showHint(controller.getRepeatMode()==Player.REPEAT_MODE_OFF?"Repeat off":controller.getRepeatMode()==Player.REPEAT_MODE_ONE?"Repeat one":"Repeat all"); }); footer.addView(repeatControl,new LinearLayout.LayoutParams(dp(40),dp(34)));
+        Button volumeControl = button("◖))"); volumeControl.setTextSize(15); volumeControl.setBackgroundColor(Color.TRANSPARENT); volumeControl.setContentDescription("Volume"); volumeControl.setOnClickListener(v -> showHint("Use device volume buttons or swipe vertically on the right")); footer.addView(volumeControl,new LinearLayout.LayoutParams(dp(40),dp(34)));
+        Button fitControl = button("⛶"); fitControl.setTextSize(20); fitControl.setBackgroundColor(Color.TRANSPARENT); fitControl.setContentDescription("Video sizing"); fitControl.setOnClickListener(v -> cycleZoom()); footer.addView(fitControl,new LinearLayout.LayoutParams(dp(40),dp(34)));
         hint = new TextView(this);
         hint.setTextColor(Color.WHITE);
         hint.setTextSize(13);
