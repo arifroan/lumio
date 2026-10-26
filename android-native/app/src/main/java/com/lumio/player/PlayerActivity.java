@@ -60,6 +60,10 @@ import androidx.media3.ui.CaptionStyleCompat;
 import androidx.media3.ui.SubtitleView;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.MediaPlayer;
+import org.videolan.libvlc.util.VLCVideoLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +87,12 @@ public final class PlayerActivity extends Activity {
 
     private static final long CONTROLS_AUTO_HIDE_MS = 2_000L;
     private PlayerView playerView;
+    private FrameLayout rootContainer;
+    private VLCVideoLayout vlcVideoLayout;
+    private LibVLC libVlc;
+    private MediaPlayer vlcPlayer;
+    private boolean vlcFallbackActive;
+    private boolean vlcFallbackAttempted;
     private LinearLayout topBar;
     private LinearLayout centerControls;
     private LinearLayout bottomControls;
@@ -111,11 +121,12 @@ public final class PlayerActivity extends Activity {
     private final Runnable updatePlaybackProgress = new Runnable() {
         @Override public void run() {
             if (controller != null && playbackSeekBar != null && !isFinishing() && !isDestroyed()) {
-                long duration = controller.getDuration(); long position = controller.getCurrentPosition();
+                long duration = vlcFallbackActive && vlcPlayer != null ? vlcPlayer.getLength() : controller.getDuration();
+                long position = vlcFallbackActive && vlcPlayer != null ? vlcPlayer.getTime() : controller.getCurrentPosition();
                 if (duration > 0) { playbackSeekBar.setMax((int)Math.min(Integer.MAX_VALUE, duration)); if (!userSeeking) playbackSeekBar.setProgress((int)Math.min(Integer.MAX_VALUE, position)); }
                 if (currentTimeText != null) currentTimeText.setText(formatPlaybackTime(position));
                 if (durationTimeText != null) durationTimeText.setText(formatPlaybackTime(Math.max(0L, duration)));
-                if (playPauseButton != null) playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶");
+                if (playPauseButton != null) playPauseButton.setText((vlcFallbackActive && vlcPlayer != null ? vlcPlayer.isPlaying() : controller.isPlaying()) ? "Ⅱ" : "▶");
                 controlsHandler.postDelayed(this, 500L);
             }
         }
@@ -146,6 +157,7 @@ public final class PlayerActivity extends Activity {
             }
         }
         @Override public void onPlayerError(PlaybackException error) {
+            if (!requestedAudio && !vlcFallbackAttempted && tryStartVlcFallback()) return;
             int code = error.errorCode;
             boolean decoderFailure = code == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED
                     || code == PlaybackException.ERROR_CODE_DECODING_FAILED
@@ -239,6 +251,7 @@ public final class PlayerActivity extends Activity {
 
     private void buildPlayerUi() {
         FrameLayout root = new FrameLayout(this);
+        rootContainer = root;
         root.setBackgroundColor(Color.rgb(8, 8, 13));
 
         playerView = new PlayerView(this);
@@ -344,7 +357,7 @@ public final class PlayerActivity extends Activity {
         LinearLayout.LayoutParams skip = new LinearLayout.LayoutParams(dp(64), dp(58)); skip.setMargins(dp(8), 0, dp(8), 0); centerControls.addView(rewind, skip);
         playPauseButton = button("▶"); playPauseButton.setTextSize(25); playPauseButton.setContentDescription("Play or pause"); playPauseButton.setBackground(rounded(0x22FFFFFF, 0xCCFFFFFF, 40));
         centerControls.addView(playPauseButton, new LinearLayout.LayoutParams(dp(62), dp(62)));
-        playPauseButton.setOnClickListener(v -> { if (controller == null) return; if (controller.isPlaying()) controller.pause(); else controller.play(); playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶"); showPlaybackControlsTemporarily(); });
+        playPauseButton.setOnClickListener(v -> { if (vlcFallbackActive && vlcPlayer != null) { if (vlcPlayer.isPlaying()) vlcPlayer.pause(); else vlcPlayer.play(); playPauseButton.setText(vlcPlayer.isPlaying() ? "Ⅱ" : "▶"); } else if (controller != null) { if (controller.isPlaying()) controller.pause(); else controller.play(); playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶"); } showPlaybackControlsTemporarily(); });
         Button forward = button("↷ 15"); forward.setTextSize(15); forward.setBackgroundColor(Color.TRANSPARENT); forward.setContentDescription("Forward 15 seconds");
         forward.setOnClickListener(v -> seekBy(15000L)); centerControls.addView(forward, skip);
         Button next = button("▶|"); next.setTextSize(20); next.setBackgroundColor(Color.TRANSPARENT); next.setContentDescription("Next item");
@@ -356,7 +369,7 @@ public final class PlayerActivity extends Activity {
         playbackSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) { if (fromUser && currentTimeText != null) currentTimeText.setText(formatPlaybackTime(progress)); }
             @Override public void onStartTrackingTouch(SeekBar bar) { userSeeking = true; controlsHandler.removeCallbacks(hidePlaybackControls); }
-            @Override public void onStopTrackingTouch(SeekBar bar) { if (controller != null) controller.seekTo(bar.getProgress()); userSeeking = false; showPlaybackControlsTemporarily(); }
+            @Override public void onStopTrackingTouch(SeekBar bar) { if (vlcFallbackActive && vlcPlayer != null) vlcPlayer.setTime(bar.getProgress()); else if (controller != null) controller.seekTo(bar.getProgress()); userSeeking = false; showPlaybackControlsTemporarily(); }
         });
         bottomControls.addView(playbackSeekBar, new LinearLayout.LayoutParams(-1, dp(24)));
         LinearLayout footer = new LinearLayout(this); footer.setGravity(Gravity.CENTER_VERTICAL); footer.setOrientation(LinearLayout.HORIZONTAL); bottomControls.addView(footer, new LinearLayout.LayoutParams(-1, dp(36)));
@@ -426,6 +439,36 @@ public final class PlayerActivity extends Activity {
                 }
             }
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    private boolean tryStartVlcFallback() {
+        if (vlcFallbackAttempted || requestedUri == null || requestedUri.trim().isEmpty() || rootContainer == null) return false;
+        vlcFallbackAttempted = true;
+        try {
+            showHint("Media3 failed. Trying VLC playback engine…");
+            if (libVlc == null) libVlc = new LibVLC(this, new ArrayList<>());
+            if (vlcPlayer == null) vlcPlayer = new MediaPlayer(libVlc);
+            if (vlcVideoLayout == null) {
+                vlcVideoLayout = new VLCVideoLayout(this);
+                rootContainer.addView(vlcVideoLayout, 0, new FrameLayout.LayoutParams(-1, -1));
+            }
+            vlcPlayer.attachViews(vlcVideoLayout, null, false, false);
+            Media media = new Media(libVlc, Uri.parse(requestedUri));
+            vlcPlayer.setMedia(media);
+            media.release();
+            long resumeMs = Math.max(0L, controller == null ? prefs.getLong("position:" + requestedUri, 0L) : controller.getCurrentPosition());
+            vlcPlayer.setTime(resumeMs);
+            vlcFallbackActive = true;
+            if (playerView != null) playerView.setVisibility(View.INVISIBLE);
+            vlcPlayer.play();
+            controlsHandler.removeCallbacks(updatePlaybackProgress);
+            controlsHandler.post(updatePlaybackProgress);
+            return true;
+        } catch (Exception ex) {
+            vlcFallbackActive = false;
+            showHint("Playback failed in both engines. This format may not be supported.");
+            return false;
+        }
     }
 
     private void initializeMedia() {
@@ -561,6 +604,11 @@ public final class PlayerActivity extends Activity {
         controlsHandler.removeCallbacks(hidePlaybackControls);
         controlsHandler.removeCallbacks(savePlaybackProgress);
         controlsHandler.removeCallbacks(bufferingFallback);
+        if (vlcPlayer != null) {
+            try { vlcPlayer.stop(); vlcPlayer.detachViews(); vlcPlayer.release(); } catch (Exception ignored) { }
+            vlcPlayer = null;
+        }
+        if (libVlc != null) { try { libVlc.release(); } catch (Exception ignored) { } libVlc = null; }
         if (controller != null) {
             controller.removeListener(playbackUiListener);
             // A video must not continue as invisible background playback. Only explicit PiP
@@ -595,7 +643,7 @@ public final class PlayerActivity extends Activity {
     private void seekBy(long deltaMs) {
         if (controller == null || controller.getDuration() <= 0) return;
         long target = Math.max(0L, Math.min(controller.getDuration(), controller.getCurrentPosition() + deltaMs));
-        controller.seekTo(target);
+        if (vlcFallbackActive && vlcPlayer != null) vlcPlayer.setTime(target); else controller.seekTo(target);
         showHint((deltaMs > 0 ? "+" : "−") + Math.abs(deltaMs / 1000L) + " seconds");
         showPlaybackControlsTemporarily();
     }
