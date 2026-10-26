@@ -125,7 +125,21 @@ public final class PlaybackService extends MediaSessionService {
                 return ordered;
             };
         }
-        return MediaCodecSelector.DEFAULT;
+        // In automatic mode, try software HEVC decoders before vendor codecs. Some
+        // devices expose a software decoder that supports Main 10 even when their
+        // hardware decoder only advertises 8-bit HEVC. Media3 still checks each
+        // decoder's advertised capabilities and can fall back to the remaining list.
+        return (mimeType, requiresSecureDecoder, requiresTunnelingDecoder) -> {
+            List<MediaCodecInfo> codecs = MediaCodecSelector.DEFAULT.getDecoderInfos(
+                    mimeType, requiresSecureDecoder, requiresTunnelingDecoder);
+            if (!"video/hevc".equals(mimeType)) return codecs;
+            List<MediaCodecInfo> ordered = new ArrayList<>(codecs.size());
+            for (MediaCodecInfo info : codecs) if (!info.hardwareAccelerated) ordered.add(info);
+            for (MediaCodecInfo info : codecs) if (info.hardwareAccelerated) ordered.add(info);
+            android.util.Log.i("LUMIO_CODEC", "HEVC decoder candidates=" + ordered.size()
+                    + ", software-first automatic selection");
+            return ordered;
+        };
     }
 
     private void rebuildPlayer(String decoderMode) {
