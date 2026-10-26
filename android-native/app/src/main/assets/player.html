@@ -1197,7 +1197,10 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  else if(!mediaLookup.size&&items.length)rebuildMediaLookup();
  for(const raw of records||[]){
   if(!raw||!raw.uri)continue;
-  const item=refreshSearchText({key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',artist:String(raw.artist||''),album:String(raw.album||''),genre:String(raw.genre||''),size:Number(raw.size)||0,mime:raw.mime||'',type:raw.type||(String(raw.mime).startsWith('audio/')?'audio':'video'),folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,width:Number(raw.width)||0,height:Number(raw.height)||0,frameRate:Number(raw.frameRate)||0,resolution:String(raw.resolution||''),identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false});
+  const normalizedMime=String(raw.mime||'').toLowerCase();
+  const normalizedType=String(raw.type||'').toLowerCase();
+  const inferredType=normalizedType==='audio'||normalizedType==='video'?normalizedType:(normalizedMime.startsWith('audio/')?'audio':'video');
+  const item=refreshSearchText({key:raw.key||raw.uri,uri:raw.uri,name:raw.name||'Local media',artist:String(raw.artist||''),album:String(raw.album||''),genre:String(raw.genre||''),size:Number(raw.size)||0,mime:raw.mime||'',type:inferredType,folder:raw.folder||'Device storage',lastModified:Number(raw.lastModified)||0,duration:Number(raw.duration)||0,width:Number(raw.width)||0,height:Number(raw.height)||0,frameRate:Number(raw.frameRate)||0,resolution:String(raw.resolution||''),identity:String(raw.identity||''),source:raw.source||'',available:raw.available!==false});
   let ix=mediaLookup.get('u:'+item.uri);
   if(ix===undefined)ix=mediaLookup.get('k:'+item.key);
   if(ix===undefined&&item.identity)ix=mediaLookup.get('i:'+item.identity);
@@ -1234,9 +1237,8 @@ function lumioMusicDiagSnapshot(event,extra={}){
 }
 let lastInvisibleMusicScanRequest=0;
 function requestInvisibleMusicScan(){
- /* Video-only cache must not suppress the initial Music scan. Cached songs render immediately;
-    when no audio entries exist, request a scan and allow a retry if the first scan stalls. */
- if(items.some(item=>item&&item.type==='audio'))return;
+ /* Always refresh the native library when entering Music, even if cached audio exists.
+    The cache is for instant display, not a reason to skip the refresh that fixes stale lists. */
  const now=Date.now();
  if(lastInvisibleMusicScanRequest&&now-lastInvisibleMusicScanRequest<15000)return;
  lastInvisibleMusicScanRequest=now;
