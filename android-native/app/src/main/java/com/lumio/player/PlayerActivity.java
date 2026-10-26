@@ -108,7 +108,6 @@ public final class PlayerActivity extends Activity {
         @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
             android.util.Log.e("LUMIO_PLAYBACK", "Playback failed for URI=" + requestedUri
                     + ", code=" + error.getErrorCodeName(), error);
-            if (launchMpvFallbackForUnsupportedHevc(error)) return;
             String detail = error.getErrorCodeName() == null ? "unknown decoder or media error" : error.getErrorCodeName();
             showHint("Playback failed: " + detail);
             new AlertDialog.Builder(PlayerActivity.this)
@@ -120,7 +119,6 @@ public final class PlayerActivity extends Activity {
                     .show();
         }
     };
-    private boolean mpvFallbackLaunched;
     private MediaController controller;
     private ListenableFuture<MediaController> controllerFuture;
     private TextView hint;
@@ -170,37 +168,6 @@ public final class PlayerActivity extends Activity {
         subtitleStylePreset = prefs.getInt("subtitle_style", 0);
         buildPlayerUi();
         applySubtitleAppearance();
-    }
-
-    /**
-     * Route only HEVC decoder capability failures to the experimental libmpv engine.
-     * Other Media3 errors continue through the existing error UI.
-     */
-    private boolean launchMpvFallbackForUnsupportedHevc(androidx.media3.common.PlaybackException error) {
-        if (mpvFallbackLaunched || requestedAudio
-                || !"ERROR_CODE_DECODING_FAILED".equals(error.getErrorCodeName())) return false;
-        StringBuilder details = new StringBuilder();
-        Throwable cause = error;
-        while (cause != null) {
-            details.append(' ').append(cause.getClass().getName()).append(' ')
-                    .append(String.valueOf(cause.getMessage()));
-            cause = cause.getCause();
-        }
-        if (!details.toString().toLowerCase(Locale.ROOT).contains("video/hevc")) return false;
-        try {
-            Intent fallback = new Intent(this, MpvFallbackActivity.class);
-            fallback.putExtra(EXTRA_URI, requestedUri);
-            fallback.putExtra(EXTRA_TITLE, requestedTitle);
-            if (controller != null) controller.stop();
-            mpvFallbackLaunched = true;
-            android.util.Log.w("LUMIO_MPV", "Launching software fallback for HEVC decoder failure");
-            startActivity(fallback);
-            finish();
-            return true;
-        } catch (Exception launchError) {
-            android.util.Log.e("LUMIO_MPV", "Could not launch software fallback", launchError);
-            return false;
-        }
     }
 
     private GradientDrawable rounded(int color, int stroke, int radiusDp) {
