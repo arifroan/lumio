@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit"]
+    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "feature/libvlc-fallback"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
@@ -74,13 +74,13 @@ jobs:
       - name: Publish direct APK download (no ZIP)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name == 'main' && 'android-preview' || 'pre-stream-fixes-preview' }}
-          name: ${{ github.ref_name == 'main' && 'Lumio Android Preview' || 'Lumio Pre-Stream Fixes Preview' }}
+          tag_name: ${{ github.ref_name == 'main' && 'android-preview' || github.ref_name == 'feature/libvlc-fallback' && 'libvlc-fallback-test' || 'pre-stream-fixes-preview' }}
+          name: ${{ github.ref_name == 'main' && 'Lumio Android Preview' || github.ref_name == 'feature/libvlc-fallback' && 'Lumio LibVLC Fallback Test' || 'Lumio Pre-Stream Fixes Preview' }}
           target_commitish: ${{ github.sha }}
           body: |
             Direct APK download for the Lumio Android preview.
             Download Lumio-Android-Preview.apk and install it on your Android device.
-            This is an early development preview; it has not been comprehensively device-tested.
+            Feature-branch builds are experimental compatibility tests and are not device-verified until tested on the target phone.
           prerelease: true
           make_latest: false
           files: Lumio-Android-Preview.apk
