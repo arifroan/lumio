@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit"]
+    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "redesign/player-playback-interface"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
