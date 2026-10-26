@@ -107,8 +107,8 @@ public final class PlayerActivity extends Activity {
         }
         @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
             android.util.Log.e("LUMIO_PLAYBACK", "Playback failed for URI=" + requestedUri
-                    + ", code=" + error.errorCodeName, error);
-            String detail = error.errorCodeName == null ? "unknown decoder or media error" : error.errorCodeName;
+                    + ", code=" + error.getErrorCodeName(), error);
+            String detail = error.getErrorCodeName() == null ? "unknown decoder or media error" : error.getErrorCodeName();
             showHint("Playback failed: " + detail);
             new AlertDialog.Builder(PlayerActivity.this)
                     .setTitle("Can't play this video")
