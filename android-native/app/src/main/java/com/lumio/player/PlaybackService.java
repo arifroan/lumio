@@ -58,7 +58,11 @@ public final class PlaybackService extends MediaSessionService {
         String normalized = normalizeDecoderMode(mode);
         PlaybackService service = instance;
         if (service == null) return;
-        new Handler(Looper.getMainLooper()).post(() -> service.rebuildPlayer(normalized));
+        new Handler(Looper.getMainLooper()).post(() -> {
+            service.getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit().putString("decoder_mode", normalized).apply();
+            service.rebuildPlayer(normalized);
+        });
     }
 
     private static String normalizeDecoderMode(String mode) {
@@ -111,20 +115,24 @@ public final class PlaybackService extends MediaSessionService {
     }
 
     private MediaCodecSelector createCodecSelector(String mode) {
-        if ("software".equals(mode)) {
-            // Prefer software decoders, while retaining a fallback list for devices with no SW codec.
-            return MediaCodecSelector.PREFER_SOFTWARE;
-        }
-        if ("hardware".equals(mode)) {
+        if ("software".equals(mode) || "hardware".equals(mode)) {
+            // Enumerate every decoder Android/Media3 reports for this format. Prefer the
+            // selected class first, but keep the other class in the list as a fallback.
             return (mimeType, requiresSecureDecoder, requiresTunnelingDecoder) -> {
                 List<MediaCodecInfo> codecs = MediaCodecSelector.DEFAULT.getDecoderInfos(
                         mimeType, requiresSecureDecoder, requiresTunnelingDecoder);
                 List<MediaCodecInfo> ordered = new ArrayList<>(codecs.size());
-                for (MediaCodecInfo info : codecs) if (info.hardwareAccelerated) ordered.add(info);
-                for (MediaCodecInfo info : codecs) if (!info.hardwareAccelerated) ordered.add(info);
+                boolean preferHardware = "hardware".equals(mode);
+                for (MediaCodecInfo info : codecs) {
+                    if (info.hardwareAccelerated == preferHardware) ordered.add(info);
+                }
+                for (MediaCodecInfo info : codecs) {
+                    if (info.hardwareAccelerated != preferHardware) ordered.add(info);
+                }
                 return ordered;
             };
         }
+        // AUTO uses Media3's full device-supported decoder list and its normal ranking.
         return MediaCodecSelector.DEFAULT;
     }
 
