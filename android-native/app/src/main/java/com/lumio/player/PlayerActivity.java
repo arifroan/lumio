@@ -57,6 +57,11 @@ import androidx.media3.ui.PlayerView;
 import androidx.media3.ui.CaptionStyleCompat;
 import androidx.media3.ui.SubtitleView;
 
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.MediaPlayer;
+import org.videolan.libvlc.util.VLCVideoLayout;
+
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
@@ -94,6 +99,12 @@ public final class PlayerActivity extends Activity {
         }
     };
     private final Player.Listener playbackUiListener = new Player.Listener() {
+        @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
+            if (!usingLibVlcFallback && !requestedAudio) {
+                fallbackStartPositionMs = controller == null ? 0L : Math.max(0L, controller.getCurrentPosition());
+                startLibVlcFallback(error);
+            }
+        }
         @Override public void onIsPlayingChanged(boolean isPlaying) {
             // Show controls on pause and resume; the shared timer hides them after two seconds.
             if (!requestedAudio) showPlaybackControlsTemporarily();
@@ -135,6 +146,11 @@ public final class PlayerActivity extends Activity {
     private boolean gestureHandled;
     private boolean scaling;
     private AudioManager audioManager;
+    private LibVLC libVlc;
+    private MediaPlayer vlcPlayer;
+    private VLCVideoLayout vlcVideoLayout;
+    private boolean usingLibVlcFallback;
+    private long fallbackStartPositionMs;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -377,7 +393,59 @@ public final class PlayerActivity extends Activity {
         titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
     }
 
+    private void startLibVlcFallback(androidx.media3.common.PlaybackException error) {
+        if (usingLibVlcFallback || requestedUri == null || requestedUri.isEmpty() || isFinishing()) return;
+        try {
+            usingLibVlcFallback = true;
+            if (controller != null) {
+                controller.pause();
+                controller.removeListener(playbackUiListener);
+            }
+            playerView.setVisibility(View.GONE);
+            ViewGroup parent = (ViewGroup) playerView.getParent();
+            if (parent == null) throw new IllegalStateException("Player surface is unavailable");
+            libVlc = new LibVLC(this, java.util.Arrays.asList("--audio-time-stretch", "--no-video-title-show"));
+            vlcPlayer = new MediaPlayer(libVlc);
+            vlcVideoLayout = new VLCVideoLayout(this);
+            FrameLayout.LayoutParams videoParams = new FrameLayout.LayoutParams(-1, -1);
+            parent.addView(vlcVideoLayout, 0, videoParams);
+            vlcPlayer.attachViews(vlcVideoLayout, null, false, false);
+            Media media = new Media(libVlc, Uri.parse(requestedUri));
+            media.setHWDecoderEnabled(true, false);
+            media.addOption(":no-video-title-show");
+            vlcPlayer.setMedia(media);
+            media.release();
+            vlcPlayer.setEventListener(event -> {
+                if (event.type == MediaPlayer.Event.EncounteredError) runOnUiThread(() -> showHint("LibVLC could not decode this file"));
+            });
+            vlcPlayer.play();
+            if (fallbackStartPositionMs > 0) vlcPlayer.setTime(fallbackStartPositionMs);
+            showHint("Switching to LibVLC compatibility engine");
+            // Rebind gesture handling to the active surface so seek/zoom gestures remain usable.
+            installFallbackGestures();
+        } catch (Throwable failure) {
+            showHint("Playback failed in both engines");
+            if (vlcPlayer != null) { try { vlcPlayer.release(); } catch (Exception ignored) { } vlcPlayer = null; }
+            if (libVlc != null) { try { libVlc.release(); } catch (Exception ignored) { } libVlc = null; }
+            usingLibVlcFallback = false;
+        }
+    }
+
+    private void installFallbackGestures() {
+        if (vlcVideoLayout == null) return;
+        vlcVideoLayout.setOnClickListener(v -> {
+            if (locked || vlcPlayer == null) return;
+            if (vlcPlayer.isPlaying()) vlcPlayer.pause(); else vlcPlayer.play();
+            showPlaybackControlsTemporarily();
+        });
+    }
+
     private void persistPosition() {
+        if (usingLibVlcFallback && vlcPlayer != null) {
+            fallbackStartPositionMs = Math.max(0L, vlcPlayer.getTime());
+            prefs.edit().putLong("position:" + requestedUri, fallbackStartPositionMs).apply();
+            return;
+        }
         if (controller == null || controller.getCurrentMediaItem() == null) return;
         // Private Vault playback uses an ephemeral decrypted cache file. Do not keep a
         // dangling resume-history entry after that temporary file is deleted.
@@ -451,6 +519,7 @@ public final class PlayerActivity extends Activity {
         controlsHandler.removeCallbacks(savePlaybackProgress);
         if (controller != null) controller.removeListener(playbackUiListener);
         if (playerView != null) playerView.setPlayer(null);
+        releaseLibVlc();
         if (controllerFuture != null) {
             MediaController.releaseFuture(controllerFuture);
             controllerFuture = null;
@@ -474,6 +543,14 @@ public final class PlayerActivity extends Activity {
     }
 
     private void cycleSpeed() {
+        if (usingLibVlcFallback && vlcPlayer != null) {
+            speedIndex = (speedIndex + 1) % SPEEDS.length;
+            float speed = SPEEDS[speedIndex];
+            vlcPlayer.setRate(speed);
+            speedButton.setText(trimSpeed(speed) + "×");
+            showHint("Playback " + trimSpeed(speed) + "×");
+            return;
+        }
         if (controller == null) return;
         speedIndex = (speedIndex + 1) % SPEEDS.length;
         float speed = SPEEDS[speedIndex];
@@ -572,7 +649,17 @@ public final class PlayerActivity extends Activity {
                         return true;
                     }
                     @Override public boolean onDoubleTap(MotionEvent e) {
-                        if (locked || controller == null || controller.getDuration() <= 0) return false;
+                        if (locked) return false;
+                        if (usingLibVlcFallback && vlcPlayer != null) {
+                            long duration = vlcPlayer.getLength();
+                            if (duration <= 0) return false;
+                            boolean forward = e.getX() >= playerView.getWidth() / 2f;
+                            vlcPlayer.setTime(Math.max(0L, Math.min(duration, vlcPlayer.getTime() + (forward ? 10_000L : -10_000L))));
+                            showHint(forward ? "+10 seconds" : "−10 seconds");
+                            gestureHandled = true;
+                            return true;
+                        }
+                        if (controller == null || controller.getDuration() <= 0) return false;
                         showPlaybackControlsTemporarily();
                         boolean forward = e.getX() >= playerView.getWidth() / 2f;
                         long target = controller.getCurrentPosition() + (forward ? 10_000L : -10_000L);
@@ -582,7 +669,18 @@ public final class PlayerActivity extends Activity {
                         return true;
                     }
                     @Override public boolean onScroll(MotionEvent first, MotionEvent current, float distanceX, float distanceY) {
-                        if (locked || controller == null || first == null || scaling) return false;
+                        if (locked || first == null || scaling) return false;
+                        if (usingLibVlcFallback && vlcPlayer != null) {
+                            long duration = vlcPlayer.getLength();
+                            if (duration > 0 && Math.abs(current.getX() - first.getX()) >= dp(14)) {
+                                long delta = (long) (-distanceX / Math.max(1, playerView.getWidth()) * duration * 1.4f);
+                                vlcPlayer.setTime(Math.max(0L, Math.min(duration, vlcPlayer.getTime() + delta)));
+                                showHint((delta >= 0 ? "+" : "") + Math.round(delta / 1000f) + "s");
+                                return true;
+                            }
+                            return false;
+                        }
+                        if (controller == null) return false;
                         if (Math.abs(current.getX() - first.getX()) < dp(14)
                                 && Math.abs(current.getY() - first.getY()) < dp(14)) return false;
                         gestureHandled = true;
@@ -1066,11 +1164,27 @@ public final class PlayerActivity extends Activity {
         }
     }
 
+    private void releaseLibVlc() {
+        if (vlcPlayer != null) {
+            try { vlcPlayer.stop(); } catch (Exception ignored) { }
+            try { vlcPlayer.detachViews(); } catch (Exception ignored) { }
+            try { vlcPlayer.release(); } catch (Exception ignored) { }
+            vlcPlayer = null;
+        }
+        if (vlcVideoLayout != null) {
+            ViewGroup parent = (ViewGroup) vlcVideoLayout.getParent();
+            if (parent != null) parent.removeView(vlcVideoLayout);
+            vlcVideoLayout = null;
+        }
+        if (libVlc != null) { try { libVlc.release(); } catch (Exception ignored) { } libVlc = null; }
+    }
+
     @Override
     protected void onDestroy() {
         controlsHandler.removeCallbacks(hidePlaybackControls);
         controlsHandler.removeCallbacks(savePlaybackProgress);
         persistPosition();
+        releaseLibVlc();
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
             if (temporaryPath != null && !temporaryPath.trim().isEmpty()) new java.io.File(temporaryPath).delete();
