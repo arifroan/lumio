@@ -82,6 +82,13 @@ public final class PlayerActivity extends Activity {
     private static final long CONTROLS_AUTO_HIDE_MS = 2_000L;
     private PlayerView playerView;
     private LinearLayout topBar;
+    private LinearLayout centerControls;
+    private LinearLayout bottomControls;
+    private SeekBar playbackSeekBar;
+    private TextView currentTimeText;
+    private TextView durationTimeText;
+    private Button playPauseButton;
+    private boolean userSeeking;
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
     private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
@@ -174,8 +181,8 @@ public final class PlayerActivity extends Activity {
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         b.setMinWidth(0);
         b.setMinimumWidth(0);
-        b.setPadding(dp(9), dp(4), dp(9), dp(4));
-        b.setBackground(rounded(Color.rgb(31, 29, 43), Color.rgb(68, 62, 88), 12));
+        b.setPadding(dp(7), dp(3), dp(7), dp(3));
+        b.setBackground(rounded(0x221A1A24, 0x443F3D4B, 24));
         return b;
     }
 
@@ -188,15 +195,12 @@ public final class PlayerActivity extends Activity {
         root.setBackgroundColor(Color.rgb(8, 8, 13));
 
         playerView = new PlayerView(this);
-        playerView.setUseController(true);
+        playerView.setUseController(false);
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
         // The header and Media3 controls share one explicit two-second timer.
         // Disable Media3's independent timeout so the two layers cannot drift apart.
         playerView.setControllerShowTimeoutMs(0);
-        playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
-            if (requestedAudio || isInPictureInPicture()) return;
-            setPlaybackControlsVisible(visibility == View.VISIBLE);
-        });
+
         playerView.setKeepContentOnPlayerReset(true);
         playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         playerView.setBackgroundColor(Color.BLACK);
@@ -205,10 +209,10 @@ public final class PlayerActivity extends Activity {
 
         topBar = new LinearLayout(this);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(10), dp(8), dp(10), dp(8));
+        topBar.setPadding(dp(14), dp(5), dp(14), dp(5));
         topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setBackground(rounded(0xB8101116, 0, 0));
-        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(62), Gravity.TOP);
+        topBar.setBackground(rounded(0x75101116, 0, 0));
+        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(54), Gravity.TOP);
         root.addView(topBar, topParams);
 
         Button back = button("‹");
@@ -219,8 +223,8 @@ public final class PlayerActivity extends Activity {
 
         titleText = new TextView(this);
         titleText.setTextColor(Color.WHITE);
-        titleText.setTextSize(13);
-        titleText.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        titleText.setTextSize(12);
+        titleText.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
         titleText.setSingleLine(true);
         titleText.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
         titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
@@ -515,14 +519,14 @@ public final class PlayerActivity extends Activity {
             contentFrame.setTranslationX(panX);
             contentFrame.setTranslationY(panY);
         }
-        zoomButton.setText(zoom == 1f ? "Fit" : zoom + "×");
+        zoomButton.setText(zoom == 1f ? "⛶" : zoom + "×");
         showHint(zoom == 1f ? "Fit to screen" : "Zoom " + zoom + "×");
     }
 
     private void toggleLock() {
         locked = !locked;
         lockOverlay.setVisibility(locked ? View.VISIBLE : View.GONE);
-        playerView.setUseController(!locked);
+        playerView.setUseController(false);
         lockButton.setText(locked ? "Locked" : "Lock");
         if (locked) {
             if (!requestedAudio) setPlaybackControlsVisible(false);
@@ -538,7 +542,6 @@ public final class PlayerActivity extends Activity {
 
     private void hidePlaybackControlsIfNeeded() {
         if (requestedAudio || locked || isInPictureInPicture()) return;
-        if (playerView != null) playerView.hideController();
         setPlaybackControlsVisible(false);
     }
 
@@ -546,7 +549,6 @@ public final class PlayerActivity extends Activity {
         if (requestedAudio || locked || isInPictureInPicture()) return;
         if (playbackControlsVisible) {
             controlsHandler.removeCallbacks(hidePlaybackControls);
-            if (playerView != null) playerView.hideController();
             setPlaybackControlsVisible(false);
         } else {
             showPlaybackControlsTemporarily();
@@ -571,7 +573,7 @@ public final class PlayerActivity extends Activity {
         if (requestedAudio || isInPictureInPicture() || locked) return;
         controlsHandler.removeCallbacks(hidePlaybackControls);
         setPlaybackControlsVisible(true);
-        if (playerView != null) playerView.showController();
+
         // Schedule even when paused: tapping or pausing should not pin controls on screen.
         controlsHandler.postDelayed(hidePlaybackControls, CONTROLS_AUTO_HIDE_MS);
     }
@@ -659,7 +661,7 @@ public final class PlayerActivity extends Activity {
                             contentFrame.setScaleX(zoom);
                             contentFrame.setScaleY(zoom);
                         }
-                        zoomButton.setText(zoom == 1f ? "Fit" : String.format(Locale.US, "%.1f×", zoom));
+                        zoomButton.setText(zoom == 1f ? "⛶" : String.format(Locale.US, "%.1f×", zoom));
                         return true;
                     }
                     @Override public void onScaleEnd(ScaleGestureDetector detector) {
