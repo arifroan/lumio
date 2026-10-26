@@ -28,6 +28,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -45,6 +46,7 @@ import androidx.core.content.ContextCompat;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.TrackSelectionOverride;
@@ -89,6 +91,18 @@ public final class PlayerActivity extends Activity {
     private TextView durationTimeText;
     private Button playPauseButton;
     private boolean userSeeking;
+    private boolean softwareFallbackAttempted;
+    private final Runnable bufferingFallback = () -> {
+        if (controller == null || isFinishing() || isDestroyed() || isInPictureInPicture()) return;
+        if (controller.getPlaybackState() != Player.STATE_BUFFERING) return;
+        if (softwareFallbackAttempted) {
+            showHint("This video is still buffering. Try another decoder in Playback Settings.");
+            return;
+        }
+        softwareFallbackAttempted = true;
+        showHint("Video decoder is stuck. Trying software decoding…");
+        PlaybackService.setDecoderMode("software");
+    };
     private final Handler controlsHandler = new Handler(Looper.getMainLooper());
     private boolean playbackControlsVisible = true;
     private final Runnable hidePlaybackControls = this::hidePlaybackControlsIfNeeded;
@@ -119,10 +133,28 @@ public final class PlayerActivity extends Activity {
             if (!requestedAudio) showPlaybackControlsTemporarily();
         }
         @Override public void onPlaybackStateChanged(int playbackState) {
+            controlsHandler.removeCallbacks(bufferingFallback);
             if (playbackState == Player.STATE_ENDED) persistPosition();
+            if (playbackState == Player.STATE_BUFFERING && !requestedAudio) {
+                controlsHandler.postDelayed(bufferingFallback, 15_000L);
+            }
             if (requestedAudio) return;
             if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
                 showPlaybackControlsUntilResumed();
+            }
+        }
+        @Override public void onPlayerError(PlaybackException error) {
+            int code = error.errorCode;
+            boolean decoderFailure = code == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED
+                    || code == PlaybackException.ERROR_CODE_DECODING_FAILED
+                    || code == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED
+                    || code == PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES;
+            if (decoderFailure && !requestedAudio && !softwareFallbackAttempted) {
+                softwareFallbackAttempted = true;
+                showHint("Video decoder failed. Trying software decoding…");
+                PlaybackService.setDecoderMode("software");
+            } else {
+                showHint("Playback failed (" + code + "). Try another decoder in Playback Settings.");
             }
         }
     };
@@ -526,7 +558,15 @@ public final class PlayerActivity extends Activity {
         persistPosition();
         controlsHandler.removeCallbacks(hidePlaybackControls);
         controlsHandler.removeCallbacks(savePlaybackProgress);
-        if (controller != null) controller.removeListener(playbackUiListener);
+        controlsHandler.removeCallbacks(bufferingFallback);
+        if (controller != null) {
+            controller.removeListener(playbackUiListener);
+            // A video must not continue as invisible background playback. Only explicit PiP
+            // keeps video running; audio playback intentionally remains service-backed.
+            if (!requestedAudio && !isInPictureInPicture()) {
+                controller.pause();
+            }
+        }
         if (playerView != null) playerView.setPlayer(null);
         if (controllerFuture != null) {
             MediaController.releaseFuture(controllerFuture);
@@ -1128,8 +1168,9 @@ public final class PlayerActivity extends Activity {
 
     @Override
     public void onUserLeaveHint() {
+        // Do not silently start PiP or leave video playing when the user presses Home.
+        // PiP is entered only through the explicit PiP button.
         super.onUserLeaveHint();
-        enterPipIfSupported();
     }
 
     private void enterPipIfSupported() {
@@ -1160,6 +1201,7 @@ public final class PlayerActivity extends Activity {
     protected void onDestroy() {
         controlsHandler.removeCallbacks(hidePlaybackControls);
         controlsHandler.removeCallbacks(savePlaybackProgress);
+        controlsHandler.removeCallbacks(bufferingFallback);
         persistPosition();
         if (isFinishing()) {
             String temporaryPath = getIntent().getStringExtra(EXTRA_TEMP_VAULT_FILE);
