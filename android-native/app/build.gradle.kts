@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.lumio.player"
-        minSdk = 23
+        minSdk = 33
         targetSdk = 35
         versionCode = 22
         versionName = "0.2.20"
