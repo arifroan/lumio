@@ -127,8 +127,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             if (mpv == null) throw new IllegalStateException("libmpv could not be created");
             // Native mpv logs and events are essential: a successful Activity build does not
             // imply that the demuxer or renderer has actually started.
-            MPVLib.addObserver(this);
-            MPVLib.addLogObserver(this);
+            mpv.addObserver(this);
+            mpv.addLogObserver(this);
             mpv.setOptionString("msg-level", "all=info");
             mpv.setOptionString("hwdec", "auto-safe");
             mpv.setOptionString("vo", "gpu");
@@ -261,8 +261,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     public void release() {
         if (released) return;
         released = true;
-        MPVLib.removeObserver(this);
-        MPVLib.removeLogObserver(this);
+        if (mpv != null) mpv.removeObserver(this);
+        if (mpv != null) mpv.removeLogObserver(this);
         if (mpv != null) {
             if (attached) {
                 try { mpv.detachSurface(); } catch (Throwable ignored) {}
