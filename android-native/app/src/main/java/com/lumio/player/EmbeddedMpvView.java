@@ -23,7 +23,7 @@ import android.widget.Toast;
 import dev.jdtech.mpv.MPVLib;
 
 /** Compact embedded libmpv renderer. The Activity keeps LUMIO's existing top toolbar. */
-public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.Callback {
+public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.Callback, MPVLib.EventObserver, MPVLib.LogObserver {
     private static final String TAG = "LUMIO_MPV";
     private final Context context;
     private final String uri;
@@ -125,6 +125,11 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         try {
             mpv = MPVLib.create(context.getApplicationContext());
             if (mpv == null) throw new IllegalStateException("libmpv could not be created");
+            // Native mpv logs and events are essential: a successful Activity build does not
+            // imply that the demuxer or renderer has actually started.
+            MPVLib.addObserver(this);
+            MPVLib.addLogObserver(this);
+            mpv.setOptionString("msg-level", "all=info");
             mpv.setOptionString("hwdec", "auto-safe");
             mpv.setOptionString("vo", "gpu");
             mpv.setOptionString("keep-open", "yes");
@@ -132,7 +137,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             mpv.setOptionString("force-window", "yes");
             mpv.setOptionString("video-unscaled", "no");
             mpv.setOptionString("keepaspect", "yes");
-            mpv.init();
+            int initResult = mpv.init();
+            Log.i(TAG, "libmpv init result=" + initResult + ", sourceScheme=" + Uri.parse(uri).getScheme());
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
             Toast.makeText(context, "LUMIO compatibility engine could not start", Toast.LENGTH_LONG).show();
@@ -184,6 +190,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             attached = true;
             if (!loaded) {
                 String playablePath = resolvePlayablePath(uri);
+                Log.i(TAG, "Surface attached; loadfile requested. sourceScheme="
+                        + Uri.parse(uri).getScheme() + ", resolvedPath=" + playablePath);
                 command("loadfile", playablePath, "replace");
                 loaded = true;
                 if (startPositionMs > 0L) command("seek", Double.toString(startPositionMs / 1000.0), "absolute");
@@ -208,6 +216,32 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         }
     }
 
+    @Override public void event(int eventId) {
+        Log.i(TAG, "mpv event=" + eventId
+                + (eventId == 8 ? " (FILE_LOADED)" : eventId == 21 ? " (PLAYBACK_RESTART)"
+                : eventId == 7 ? " (END_FILE)" : ""));
+    }
+
+    @Override public void eventProperty(String property) {
+        Log.d(TAG, "mpv property changed: " + property);
+    }
+    @Override public void eventProperty(String property, long value) {
+        Log.d(TAG, "mpv property " + property + "=" + value);
+    }
+    @Override public void eventProperty(String property, boolean value) {
+        Log.d(TAG, "mpv property " + property + "=" + value);
+    }
+    @Override public void eventProperty(String property, double value) {
+        Log.d(TAG, "mpv property " + property + "=" + value);
+    }
+    @Override public void eventProperty(String property, String value) {
+        Log.d(TAG, "mpv property " + property + "=" + value);
+    }
+    @Override public void logMessage(String prefix, int level, String text) {
+        if (level <= 40) Log.i(TAG, "mpv/" + prefix + ": " + text);
+        else Log.d(TAG, "mpv/" + prefix + ": " + text);
+    }
+
     public boolean isAvailable() { return mpv != null && !released; }
     public void cycleAudioTrack() { command("cycle", "audio"); }
     public void disableSubtitles() { command("set", "sid", "no"); }
@@ -227,6 +261,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     public void release() {
         if (released) return;
         released = true;
+        MPVLib.removeObserver(this);
+        MPVLib.removeLogObserver(this);
         if (mpv != null) {
             if (attached) {
                 try { mpv.detachSurface(); } catch (Throwable ignored) {}
