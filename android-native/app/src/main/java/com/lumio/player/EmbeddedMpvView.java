@@ -2,6 +2,11 @@ package com.lumio.player;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.ContentResolver;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import java.io.File;
+import java.io.FileNotFoundException;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -22,6 +27,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     private static final String TAG = "LUMIO_MPV";
     private final Context context;
     private final String uri;
+    // Keep a provider-granted file descriptor alive while libmpv reads /proc/self/fd/N.
+    private ParcelFileDescriptor sourceDescriptor;
     private final long startPositionMs;
     private MPVLib mpv;
     private SurfaceView surface;
@@ -133,6 +140,22 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         }
     }
 
+    /**
+     * Android media pickers commonly pass content:// URIs. Native mpv cannot reliably
+     * consume those provider URIs directly, so pass its open file descriptor instead.
+     * Keeping the descriptor open is essential for seeking and streaming large files.
+     */
+    private String resolvePlayablePath(String source) throws Exception {
+        Uri parsed = Uri.parse(source);
+        if (ContentResolver.SCHEME_CONTENT.equals(parsed.getScheme())) {
+            sourceDescriptor = context.getContentResolver().openFileDescriptor(parsed, "r");
+            if (sourceDescriptor == null) throw new FileNotFoundException("Provider returned no file descriptor for " + source);
+            return "/proc/self/fd/" + sourceDescriptor.getFd();
+        }
+        if (ContentResolver.SCHEME_FILE.equals(parsed.getScheme())) return parsed.getPath();
+        return source;
+    }
+
     private void command(String... args) {
         if (mpv == null || released) return;
         try { mpv.command(args); }
@@ -160,7 +183,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             mpv.attachSurface(holder.getSurface());
             attached = true;
             if (!loaded) {
-                command("loadfile", uri, "replace");
+                String playablePath = resolvePlayablePath(uri);
+                command("loadfile", playablePath, "replace");
                 loaded = true;
                 if (startPositionMs > 0L) command("seek", Double.toString(startPositionMs / 1000.0), "absolute");
             }
@@ -210,6 +234,10 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             }
             try { mpv.destroy(); } catch (Throwable error) { Log.w(TAG, "mpv destroy failed", error); }
             mpv = null;
+        }
+        if (sourceDescriptor != null) {
+            try { sourceDescriptor.close(); } catch (Exception error) { Log.w(TAG, "Source descriptor close failed", error); }
+            sourceDescriptor = null;
         }
     }
 }
