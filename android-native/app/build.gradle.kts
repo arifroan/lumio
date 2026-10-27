@@ -25,6 +25,11 @@ android {
         targetSdk = 35
         versionCode = 22
         versionName = "0.2.20"
+        // This preview targets modern 64-bit Android phones to avoid bundling duplicate
+        // 32-bit and emulator native decoder libraries in the APK.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     signingConfigs {
