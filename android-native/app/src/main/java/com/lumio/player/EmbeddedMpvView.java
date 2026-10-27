@@ -131,10 +131,11 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             mpv.addLogObserver(this);
             mpv.setOptionString("msg-level", "all=info");
             mpv.setOptionString("hwdec", "auto-safe");
-            mpv.setOptionString("vo", "gpu");
+            // Let libmpv initialize without a video output; create the GPU output only
+            // after Android supplies a real Surface, as required by the Android GPU context.
+            mpv.setOptionString("gpu-context", "android");
             mpv.setOptionString("keep-open", "yes");
             mpv.setOptionString("osd-level", "0");
-            mpv.setOptionString("force-window", "yes");
             mpv.setOptionString("video-unscaled", "no");
             mpv.setOptionString("keepaspect", "yes");
             mpv.init();
@@ -186,32 +187,56 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     @Override public void surfaceCreated(SurfaceHolder holder) {
         if (mpv == null || released || holder.getSurface() == null || !holder.getSurface().isValid()) return;
         try {
+            int width = Math.max(1, surface.getWidth());
+            int height = Math.max(1, surface.getHeight());
+            mpv.setPropertyString("android-surface-size", width + "x" + height);
             mpv.attachSurface(holder.getSurface());
             attached = true;
+
+            // Critical: enable the video output only after a valid Android Surface is attached.
+            // Initializing vo=gpu before surface creation can leave audio playing over a black view.
+            mpv.setOptionString("force-window", "yes");
+            mpv.setPropertyString("vo", "gpu");
+            Log.i(TAG, "Surface attached; GPU video output enabled at " + width + "x" + height);
+
             if (!loaded) {
                 String playablePath = resolvePlayablePath(uri);
-                Log.i(TAG, "Surface attached; loadfile requested. sourceScheme="
+                Log.i(TAG, "Loadfile requested. sourceScheme="
                         + Uri.parse(uri).getScheme() + ", resolvedPath=" + playablePath);
                 command("loadfile", playablePath, "replace");
                 loaded = true;
                 if (startPositionMs > 0L) command("seek", Double.toString(startPositionMs / 1000.0), "absolute");
             }
         } catch (Throwable error) {
-            Log.e(TAG, "Could not attach playback surface", error);
-            Toast.makeText(context, "LUMIO could not open this video with the compatibility engine", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Could not attach playback surface or start GPU output", error);
+            Toast.makeText(context, "LUMIO could not initialize video rendering", Toast.LENGTH_LONG).show();
         }
     }
 
     @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (mpv != null && holder.getSurface() != null && holder.getSurface().isValid()) {
-            try { mpv.attachSurface(holder.getSurface()); attached = true; }
-            catch (Throwable error) { Log.w(TAG, "Surface update failed", error); }
+        if (mpv != null && !released && holder.getSurface() != null && holder.getSurface().isValid()) {
+            try {
+                mpv.setPropertyString("android-surface-size", Math.max(1, width) + "x" + Math.max(1, height));
+                if (!attached) {
+                    mpv.attachSurface(holder.getSurface());
+                    attached = true;
+                    mpv.setOptionString("force-window", "yes");
+                    mpv.setPropertyString("vo", "gpu");
+                }
+                Log.i(TAG, "Surface size updated to " + width + "x" + height);
+            } catch (Throwable error) { Log.w(TAG, "Surface update failed", error); }
         }
     }
 
     @Override public void surfaceDestroyed(SurfaceHolder holder) {
         if (mpv != null && attached) {
-            try { mpv.detachSurface(); } catch (Throwable error) { Log.w(TAG, "Surface detach failed", error); }
+            try {
+                // Disable the VO before detaching the native window, following mpv-android's
+                // lifecycle to avoid retaining a stale EGL/native surface.
+                mpv.setPropertyString("vo", "null");
+                mpv.setPropertyString("force-window", "no");
+                mpv.detachSurface();
+            } catch (Throwable error) { Log.w(TAG, "Surface detach failed", error); }
             attached = false;
         }
     }
