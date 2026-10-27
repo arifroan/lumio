@@ -1,25 +1,23 @@
 package com.lumio.player;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.util.TypedValue;
 import android.widget.Toast;
-import android.util.Log;
-import android.view.WindowManager;
-import android.app.Activity;
 
 import dev.jdtech.mpv.MPVLib;
 
-/** libmpv renderer hosted inside PlayerActivity, with compact LUMIO playback controls. */
+/** Compact embedded libmpv renderer. The Activity keeps LUMIO's existing top toolbar. */
 public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.Callback {
     private static final String TAG = "LUMIO_MPV";
     private final Context context;
@@ -30,12 +28,12 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     private boolean attached;
     private boolean loaded;
     private boolean released;
-    private Button playPause;
-    private Button speedButton;
-    private float speed = 1.0f;
+    private TextView playPause;
+    private TextView speedButton;
     private boolean paused;
-    private final int[] speeds = {25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 400};
-    private int speedIndex = 3;
+    private float speed = 1f;
+    private final float[] speeds = {0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f};
+    private int speedIndex = 2;
 
     public EmbeddedMpvView(Context context, String uri, long startPositionMs) {
         super(context);
@@ -44,6 +42,7 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         this.startPositionMs = Math.max(0L, startPositionMs);
         setBackgroundColor(Color.BLACK);
         surface = new SurfaceView(context);
+        surface.setBackgroundColor(Color.BLACK);
         surface.getHolder().addCallback(this);
         addView(surface, new FrameLayout.LayoutParams(-1, -1));
         buildControls();
@@ -51,21 +50,28 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     }
 
     private int dp(float value) {
-        return (int)(value * getResources().getDisplayMetrics().density + 0.5f);
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    private Button makeButton(String label) {
-        Button b = new Button(context);
-        b.setText(label);
-        b.setTextColor(Color.WHITE);
-        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        b.setAllCaps(false);
-        b.setMinWidth(dp(44));
-        b.setMinimumWidth(dp(44));
-        b.setPadding(dp(5), 0, dp(5), 0);
-        b.setBackgroundColor(0xCC202027);
-        return b;
+    private GradientDrawable panel(int color, int radius) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(color);
+        shape.setCornerRadius(dp(radius));
+        return shape;
+    }
+
+    private TextView control(String label, boolean primary) {
+        TextView view = new TextView(context);
+        view.setText(label);
+        view.setTextColor(Color.WHITE);
+        view.setTextSize(TypedValue.COMPLEX_UNIT_SP, primary ? 15 : 12);
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setGravity(Gravity.CENTER);
+        view.setIncludeFontPadding(false);
+        view.setMinWidth(dp(primary ? 48 : 42));
+        view.setPadding(dp(8), dp(5), dp(8), dp(5));
+        view.setBackground(panel(primary ? 0xFF343247 : 0xCC202027, primary ? 16 : 12));
+        return view;
     }
 
     private void buildControls() {
@@ -73,47 +79,56 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         controls.setOrientation(LinearLayout.HORIZONTAL);
         controls.setGravity(Gravity.CENTER);
         controls.setPadding(dp(8), dp(6), dp(8), dp(6));
-        controls.setBackgroundColor(0xD9000000);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-1, dp(58), Gravity.BOTTOM);
-        addView(controls, params);
+        controls.setBackground(panel(0xE6101018, 18));
+        FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(
+                LayoutParams.MATCH_PARENT, dp(54), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        panelParams.setMargins(dp(14), 0, dp(14), dp(12));
+        addView(controls, panelParams);
 
-        Button back = makeButton("‹");
+        TextView back = control("‹", false);
         back.setOnClickListener(v -> {
             if (context instanceof Activity) ((Activity) context).finish();
         });
-        controls.addView(back, new LinearLayout.LayoutParams(0, -1, 0.8f));
+        add(controls, back, 0.75f, 0);
 
-        Button back10 = makeButton("−10s");
-        back10.setOnClickListener(v -> command("seek", "-10", "relative"));
-        controls.addView(back10, new LinearLayout.LayoutParams(0, -1, 1f));
+        TextView back10 = control("−10s", false);
+        back10.setOnClickListener(v -> seek(-10));
+        add(controls, back10, 1f, dp(5));
 
-        playPause = makeButton("Ⅱ");
+        playPause = control("Ⅱ", true);
         playPause.setOnClickListener(v -> togglePause());
-        controls.addView(playPause, new LinearLayout.LayoutParams(0, -1, 1f));
+        add(controls, playPause, 1f, dp(5));
 
-        Button forward10 = makeButton("+10s");
-        forward10.setOnClickListener(v -> command("seek", "10", "relative"));
-        controls.addView(forward10, new LinearLayout.LayoutParams(0, -1, 1f));
+        TextView forward10 = control("+10s", false);
+        forward10.setOnClickListener(v -> seek(10));
+        add(controls, forward10, 1f, dp(5));
 
-        speedButton = makeButton("1×");
+        speedButton = control("1×", false);
         speedButton.setOnClickListener(v -> cycleSpeed());
-        controls.addView(speedButton, new LinearLayout.LayoutParams(0, -1, 1f));
+        add(controls, speedButton, 0.9f, dp(5));
+    }
+
+    private void add(LinearLayout parent, TextView child, float weight, int leftMargin) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, weight);
+        params.setMargins(leftMargin, 0, 0, 0);
+        parent.addView(child, params);
     }
 
     private void initializeEngine() {
         try {
             mpv = MPVLib.create(context.getApplicationContext());
             if (mpv == null) throw new IllegalStateException("libmpv could not be created");
-            // Prefer supported hardware decoding to avoid forcing slow software decode on phones.
             mpv.setOptionString("hwdec", "auto-safe");
             mpv.setOptionString("vo", "gpu");
             mpv.setOptionString("keep-open", "yes");
             mpv.setOptionString("osd-level", "0");
             mpv.setOptionString("force-window", "yes");
+            mpv.setOptionString("video-unscaled", "no");
+            mpv.setOptionString("keepaspect", "yes");
             mpv.init();
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
-            Toast.makeText(context, "LUMIO fallback engine could not start", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "LUMIO compatibility engine could not start", Toast.LENGTH_LONG).show();
             release();
         }
     }
@@ -132,9 +147,11 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
 
     private void cycleSpeed() {
         speedIndex = (speedIndex + 1) % speeds.length;
-        speed = speeds[speedIndex] / 100f;
-        command("set", "speed", Float.toString(speed));
-        if (speedButton != null) speedButton.setText((speed == (int)speed ? Integer.toString((int)speed) : Float.toString(speed)) + "×");
+        setPlaybackSpeed(speeds[speedIndex]);
+    }
+
+    private void seek(int seconds) {
+        command("seek", Integer.toString(seconds), "relative");
     }
 
     @Override public void surfaceCreated(SurfaceHolder holder) {
@@ -149,7 +166,7 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             }
         } catch (Throwable error) {
             Log.e(TAG, "Could not attach playback surface", error);
-            Toast.makeText(context, "LUMIO could not open this video with the fallback engine", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "LUMIO could not open this video with the compatibility engine", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -175,7 +192,10 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         if (value < 0.25f || value > 4f) return;
         speed = value;
         command("set", "speed", Float.toString(value));
-        if (speedButton != null) speedButton.setText((value == (int)value ? Integer.toString((int)value) : Float.toString(value)) + "×");
+        if (speedButton != null) {
+            String label = value == (int) value ? Integer.toString((int) value) : Float.toString(value);
+            speedButton.setText(label + "×");
+        }
     }
     public void seekRelative(long milliseconds) {
         command("seek", Double.toString(milliseconds / 1000.0), "relative");
