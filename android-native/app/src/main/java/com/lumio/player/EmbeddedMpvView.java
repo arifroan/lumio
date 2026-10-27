@@ -137,8 +137,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             mpv.setOptionString("force-window", "yes");
             mpv.setOptionString("video-unscaled", "no");
             mpv.setOptionString("keepaspect", "yes");
-            int initResult = mpv.init();
-            Log.i(TAG, "libmpv init result=" + initResult + ", sourceScheme=" + Uri.parse(uri).getScheme());
+            mpv.init();
+            Log.i(TAG, "libmpv initialized; sourceScheme=" + Uri.parse(uri).getScheme());
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
             Toast.makeText(context, "LUMIO compatibility engine could not start", Toast.LENGTH_LONG).show();
