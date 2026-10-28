@@ -162,7 +162,7 @@ public final class PlayerActivity extends Activity {
             paint.setStrokeWidth(1.65f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
         }
         @Override public void draw(Canvas canvas) {
-            RectF b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
+            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
             canvas.save(); canvas.translate(b.centerX()-size/2f,b.centerY()-size/2f); canvas.scale(size/24f,size/24f);
             switch(name) {
                 case "back": line(canvas,19,12,5,12); line(canvas,5,12,12,5); line(canvas,5,12,12,19); break;
