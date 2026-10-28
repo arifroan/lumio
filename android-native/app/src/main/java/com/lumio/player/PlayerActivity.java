@@ -159,10 +159,10 @@ public final class PlayerActivity extends Activity {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         PlaybackIconDrawable(String name) {
             this.name = name; paint.setColor(Color.WHITE); paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(1.8f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeWidth(2.05f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
         }
         @Override public void draw(Canvas canvas) {
-            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
+            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.68f;
             canvas.save(); canvas.translate(b.centerX()-size/2f,b.centerY()-size/2f); canvas.scale(size/24f,size/24f);
             switch(name) {
                 case "back": line(canvas,19,12,5,12); line(canvas,5,12,12,5); line(canvas,5,12,12,19); break;
@@ -182,7 +182,7 @@ public final class PlayerActivity extends Activity {
                 case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",6.2f,15.4f,7.4f);break;
                 case "forward": arc(canvas,4,3,20,21,-130,285);line(canvas,20,3,20,9);line(canvas,20,3,14,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
                 case "play": paint.setStyle(Paint.Style.FILL);Path tri=new Path();tri.moveTo(7,4);tri.lineTo(19,12);tri.lineTo(7,20);tri.close();canvas.drawPath(tri,paint);paint.setStyle(Paint.Style.STROKE);break;
-                case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(1.65f);break;
+                case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(2.05f);break;
                 case "headphones": arc(canvas,3,2,21,22,180,180);canvas.drawRoundRect(new RectF(3,12,7,19),1.2f,1.2f,paint);canvas.drawRoundRect(new RectF(17,12,21,19),1.2f,1.2f,paint);break;
                 case "fullscreen": line(canvas,4,9,4,4);line(canvas,4,4,9,4);line(canvas,15,4,20,4);line(canvas,20,4,20,9);line(canvas,4,15,4,20);line(canvas,4,20,9,20);line(canvas,15,20,20,20);line(canvas,20,15,20,20);break;
                 case "unlock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,8,3,20,15,190,160);line(canvas,12,14,12,17);break;
@@ -445,7 +445,7 @@ public final class PlayerActivity extends Activity {
         Button cast = overlayButton("icon:cast", 21);
         cast.setContentDescription("Cast");
         cast.setOnClickListener(v -> showHint("Casting is not available in this build"));
-        topBar.addView(cast, new LinearLayout.LayoutParams(dp(38), -1));
+        topBar.addView(cast, new LinearLayout.LayoutParams(dp(44), -1));
 
         Button cc = overlayButton("icon:cc", 15);
         cc.setContentDescription("Subtitles");
@@ -470,7 +470,7 @@ public final class PlayerActivity extends Activity {
         Button overflow = overlayButton("icon:more", 24);
         overflow.setContentDescription("More playback options");
         overflow.setOnClickListener(v -> showPlaybackSettings());
-        topBar.addView(overflow, new LinearLayout.LayoutParams(dp(34), -1));
+        topBar.addView(overflow, new LinearLayout.LayoutParams(dp(44), -1));
 
         // Side indicators mirror the brightness and volume gesture zones; swipes remain handled by installGestures().
         LinearLayout brightnessRail = new LinearLayout(this);
@@ -619,7 +619,7 @@ public final class PlayerActivity extends Activity {
         Button rewind = overlayButton("icon:rewind", 16);
         rewind.setContentDescription("Rewind 10 seconds");
         rewind.setOnClickListener(v -> seekBy(-10_000L));
-        centerControls.addView(rewind, new LinearLayout.LayoutParams(dp(58), -1));
+        centerControls.addView(rewind, new LinearLayout.LayoutParams(dp(64), -1));
         playPauseButton = overlayButton("icon:pause", 30);
         playPauseButton.setContentDescription("Play or pause");
         playPauseButton.setOnClickListener(v -> {
