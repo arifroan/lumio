@@ -1265,12 +1265,13 @@ function redrawMusicIfVisible(reason){
  MusicNavigation.render(MusicNavigation.getCurrent());
 }
 function scheduleMusicLibraryRedraw(){
- /* Android WebView may complete a page transition before its layout/render state settles.
-    Retry through later frames and short delays, but only while Music is the active page. */
- [0,120,400,800,1500].forEach(delay=>setTimeout(()=>{
-  if(delay===0&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>redrawMusicIfVisible('scheduled-frame'));
-  else redrawMusicIfVisible('scheduled-'+delay+'ms');
- },delay));
+ /* One post-layout correction only. Repeated redraws at 120/400/800/1500 ms
+    rebuilt the full Music DOM several times after every navigation and caused jank. */
+ if(typeof requestAnimationFrame==='function'){
+  requestAnimationFrame(()=>redrawMusicIfVisible('scheduled-frame'));
+ }else{
+  redrawMusicIfVisible('scheduled-immediate');
+ }
 }
 let musicLifecycleHooksBound=false;
 function bindMusicLifecycleHooks(){
