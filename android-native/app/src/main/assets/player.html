@@ -140,7 +140,7 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 @media(max-width:380px){.video-toolbar-row #addFolderButton{flex:1}}
 
 
-.player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
+.player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.player{position:relative;padding-top:0}.player-dismiss{position:absolute;z-index:3;right:9px;top:9px;display:grid;place-items:center;width:34px;height:34px;border:1px solid #ffffff35;border-radius:50%;background:#17171de8;color:var(--ink);font-size:27px;line-height:1}.player-dismiss:active{background:#34343d}.player .nowplaying{padding-right:48px}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
 .screen{aspect-ratio:16/9;min-height:180px;position:relative;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#29213d,#09090f 70%);overflow:hidden;touch-action:none;user-select:none}.screen audio{position:absolute;bottom:0;width:100%;z-index:2}.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:center;transition:transform .12s linear}.placeholder{text-align:center;padding:20px}.placeholder .playdisc{width:57px;height:57px;border-radius:21px;background:var(--violet);color:#181322;display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.placeholder strong{font-size:14px}.placeholder p{color:var(--muted);font-size:11px;margin:4px 0}
 .gesture-hint{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);background:#171520d9;border:1px solid #ffffff22;border-radius:18px;padding:8px 12px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}.gesture-hint.show{opacity:1}.lockoverlay{display:none;position:absolute;z-index:5;inset:0;background:#08080d55;align-items:center;justify-content:center}.lockoverlay.show{display:flex}.lockoverlay button{background:#171520e8;color:white;border:1px solid #ffffff44;border-radius:18px;padding:13px 17px;font-weight:850}
 .playerbar{padding:14px 15px 16px}.timeline{width:100%;accent-color:var(--lime);height:4px}.times{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:10px;margin:2px 0 10px}.times input{flex:1}.playrow{display:flex;align-items:center;justify-content:space-between;gap:5px}.playrow button{background:transparent;border:0;color:var(--ink);padding:8px 9px;font-weight:800}.playrow .primary{background:var(--lime);color:#15151b;border-radius:50%;width:44px;height:44px;font-size:19px}.speed{border:1px solid var(--line)!important;border-radius:10px!important;font-size:11px!important}.nowplaying{padding:12px 15px 15px;border-top:1px solid #2c2b38;font-size:12px}.nowplaying strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowplaying span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
@@ -869,7 +869,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <body>
 <main>
 <section id="mediaPage">
-<section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
+<section class="player" id="player"><button class="player-dismiss" id="playerDismiss" type="button" aria-label="Close recent media card" title="Close">×</button><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
 <div class="media-header">
   <div class="media-heading"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
   <div class="media-header-actions">
@@ -1344,6 +1344,7 @@ function observeThumbnails(){
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function openVault(){safeBridge('openVault')}
 $('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
 $('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('playerDismiss').onclick=()=>{$('player').classList.remove('visible');$('player').setAttribute('aria-hidden','true')};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 let searchRenderFrame=0;
 $('videoSearch').addEventListener('input',()=>{if(searchRenderFrame)cancelAnimationFrame(searchRenderFrame);searchRenderFrame=requestAnimationFrame(()=>{searchRenderFrame=0;videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()})});
@@ -1449,8 +1450,22 @@ function choosePage(page){
  }
 }
 
+function resetPageHome(page){
+ if(page==='videos'){
+  searchExpanded=false;videoSearchText='';$('videoSearch').value='';$('videoToolbar').hidden=true;$('searchToggle').setAttribute('aria-expanded','false');
+  videoLibraryFilter='all';currentFolderPath='';folderNavigationHistory=[];
+  mediaContentMode=videoContentModePreference||'folders';folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';groupByFolder=folderBrowseActive;
+  $('showAllVideos').classList.add('active');$('showFavoriteVideos').classList.remove('active');$('showAllVideos').setAttribute('aria-pressed','true');$('showFavoriteVideos').setAttribute('aria-pressed','false');syncOptionsSelection();
+ }else if(page==='music'){
+  musicSearchExpanded=false;musicSearchText='';$('musicSearch').value='';$('musicToolbar').hidden=true;
+  musicLibraryFilter='all';musicBrowseView='all';currentMusicFolder='';currentMusicPlaylistId='';currentMusicGroup=null;
+  if(typeof MusicNavigation!=='undefined'&&MusicNavigation&&MusicNavigation.navigate)MusicNavigation.navigate('all');
+ }
+}
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
-  choosePage(button.dataset.page);
+  const page=button.dataset.page;
+  resetPageHome(page);
+  choosePage(page);
 }));
 
  $('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
