@@ -1954,7 +1954,7 @@ function showMusicInfo(view){
 
 /* Compatibility entry points route into the single controller; no independent navigation logic. */
 function setMusicBrowseView(view){MusicNavigation.navigate(view)}
-function renderMusic(){lumioMusicDiagSnapshot('renderMusic:before');MusicNavigation.render(musicBrowseView);lumioMusicDiagSnapshot('renderMusic:after')}
+function renderMusic(){MusicNavigation.render(musicBrowseView)}
 
 function renderMusicPlaylists(){
  const box=$('musicPlaylistsList');if(!box)return;
