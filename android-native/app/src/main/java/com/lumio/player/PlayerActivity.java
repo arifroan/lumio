@@ -108,7 +108,7 @@ public final class PlayerActivity extends Activity {
         @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
             android.util.Log.e("LUMIO_PLAYBACK", "Playback failed for URI=" + requestedUri
                     + ", code=" + error.getErrorCodeName(), error);
-            activateEmbeddedMpv(error);
+            showPlaybackFailure(error);
         }
     };
     private MediaController controller;
@@ -121,7 +121,6 @@ public final class PlayerActivity extends Activity {
     private Button lockButton;
     private FrameLayout contentFrame;
     private FrameLayout rootFrame;
-    private EmbeddedMpvView embeddedMpvView;
     private FrameLayout lockOverlay;
     private SharedPreferences prefs;
     private String requestedUri;
@@ -325,52 +324,16 @@ public final class PlayerActivity extends Activity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    private void activateEmbeddedMpv(androidx.media3.common.PlaybackException error) {
-        if (embeddedMpvView != null || isFinishing() || isDestroyed()) return;
-        if (requestedAudio || requestedUri == null || rootFrame == null) {
-            showPlaybackFailure(error);
-            return;
-        }
-        long resumeAt = controller == null ? 0L : Math.max(0L, controller.getCurrentPosition());
-        android.util.Log.w("LUMIO_PLAYBACK", "Switching to embedded libmpv fallback; error="
-                + error.getErrorCodeName() + ", resumeMs=" + resumeAt);
-        try {
-            embeddedMpvView = new EmbeddedMpvView(this, requestedUri, resumeAt);
-            if (!embeddedMpvView.isAvailable()) {
-                embeddedMpvView.release();
-                embeddedMpvView = null;
-                showPlaybackFailure(error);
-                return;
-            }
-            if (controller != null) {
-                controller.removeListener(playbackUiListener);
-                controller.pause();
-            }
-            if (playerView != null) {
-                playerView.setPlayer(null);
-                playerView.setVisibility(View.GONE);
-            }
-            rootFrame.addView(embeddedMpvView, 0, new FrameLayout.LayoutParams(-1, -1));
-            setPlaybackControlsVisible(true);
-            showHint("Using compatibility decoder");
-        } catch (Throwable fallbackError) {
-            android.util.Log.e("LUMIO_PLAYBACK", "Embedded libmpv fallback failed", fallbackError);
-            if (embeddedMpvView != null) {
-                embeddedMpvView.release();
-                embeddedMpvView = null;
-            }
-            showPlaybackFailure(error);
-        }
-    }
-
     private void showPlaybackFailure(androidx.media3.common.PlaybackException error) {
         String detail = error.getErrorCodeName() == null ? "unknown decoder or media error" : error.getErrorCodeName();
+        android.util.Log.e("LUMIO_PLAYBACK", "Media3 playback failed for URI=" + requestedUri + ", code=" + detail, error);
         showHint("Playback failed: " + detail);
-        new AlertDialog.Builder(PlayerActivity.this)
-                .setTitle("Can't play this video")
-                .setMessage("LUMIO couldn't play this video with Media3 or the fallback engine. Error: " + detail
-                        + "\\n\\n" + (error.getMessage() == null ? "No additional details." : error.getMessage()))
-                .setPositiveButton("OK", null).show();
+        if (!isFinishing() && !isDestroyed()) {
+            new AlertDialog.Builder(PlayerActivity.this).setTitle("Video playback failed")
+                    .setMessage("Media3 could not play this video. Error: " + detail + "\n\n"
+                            + (error.getMessage() == null ? "No additional details." : error.getMessage()))
+                    .setPositiveButton("OK", null).show();
+        }
     }
 
     private void initializeMedia() {
@@ -532,9 +495,8 @@ public final class PlayerActivity extends Activity {
     private void cycleSpeed() {
         speedIndex = (speedIndex + 1) % SPEEDS.length;
         float speed = SPEEDS[speedIndex];
-        if (embeddedMpvView != null) embeddedMpvView.setPlaybackSpeed(speed);
-        else if (controller != null) controller.setPlaybackParameters(new PlaybackParameters(speed));
-        else return;
+        if (controller == null) return;
+        controller.setPlaybackParameters(new PlaybackParameters(speed));
         speedButton.setText(trimSpeed(speed) + "×");
         showHint("Playback " + trimSpeed(speed) + "×");
     }
@@ -609,9 +571,8 @@ public final class PlayerActivity extends Activity {
         if (requestedAudio || isInPictureInPicture() || locked) return;
         controlsHandler.removeCallbacks(hidePlaybackControls);
         setPlaybackControlsVisible(true);
-        if (playerView != null && embeddedMpvView == null) playerView.showController();
-        // libmpv fallback keeps its compact transport bar visible.
-        if (embeddedMpvView == null) controlsHandler.postDelayed(hidePlaybackControls, CONTROLS_AUTO_HIDE_MS);
+        if (playerView != null) playerView.showController();
+        controlsHandler.postDelayed(hidePlaybackControls, CONTROLS_AUTO_HIDE_MS);
     }
 
     private void showPlaybackControlsUntilResumed() {
@@ -632,19 +593,15 @@ public final class PlayerActivity extends Activity {
                         if (locked) return false;
                         showPlaybackControlsTemporarily();
                         boolean forward = e.getX() >= playerView.getWidth() / 2f;
-                        if (embeddedMpvView != null) {
-                            embeddedMpvView.seekRelative(forward ? 10_000L : -10_000L);
-                        } else {
-                            if (controller == null || controller.getDuration() <= 0) return false;
-                            long target = controller.getCurrentPosition() + (forward ? 10_000L : -10_000L);
-                            controller.seekTo(Math.max(0L, Math.min(controller.getDuration(), target)));
-                        }
+                        if (controller == null || controller.getDuration() <= 0) return false;
+                        long target = controller.getCurrentPosition() + (forward ? 10_000L : -10_000L);
+                        controller.seekTo(Math.max(0L, Math.min(controller.getDuration(), target)));
                         showHint(forward ? "+10 seconds" : "−10 seconds");
                         gestureHandled = true;
                         return true;
                     }
                     @Override public boolean onScroll(MotionEvent first, MotionEvent current, float distanceX, float distanceY) {
-                        if (locked || (controller == null && embeddedMpvView == null) || first == null || scaling) return false;
+                        if (locked || controller == null || first == null || scaling) return false;
                         if (Math.abs(current.getX() - first.getX()) < dp(14)
                                 && Math.abs(current.getY() - first.getY()) < dp(14)) return false;
                         gestureHandled = true;
@@ -656,18 +613,12 @@ public final class PlayerActivity extends Activity {
                             return true;
                         }
                         if (Math.abs(distanceX) > Math.abs(distanceY)) {
-                            if (embeddedMpvView != null) {
-                                long delta = (long) (-distanceX / Math.max(1, playerView.getWidth()) * 10_000f);
-                                embeddedMpvView.seekRelative(delta);
+                            long duration = controller.getDuration();
+                            if (duration > 0) {
+                                long delta = (long) (-distanceX / Math.max(1, playerView.getWidth()) * duration * 1.4f);
+                                long target = Math.max(0L, Math.min(duration, controller.getCurrentPosition() + delta));
+                                controller.seekTo(target);
                                 showHint((delta >= 0 ? "+" : "") + Math.round(delta / 1000f) + "s");
-                            } else if (controller != null) {
-                                long duration = controller.getDuration();
-                                if (duration > 0) {
-                                    long delta = (long) (-distanceX / Math.max(1, playerView.getWidth()) * duration * 1.4f);
-                                    long target = Math.max(0L, Math.min(duration, controller.getCurrentPosition() + delta));
-                                    controller.seekTo(target);
-                                    showHint((delta >= 0 ? "+" : "") + Math.round(delta / 1000f) + "s");
-                                }
                             }
                         } else {
                             float fraction = distanceY / Math.max(1, playerView.getHeight());
@@ -743,14 +694,6 @@ public final class PlayerActivity extends Activity {
     private final Runnable hideHint = () -> { if (hint != null) hint.setVisibility(View.GONE); };
 
     private void showTrackMenu() {
-        if (embeddedMpvView != null) {
-            new AlertDialog.Builder(this).setTitle("Audio tracks")
-                    .setItems(new String[]{"Next audio track", "Playback settings"}, (d, which) -> {
-                        if (which == 0) embeddedMpvView.cycleAudioTrack();
-                        else showDecoderMode();
-                    }).setNegativeButton("Close", null).show();
-            return;
-        }
         if (controller == null) { showHint("Player is loading"); return; }
         Tracks tracks = controller.getCurrentTracks();
         List<String> labels = new ArrayList<>();
@@ -892,14 +835,6 @@ public final class PlayerActivity extends Activity {
     }
 
     private void showSubtitleMenu() {
-        if (embeddedMpvView != null) {
-            new AlertDialog.Builder(this).setTitle("Subtitles")
-                    .setItems(new String[]{"Cycle subtitle track", "Subtitles off"}, (d, which) -> {
-                        if (which == 0) embeddedMpvView.cycleSubtitleTrack();
-                        else embeddedMpvView.disableSubtitles();
-                    }).setNegativeButton("Close", null).show();
-            return;
-        }
         if (controller == null) { showHint("Player is loading"); return; }
         Tracks tracks = controller.getCurrentTracks();
         List<String> labels = new ArrayList<>();
@@ -1161,11 +1096,6 @@ public final class PlayerActivity extends Activity {
             if (generatedSubtitleFile != null) generatedSubtitleFile.delete();
         }
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (embeddedMpvView != null) {
-            embeddedMpvView.release();
-            if (rootFrame != null) rootFrame.removeView(embeddedMpvView);
-            embeddedMpvView = null;
-        }
         if (controllerFuture != null) {
             MediaController.releaseFuture(controllerFuture);
             controllerFuture = null;
