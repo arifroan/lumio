@@ -1190,7 +1190,6 @@ function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('
 function persistMediaCache(){try{const compact=items.map(({key,uri,name,artist,album,genre,size,mime,type,folder,lastModified,duration,width,height,frameRate,resolution,identity,source,available})=>({key,uri,name,artist,album,genre,size,mime,type,folder,lastModified,duration,width,height,frameRate,resolution,identity,source,available}));localStorage.setItem('lumio.mediaCache.v1',JSON.stringify(compact))}catch(e){}}
 function restoreMediaCache(){try{const raw=localStorage.getItem('lumio.mediaCache.v1');if(!raw)return;const cached=JSON.parse(raw);if(Array.isArray(cached)&&cached.length)mergeMedia(cached,false,false)}catch(e){}}
 function mergeMedia(records,replaceExisting=false,shouldRender=true){
- lumioMusicDiagSnapshot('mergeMedia:start',{records:Array.isArray(records)?records.length:-1,replaceExisting,shouldRender,audioIncoming:Array.isArray(records)?records.filter(x=>x&&(x.type==='audio'||String(x.mime||'').startsWith('audio/'))).length:-1});
  // A changed library invalidates cached HTML for both tabs.
  pageRenderCache.videos.clear();
  if(replaceExisting){items=[];mediaLookup.clear()}
@@ -1215,23 +1214,6 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(shouldRender)render()
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
-/* TEMP MUSIC DIAGNOSTICS: collect evidence without changing library behavior. */
-const lumioMusicDiag=[];
-function lumioMusicDiagSnapshot(event,extra={}){
- try{
-  const lib=document.getElementById('musicLibrary');
-  const page=document.getElementById('musicPage');
-  const snap={t:new Date().toLocaleTimeString(),event,page:currentPage,view:typeof musicBrowseView==='undefined'?'?':musicBrowseView,
-   items:typeof items==='undefined'?-1:items.length,audio:typeof items==='undefined'?-1:items.filter(x=>x&&x.type==='audio').length,
-   libExists:!!lib,libHidden:lib?lib.hidden:null,libDisplay:lib?getComputedStyle(lib).display:null,
-   libChildren:lib?lib.children.length:-1,trackRows:lib?lib.querySelectorAll('[data-mkey]').length:0,
-   pageHidden:page?page.hidden:null,...extra};
-  lumioMusicDiag.push(snap);if(lumioMusicDiag.length>12)lumioMusicDiag.shift();
-  let panel=document.getElementById('lumioMusicDiagPanel');
-  if(!panel&&page){panel=document.createElement('details');panel.id='lumioMusicDiagPanel';panel.style.cssText='margin:12px;padding:10px;border:1px solid #789;border-radius:8px;font:12px monospace;color:var(--ink);background:var(--surface);';panel.innerHTML='<summary style="font-weight:700;cursor:pointer">Temporary Music diagnostics (tap to expand)</summary><pre id="lumioMusicDiagText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto"></pre>';page.appendChild(panel);}
-  const out=document.getElementById('lumioMusicDiagText');if(out)out.textContent=lumioMusicDiag.map(x=>JSON.stringify(x)).join('\\n');
- }catch(e){}
-}
 let lastInvisibleMusicScanRequest=0;
 function requestInvisibleMusicScan(){
  /* Video-only cache must not suppress the initial Music scan. Cached songs render immediately;
@@ -1261,7 +1243,6 @@ function redrawMusicIfVisible(reason){
  if(currentPage!=='music'||!MusicNavigation||typeof MusicNavigation.render!=='function')return;
  const page=$('musicPage');
  if(!page||page.hidden)return;
- lumioMusicDiagSnapshot('musicLifecycle:redraw',{reason,visibility:document.visibilityState});
  MusicNavigation.render(MusicNavigation.getCurrent());
 }
 function scheduleMusicLibraryRedraw(){
@@ -1288,7 +1269,6 @@ function bindMusicLifecycleHooks(){
 }
 bindMusicLifecycleHooks();
 window.onNativeMediaScan=function(records,error,status){
- lumioMusicDiagSnapshot('nativeScan:received',{records:Array.isArray(records)?records.length:-1,error:error||null,audioIncoming:Array.isArray(records)?records.filter(x=>x&&(x.type==='audio'||String(x.mime||'').startsWith('audio/'))).length:-1,status:status||null});
  try{localStorage.setItem('lumio.lastScanAttemptAt',String(Date.now()))}catch(e){}
  if(error&&status&&typeof status==='object'){
   const incoming=new Set();
@@ -1304,9 +1284,13 @@ window.onNativeMediaScan=function(records,error,status){
   if(kept.length!==items.length){items=kept;rebuildMediaLookup();persistMediaCache()}
  }
  mergeMedia(records,!error,false);
- if(!refreshLibraryState())render();
- /* Force a post-scan redraw after the data merge and any synchronous library-state callback. */
- renderMusic();
+ if(currentPage==='music'){
+  active='audio';
+  renderMusic();
+ }else{
+  active='video';
+  if(!refreshLibraryState())render();
+ }
  if(musicBrowseView==='playlists'&&typeof renderMusicPlaylists==='function')renderMusicPlaylists();
  scheduleMusicLibraryRedraw();
  if(!error){try{localStorage.setItem('lumio.lastSuccessfulScanAt',String(Date.now()))}catch(e){}}
@@ -1400,7 +1384,6 @@ function pageCacheKey(page){
  return 'videos|'+String(mediaContentMode||'')+'|'+normalizeFolder(currentFolderPath||'')+'|'+String(videoSearchText||'')+'|'+String(videoLibraryFilter||'');
 }
 function choosePage(page){
- lumioMusicDiagSnapshot('choosePage:enter',{requestedPage:page});
  const previousPage=currentPage,library=$('library');
  /* Cache the current Videos view only when leaving the section. */
  if(previousPage==='videos'&&page!=='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading'))pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
@@ -1740,7 +1723,6 @@ function musicTracksForCurrentView(){
 function bindMusicTrackRows(lib){lib.querySelectorAll('[data-mkey]').forEach(row=>row.onclick=e=>{if(!e.target.closest('[data-ma]'))playMusicItem(row.dataset.mkey)});lib.querySelectorAll('[data-ma="play"]').forEach(b=>b.onclick=e=>{e.stopPropagation();playMusicItem(b.closest('[data-mkey]').dataset.mkey)});lib.querySelectorAll('[data-ma="more"]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=items.find(y=>y.key===b.closest('[data-mkey]').dataset.mkey);if(x)showMediaActions(x)});lib.querySelectorAll('[data-ma="favorite"]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=items.find(y=>y.key===b.closest('[data-mkey]').dataset.mkey);if(x)toggleFavorite(x);renderMusic()})}
 function lumioBaseRenderMusic(){
  const lib=$('musicLibrary');if(!lib)return;
- lumioMusicDiagSnapshot('songsRenderer:enter',{browseView:musicBrowseView});
  const tracks=items.filter(x=>x&&x.type==='audio'),favs=tracks.filter(isFavorite);
  const recentCount=tracks.filter(x=>watchHistory.some(h=>h&&h.uri===x.uri)).length;
  const list=musicTracksForCurrentView();
@@ -1768,7 +1750,6 @@ function lumioBaseRenderMusic(){
   return '<div class="file" data-mkey="'+escapeHtml(x.key)+'" data-track-index="'+index+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(title)+'</strong><small>'+escapeHtml(detail)+'</small></div><button type="button" class="openfile music-favorite '+(isFavorite(x)?'favorited':'')+'" data-ma="favorite" aria-label="'+(isFavorite(x)?'Remove from favorites':'Add to favorites')+'">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button type="button" class="openfile" data-ma="play" aria-label="Play '+escapeHtml(title)+'">'+uiIcon('play')+'</button><button type="button" class="openfile" data-ma="more" aria-label="More actions for '+escapeHtml(title)+'">'+uiIcon('more')+'</button></div>';
  }).join('');
  bindMusicTrackRows(lib);
- lumioMusicDiagSnapshot('songsRenderer:rowsWritten',{listLength:list.length});
 }
 function renderMusicPlaylists(){const box=$('musicPlaylistsList');if(!box)return;box.innerHTML=musicPlaylists.map(p=>'<div class="music-playlist-row"><div class="music-playlist-art">♫</div><div class="music-playlist-copy"><strong>'+escapeHtml(p.name)+'</strong><small>'+p.uris.length+' saved tracks</small></div><button data-playlist="'+escapeHtml(p.id)+'" aria-label="Play playlist">▶</button><button data-remove-playlist="'+escapeHtml(p.id)+'" aria-label="Delete playlist">×</button></div>').join('')||'<div class="empty"><strong>No playlists yet</strong><p>Create a playlist, then use a track’s menu to add songs.</p></div>';box.querySelectorAll('[data-playlist]').forEach(b=>b.onclick=()=>playMusicPlaylist(b.dataset.playlist));box.querySelectorAll('[data-remove-playlist]').forEach(b=>b.onclick=()=>{const p=musicPlaylists.find(p=>p.id===b.dataset.removePlaylist);if(p&&confirm('Delete playlist "'+p.name+'"?')){musicPlaylists=musicPlaylists.filter(x=>x.id!==p.id);saveMusicPlaylists();renderMusicPlaylists();renderMusic()}})}
 function playMusicPlaylist(id){const p=musicPlaylists.find(x=>x.id===id);if(!p)return;const list=p.uris.map(uri=>items.find(x=>x.uri===uri&&x.type==='audio')).filter(Boolean);if(!list.length){showMessage('This playlist has no available local tracks.');return}selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
@@ -1880,14 +1861,12 @@ const MusicNavigation = (() => {
  }
 
  function render(view=current){
-  lumioMusicDiagSnapshot('MusicNavigation.render:enter',{requestedView:view});
   const page=$('musicPage');
   if(!page)return;
   current=view;musicBrowseView=view;
   syncChrome(view);
   const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel');
   if(view==='all'||view==='recent'||view==='favorites'){
-   lumioMusicDiagSnapshot('MusicNavigation.render:songs',{view});
    currentMusicFolder='';currentMusicGroup=null;
    if(lib)lib.hidden=false;
    if(playlists)playlists.hidden=true;
