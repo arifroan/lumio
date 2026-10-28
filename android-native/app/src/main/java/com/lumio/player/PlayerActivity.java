@@ -1086,6 +1086,18 @@ public final class PlayerActivity extends Activity {
     }
 
     @Override
+    protected void onStop() {
+        // Video playback must not continue as audio-only when the player is no longer visible.
+        // Keep playback running only when Android has actually entered Picture-in-Picture.
+        if (!isInPictureInPictureMode() && controller != null) {
+            persistPosition();
+            controller.pause();
+            controller.clearMediaItems();
+        }
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         controlsHandler.removeCallbacks(hidePlaybackControls);
         controlsHandler.removeCallbacks(savePlaybackProgress);
