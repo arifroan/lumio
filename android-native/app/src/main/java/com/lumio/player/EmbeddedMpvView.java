@@ -84,8 +84,9 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         LinearLayout controls = new LinearLayout(context);
         controls.setOrientation(LinearLayout.HORIZONTAL);
         controls.setGravity(Gravity.CENTER);
-        controls.setPadding(dp(8), dp(6), dp(8), dp(6));
-        controls.setBackground(panel(0xE6101018, 18));
+        controls.setPadding(dp(4), dp(4), dp(4), dp(4));
+        // Keep only the essential playback buttons; remove the large decorative overlay panel.
+        controls.setBackgroundColor(Color.TRANSPARENT);
         FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT, dp(54), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         panelParams.setMargins(dp(14), 0, dp(14), dp(12));
@@ -149,7 +150,7 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             Log.i(TAG, "libmpv initialized; sourceScheme=" + Uri.parse(uri).getScheme());
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
-            Toast.makeText(context, "LUMIO compatibility engine could not start", Toast.LENGTH_LONG).show();
+            // Keep failures in Logcat rather than adding a transient UI overlay over the video.
             release();
         }
     }
@@ -216,7 +217,7 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             }
         } catch (Throwable error) {
             Log.e(TAG, "Could not attach playback surface or start GPU output", error);
-            Toast.makeText(context, "LUMIO could not initialize video rendering", Toast.LENGTH_LONG).show();
+            // Rendering errors are logged; do not cover the playback surface with a toast overlay.
         }
     }
 
