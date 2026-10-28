@@ -85,5 +85,6 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("androidx.media3:media3-session:1.11.1")
-    implementation("dev.jdtech.mpv:libmpv:1.0.0")
+    // NextLib adds FFmpeg software decoders (including HEVC video) to Media3.
+    implementation("io.github.anilbeesetti:nextlib-media3ext:1.11.1-0.16.0")
 }
