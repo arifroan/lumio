@@ -119,6 +119,61 @@ public final class PlayerActivity extends Activity {
     private Button pipButton;
     private Button zoomButton;
     private Button lockButton;
+    private FrameLayout controlsOverlay;
+    private LinearLayout timelineRow;
+    private LinearLayout bottomRow;
+    private LinearLayout centerControls;
+    private SeekBar timelineSeekBar;
+    private TextView currentTimeText;
+    private TextView durationTimeText;
+    private Button playPauseButton;
+    private boolean userSeeking;
+    private final Runnable updateTimeline = new Runnable() {
+        @Override public void run() {
+            if (controller != null && timelineSeekBar != null && !userSeeking) {
+                long duration = controller.getDuration();
+                long position = controller.getCurrentPosition();
+                if (duration < 0L) duration = 0L;
+                timelineSeekBar.setMax((int) Math.min(Integer.MAX_VALUE, duration));
+                timelineSeekBar.setProgress((int) Math.min(Integer.MAX_VALUE, Math.max(0L, position)));
+                if (currentTimeText != null) currentTimeText.setText(formatClock(position));
+                if (durationTimeText != null) durationTimeText.setText(formatClock(duration));
+                if (playPauseButton != null) playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶");
+            }
+            controlsHandler.removeCallbacks(this);
+            if (!isFinishing() && !isDestroyed()) controlsHandler.postDelayed(this, 500L);
+        }
+    };
+
+    private String formatClock(long millis) {
+        long seconds = Math.max(0L, millis / 1000L);
+        long hours = seconds / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remainder = seconds % 60L;
+        return hours > 0 ? String.format(Locale.US, "%d:%02d:%02d", hours, minutes, remainder)
+                : String.format(Locale.US, "%d:%02d", minutes, remainder);
+    }
+
+    private Button overlayButton(String label, float sizeSp) {
+        Button b = button(label);
+        b.setTextSize(sizeSp);
+        b.setTextColor(Color.WHITE);
+        b.setBackgroundColor(Color.TRANSPARENT);
+        b.setStateListAnimator(null);
+        b.setPadding(dp(7), dp(3), dp(7), dp(3));
+        b.setMinHeight(dp(42));
+        return b;
+    }
+
+    private LinearLayout horizontalRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(12), dp(2), dp(12), dp(2));
+        row.setBackgroundColor(Color.TRANSPARENT);
+        return row;
+    }
+
     private FrameLayout contentFrame;
     private FrameLayout rootFrame;
     private FrameLayout lockOverlay;
@@ -219,6 +274,74 @@ public final class PlayerActivity extends Activity {
         return b;
     }
 
+    private void seekBy(long deltaMs) {
+        if (controller == null) return;
+        long duration = controller.getDuration();
+        long target = Math.max(0L, controller.getCurrentPosition() + deltaMs);
+        if (duration > 0L) target = Math.min(duration, target);
+        controller.seekTo(target);
+        showPlaybackControlsTemporarily();
+    }
+
+    private float currentVolumeFraction() {
+        if (audioManager == null) return volumeFraction;
+        int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        return max <= 0 ? 0f : audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) / (float) max;
+    }
+
+    private void setVolumeFraction(float fraction) {
+        volumeFraction = clamp(fraction, 0f, 1f);
+        if (audioManager != null) {
+            int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, Math.round(volumeFraction * max), 0);
+        }
+    }
+
+    private void adjustVolume(int direction) {
+        if (audioManager != null) audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                direction > 0 ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, 0);
+        volumeFraction = currentVolumeFraction();
+        showHint("Volume " + Math.round(volumeFraction * 100) + "%");
+    }
+
+    private void setBrightness(float value) {
+        brightness = clamp(value, 0.08f, 1f);
+        WindowManager.LayoutParams attrs = getWindow().getAttributes();
+        attrs.screenBrightness = brightness;
+        getWindow().setAttributes(attrs);
+    }
+
+    private void adjustBrightness(float delta) {
+        setBrightness(brightness + delta);
+        showHint("Brightness " + Math.round(brightness * 100) + "%");
+    }
+
+    private void showPlaybackSettings() {
+        String[] choices = {"Playback speed", "Subtitles", "Audio tracks", "Picture in Picture", "Fit / fill"};
+        new AlertDialog.Builder(this).setTitle("Playback settings").setItems(choices, (dialog, which) -> {
+            if (which == 0) cycleSpeed();
+            else if (which == 1) showSubtitleMenu();
+            else if (which == 2) showTrackMenu();
+            else if (which == 3) enterPipIfSupported();
+            else cycleZoom();
+        }).show();
+    }
+
+    private void showPlaylistMenu() {
+        if (controller == null || controller.getMediaItemCount() <= 1) {
+            showHint("No other items in the playback list");
+            return;
+        }
+        String[] labels = new String[controller.getMediaItemCount()];
+        for (int i = 0; i < labels.length; i++) {
+            MediaItem item = controller.getMediaItemAt(i);
+            CharSequence title = item.mediaMetadata.title;
+            labels[i] = title == null ? "Media " + (i + 1) : title.toString();
+        }
+        new AlertDialog.Builder(this).setTitle("Playback list").setItems(labels,
+                (dialog, which) -> controller.seekToDefaultPosition(which)).show();
+    }
+
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
@@ -226,81 +349,255 @@ public final class PlayerActivity extends Activity {
     private void buildPlayerUi() {
         FrameLayout root = new FrameLayout(this);
         rootFrame = root;
-        root.setBackgroundColor(Color.rgb(8, 8, 13));
+        root.setBackgroundColor(Color.BLACK);
 
         playerView = new PlayerView(this);
-        playerView.setUseController(true);
+        playerView.setUseController(false);
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
-        // The header and Media3 controls share one explicit two-second timer.
-        // Disable Media3's independent timeout so the two layers cannot drift apart.
-        playerView.setControllerShowTimeoutMs(0);
-        playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
-            if (requestedAudio || isInPictureInPicture()) return;
-            setPlaybackControlsVisible(visibility == View.VISIBLE);
-        });
         playerView.setKeepContentOnPlayerReset(true);
         playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         playerView.setBackgroundColor(Color.BLACK);
         root.addView(playerView, new FrameLayout.LayoutParams(-1, -1));
         contentFrame = playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
 
+        controlsOverlay = new FrameLayout(this);
+        controlsOverlay.setBackgroundColor(Color.TRANSPARENT);
+        root.addView(controlsOverlay, new FrameLayout.LayoutParams(-1, -1));
+
         topBar = new LinearLayout(this);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(10), dp(10), dp(10), dp(10));
         topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setBackground(rounded(0xDD101018, 0, 0));
-        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(62), Gravity.TOP);
-        root.addView(topBar, topParams);
+        topBar.setPadding(dp(12), dp(5), dp(12), dp(5));
+        topBar.setBackgroundColor(Color.TRANSPARENT);
+        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(54), Gravity.TOP);
+        controlsOverlay.addView(topBar, topParams);
 
-        Button back = button("‹");
-        back.setTextSize(26);
+        Button back = overlayButton("‹", 30);
+        back.setContentDescription("Back");
         back.setOnClickListener(v -> finish());
         topBar.addView(back, new LinearLayout.LayoutParams(dp(42), -1));
 
         titleText = new TextView(this);
         titleText.setTextColor(Color.WHITE);
-        titleText.setTextSize(13);
+        titleText.setTextSize(14);
         titleText.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         titleText.setSingleLine(true);
         titleText.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
-        titleText.setText(requestedTitle == null ? "Lumio Player" : requestedTitle);
+        titleText.setText(requestedTitle == null ? "LUMIO" : requestedTitle);
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, -2, 1f);
-        titleParams.setMargins(dp(9), 0, dp(4), 0);
+        titleParams.setMargins(dp(7), 0, dp(8), 0);
         topBar.addView(titleText, titleParams);
 
-        Button tracks = button("Tracks");
-        tracks.setOnClickListener(v -> showTrackMenu());
-        topBar.addView(tracks, new LinearLayout.LayoutParams(-2, dp(40)));
+        Button cast = overlayButton("▣", 21);
+        cast.setContentDescription("Cast");
+        cast.setOnClickListener(v -> showHint("Casting is not available in this build"));
+        topBar.addView(cast, new LinearLayout.LayoutParams(dp(38), -1));
 
-        pipButton = button("PiP");
-        pipButton.setOnClickListener(v -> enterPipIfSupported());
-        LinearLayout.LayoutParams pipParams = new LinearLayout.LayoutParams(-2, dp(40));
-        pipParams.setMargins(dp(4), 0, 0, 0);
-        topBar.addView(pipButton, pipParams);
-
-        Button cc = button("CC");
+        Button cc = overlayButton("CC", 15);
+        cc.setContentDescription("Subtitles");
         cc.setOnClickListener(v -> showSubtitleMenu());
-        LinearLayout.LayoutParams smallGap = new LinearLayout.LayoutParams(-2, dp(40));
-        smallGap.setMargins(dp(4), 0, 0, 0);
-        topBar.addView(cc, smallGap);
+        topBar.addView(cc, new LinearLayout.LayoutParams(dp(38), -1));
 
-        speedButton = button("1×");
-        speedButton.setOnClickListener(v -> cycleSpeed());
-        LinearLayout.LayoutParams speedParams = new LinearLayout.LayoutParams(-2, dp(40));
-        speedParams.setMargins(dp(4), 0, 0, 0);
-        topBar.addView(speedButton, speedParams);
+        Button audio = overlayButton("♫", 23);
+        audio.setContentDescription("Audio tracks");
+        audio.setOnClickListener(v -> showTrackMenu());
+        topBar.addView(audio, new LinearLayout.LayoutParams(dp(38), -1));
 
-        zoomButton = button("Fit");
-        zoomButton.setOnClickListener(v -> cycleZoom());
-        LinearLayout.LayoutParams zoomParams = new LinearLayout.LayoutParams(-2, dp(40));
-        zoomParams.setMargins(dp(4), 0, 0, 0);
-        topBar.addView(zoomButton, zoomParams);
+        Button settings = overlayButton("⚙", 22);
+        settings.setContentDescription("Playback settings");
+        settings.setOnClickListener(v -> showPlaybackSettings());
+        topBar.addView(settings, new LinearLayout.LayoutParams(dp(38), -1));
 
-        lockButton = button("Lock");
+        pipButton = overlayButton("▣", 20);
+        pipButton.setContentDescription("Picture in Picture");
+        pipButton.setOnClickListener(v -> enterPipIfSupported());
+        topBar.addView(pipButton, new LinearLayout.LayoutParams(dp(38), -1));
+
+        Button overflow = overlayButton("⋮", 24);
+        overflow.setContentDescription("More playback options");
+        overflow.setOnClickListener(v -> showPlaybackSettings());
+        topBar.addView(overflow, new LinearLayout.LayoutParams(dp(34), -1));
+
+        // Side indicators mirror the brightness and volume gesture zones; swipes remain handled by installGestures().
+        LinearLayout brightnessRail = new LinearLayout(this);
+        brightnessRail.setOrientation(LinearLayout.VERTICAL);
+        brightnessRail.setGravity(Gravity.CENTER);
+        brightnessRail.setBackgroundColor(Color.TRANSPARENT);
+        Button brightUp = overlayButton("⌃", 24);
+        brightUp.setContentDescription("Increase brightness");
+        brightUp.setOnClickListener(v -> adjustBrightness(0.08f));
+        brightnessRail.addView(brightUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        TextView sun = new TextView(this);
+        sun.setText("☼");
+        sun.setTextColor(Color.WHITE);
+        sun.setTextSize(27);
+        sun.setGravity(Gravity.CENTER);
+        brightnessRail.addView(sun, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        SeekBar brightSeek = new SeekBar(this);
+        brightSeek.setMax(100);
+        brightSeek.setProgress(Math.round(brightness * 100));
+        brightSeek.setRotation(-90f);
+        brightSeek.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(91, 190, 255)));
+        brightSeek.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        brightSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) setBrightness(progress / 100f);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        FrameLayout brightSeekHolder = new FrameLayout(this);
+        brightSeekHolder.addView(brightSeek, new FrameLayout.LayoutParams(dp(112), dp(36), Gravity.CENTER));
+        brightnessRail.addView(brightSeekHolder, new LinearLayout.LayoutParams(dp(44), dp(112)));
+        Button brightDown = overlayButton("⌄", 24);
+        brightDown.setContentDescription("Decrease brightness");
+        brightDown.setOnClickListener(v -> adjustBrightness(-0.08f));
+        brightnessRail.addView(brightDown, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        FrameLayout.LayoutParams brightParams = new FrameLayout.LayoutParams(dp(48), dp(250), Gravity.CENTER_VERTICAL | Gravity.LEFT);
+        brightParams.leftMargin = dp(12);
+        controlsOverlay.addView(brightnessRail, brightParams);
+
+        LinearLayout volumeRail = new LinearLayout(this);
+        volumeRail.setOrientation(LinearLayout.VERTICAL);
+        volumeRail.setGravity(Gravity.CENTER);
+        volumeRail.setBackgroundColor(Color.TRANSPARENT);
+        Button volumeUp = overlayButton("⌃", 24);
+        volumeUp.setContentDescription("Increase volume");
+        volumeUp.setOnClickListener(v -> adjustVolume(1));
+        volumeRail.addView(volumeUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        Button speaker = overlayButton("◖))", 17);
+        speaker.setContentDescription("Volume");
+        speaker.setOnClickListener(v -> showHint("Volume " + Math.round(currentVolumeFraction() * 100) + "%"));
+        volumeRail.addView(speaker, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        SeekBar volumeSeek = new SeekBar(this);
+        volumeSeek.setMax(100);
+        volumeSeek.setProgress(Math.round(currentVolumeFraction() * 100));
+        volumeSeek.setRotation(-90f);
+        volumeSeek.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(91, 190, 255)));
+        volumeSeek.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        volumeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) setVolumeFraction(progress / 100f);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        FrameLayout volumeSeekHolder = new FrameLayout(this);
+        volumeSeekHolder.addView(volumeSeek, new FrameLayout.LayoutParams(dp(112), dp(36), Gravity.CENTER));
+        volumeRail.addView(volumeSeekHolder, new LinearLayout.LayoutParams(dp(44), dp(112)));
+        Button volumeDown = overlayButton("⌄", 24);
+        volumeDown.setContentDescription("Decrease volume");
+        volumeDown.setOnClickListener(v -> adjustVolume(-1));
+        volumeRail.addView(volumeDown, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        FrameLayout.LayoutParams volumeParams = new FrameLayout.LayoutParams(dp(48), dp(250), Gravity.CENTER_VERTICAL | Gravity.RIGHT);
+        volumeParams.rightMargin = dp(12);
+        controlsOverlay.addView(volumeRail, volumeParams);
+
+        timelineRow = horizontalRow();
+        timelineRow.setPadding(dp(22), dp(1), dp(22), dp(1));
+        FrameLayout.LayoutParams timelineParams = new FrameLayout.LayoutParams(-1, dp(44), Gravity.BOTTOM);
+        timelineParams.bottomMargin = dp(64);
+        controlsOverlay.addView(timelineRow, timelineParams);
+
+        currentTimeText = new TextView(this);
+        currentTimeText.setTextColor(Color.WHITE);
+        currentTimeText.setTextSize(12);
+        currentTimeText.setText("0:00");
+        timelineRow.addView(currentTimeText, new LinearLayout.LayoutParams(-2, -2));
+
+        timelineSeekBar = new SeekBar(this);
+        timelineSeekBar.setMax(1);
+        timelineSeekBar.setProgress(0);
+        timelineSeekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(91, 190, 255)));
+        timelineSeekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        timelineSeekBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x99FFFFFF));
+        LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(0, dp(32), 1f);
+        seekParams.setMargins(dp(10), 0, dp(10), 0);
+        timelineRow.addView(timelineSeekBar, seekParams);
+        timelineSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (fromUser && currentTimeText != null) currentTimeText.setText(formatClock(progress));
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) { userSeeking = true; }
+            @Override public void onStopTrackingTouch(SeekBar bar) {
+                userSeeking = false;
+                if (controller != null) controller.seekTo(bar.getProgress());
+            }
+        });
+
+        durationTimeText = new TextView(this);
+        durationTimeText.setTextColor(Color.WHITE);
+        durationTimeText.setTextSize(12);
+        durationTimeText.setText("0:00");
+        timelineRow.addView(durationTimeText, new LinearLayout.LayoutParams(-2, -2));
+
+        bottomRow = horizontalRow();
+        bottomRow.setPadding(dp(12), 0, dp(12), dp(2));
+        FrameLayout.LayoutParams bottomParams = new FrameLayout.LayoutParams(-1, dp(58), Gravity.BOTTOM);
+        controlsOverlay.addView(bottomRow, bottomParams);
+
+        LinearLayout leftTools = new LinearLayout(this);
+        leftTools.setOrientation(LinearLayout.HORIZONTAL);
+        leftTools.setGravity(Gravity.CENTER_VERTICAL);
+        bottomRow.addView(leftTools, new LinearLayout.LayoutParams(0, -1, 1f));
+        lockButton = overlayButton("♙", 21);
+        lockButton.setContentDescription("Lock playback controls");
         lockButton.setOnClickListener(v -> toggleLock());
-        LinearLayout.LayoutParams lockParams = new LinearLayout.LayoutParams(-2, dp(40));
-        lockParams.setMargins(dp(4), 0, 0, 0);
-        topBar.addView(lockButton, lockParams);
+        leftTools.addView(lockButton, new LinearLayout.LayoutParams(dp(40), -1));
+        Button rotate = overlayButton("⟳", 23);
+        rotate.setContentDescription("Rotate screen");
+        rotate.setOnClickListener(v -> {
+            int orientation = getResources().getConfiguration().orientation;
+            setRequestedOrientation(orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        });
+        leftTools.addView(rotate, new LinearLayout.LayoutParams(dp(40), -1));
+        Button playlist = overlayButton("☷", 23);
+        playlist.setContentDescription("Playback list");
+        playlist.setOnClickListener(v -> showPlaylistMenu());
+        leftTools.addView(playlist, new LinearLayout.LayoutParams(dp(40), -1));
+
+        centerControls = new LinearLayout(this);
+        centerControls.setOrientation(LinearLayout.HORIZONTAL);
+        centerControls.setGravity(Gravity.CENTER);
+        bottomRow.addView(centerControls, new LinearLayout.LayoutParams(-2, -1));
+        Button rewind = overlayButton("↶\n10", 16);
+        rewind.setContentDescription("Rewind 10 seconds");
+        rewind.setOnClickListener(v -> seekBy(-10_000L));
+        centerControls.addView(rewind, new LinearLayout.LayoutParams(dp(58), -1));
+        playPauseButton = overlayButton("Ⅱ", 30);
+        playPauseButton.setContentDescription("Play or pause");
+        playPauseButton.setOnClickListener(v -> {
+            if (controller == null) return;
+            if (controller.isPlaying()) controller.pause(); else controller.play();
+            showPlaybackControlsTemporarily();
+        });
+        centerControls.addView(playPauseButton, new LinearLayout.LayoutParams(dp(58), -1));
+        Button forward = overlayButton("↷\n10", 16);
+        forward.setContentDescription("Forward 10 seconds");
+        forward.setOnClickListener(v -> seekBy(10_000L));
+        centerControls.addView(forward, new LinearLayout.LayoutParams(dp(58), -1));
+
+        LinearLayout rightTools = new LinearLayout(this);
+        rightTools.setOrientation(LinearLayout.HORIZONTAL);
+        rightTools.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
+        bottomRow.addView(rightTools, new LinearLayout.LayoutParams(0, -1, 1f));
+        speedButton = overlayButton("1.0x", 13);
+        speedButton.setContentDescription("Playback speed");
+        speedButton.setOnClickListener(v -> cycleSpeed());
+        rightTools.addView(speedButton, new LinearLayout.LayoutParams(dp(48), -1));
+        Button headphones = overlayButton("♬", 22);
+        headphones.setContentDescription("Audio track options");
+        headphones.setOnClickListener(v -> showTrackMenu());
+        rightTools.addView(headphones, new LinearLayout.LayoutParams(dp(38), -1));
+        Button pip = overlayButton("▣", 19);
+        pip.setContentDescription("Picture in Picture");
+        pip.setOnClickListener(v -> enterPipIfSupported());
+        rightTools.addView(pip, new LinearLayout.LayoutParams(dp(38), -1));
+        Button fullscreen = overlayButton("⛶", 23);
+        fullscreen.setContentDescription("Toggle fit and fill");
+        fullscreen.setOnClickListener(v -> cycleZoom());
+        rightTools.addView(fullscreen, new LinearLayout.LayoutParams(dp(38), -1));
 
         hint = new TextView(this);
         hint.setTextColor(Color.WHITE);
@@ -308,16 +605,15 @@ public final class PlayerActivity extends Activity {
         hint.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         hint.setGravity(Gravity.CENTER);
         hint.setPadding(dp(15), dp(10), dp(15), dp(10));
-        hint.setBackground(rounded(0xE6222030, 0x665C547A, 20));
+        hint.setBackground(rounded(0xAA101018, 0, 16));
         hint.setVisibility(View.GONE);
         FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
-        root.addView(hint, hintParams);
+        controlsOverlay.addView(hint, hintParams);
 
         lockOverlay = new FrameLayout(this);
-        lockOverlay.setBackgroundColor(0x55000000);
+        lockOverlay.setBackgroundColor(0x33000000);
         lockOverlay.setVisibility(View.GONE);
-        Button unlock = button("🔒  Unlock playback");
-        unlock.setTextSize(14);
+        Button unlock = overlayButton("🔒  Unlock playback", 14);
         unlock.setOnClickListener(v -> toggleLock());
         FrameLayout.LayoutParams unlockParams = new FrameLayout.LayoutParams(-2, dp(52), Gravity.CENTER);
         lockOverlay.addView(unlock, unlockParams);
@@ -325,6 +621,7 @@ public final class PlayerActivity extends Activity {
 
         setContentView(root);
         installGestures();
+        controlsHandler.post(updateTimeline);
     }
 
     @Override
@@ -595,17 +892,27 @@ public final class PlayerActivity extends Activity {
     private void setPlaybackControlsVisible(boolean visible) {
         playbackControlsVisible = visible;
         if (topBar == null) return;
-        topBar.animate().cancel();
-        if (visible) {
-            topBar.setVisibility(View.VISIBLE);
-            topBar.setAlpha(1f);
-        } else {
-            topBar.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
-                if (!playbackControlsVisible && topBar != null) topBar.setVisibility(View.GONE);
-            }).start();
+        View[] layers = new View[] { topBar, timelineRow, bottomRow };
+        for (View layer : layers) {
+            if (layer == null) continue;
+            layer.animate().cancel();
+            if (visible) {
+                layer.setVisibility(View.VISIBLE);
+                layer.setAlpha(1f);
+            } else {
+                layer.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
+                    if (!playbackControlsVisible) layer.setVisibility(View.GONE);
+                }).start();
+            }
+        }
+        if (controlsOverlay != null) {
+            for (int i = 0; i < controlsOverlay.getChildCount(); i++) {
+                View child = controlsOverlay.getChildAt(i);
+                if (child == topBar || child == timelineRow || child == bottomRow || child == hint) continue;
+                child.setVisibility(visible ? View.VISIBLE : View.GONE);
+            }
         }
     }
-
     private void showPlaybackControlsTemporarily() {
         if (requestedAudio || isInPictureInPicture() || locked) return;
         controlsHandler.removeCallbacks(hidePlaybackControls);
