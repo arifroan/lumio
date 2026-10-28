@@ -159,7 +159,7 @@ public final class PlayerActivity extends Activity {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         PlaybackIconDrawable(String name) {
             this.name = name; paint.setColor(Color.WHITE); paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(1.65f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeWidth(1.8f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
         }
         @Override public void draw(Canvas canvas) {
             android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
@@ -179,7 +179,7 @@ public final class PlayerActivity extends Activity {
                 case "lock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,6,3,18,15,180,180);line(canvas,12,14,12,17);break;
                 case "rotate": arc(canvas,3,3,21,21,35,250);line(canvas,3,4,3,10);line(canvas,3,4,9,4);arc(canvas,3,3,21,21,215,250);line(canvas,21,20,21,14);line(canvas,21,20,15,20);break;
                 case "playlist": canvas.drawRoundRect(new RectF(3,3,21,21),1.5f,1.5f,paint);for(int y=8;y<=16;y+=4){line(canvas,7,y,9,y);line(canvas,12,y,18,y);}break;
-                case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
+                case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",6.2f,15.4f,7.4f);break;
                 case "forward": arc(canvas,4,3,20,21,-130,285);line(canvas,20,3,20,9);line(canvas,20,3,14,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
                 case "play": paint.setStyle(Paint.Style.FILL);Path tri=new Path();tri.moveTo(7,4);tri.lineTo(19,12);tri.lineTo(7,20);tri.close();canvas.drawPath(tri,paint);paint.setStyle(Paint.Style.STROKE);break;
                 case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(1.65f);break;
@@ -516,7 +516,7 @@ public final class PlayerActivity extends Activity {
         volumeRail.setOrientation(LinearLayout.VERTICAL);
         volumeRail.setGravity(Gravity.CENTER);
         volumeRail.setBackgroundColor(Color.TRANSPARENT);
-        Button volumeUp = overlayButton("⌃", 24);
+        Button volumeUp = overlayButton("icon:up", 24);
         volumeUp.setContentDescription("Increase volume");
         volumeUp.setOnClickListener(v -> adjustVolume(1));
         volumeRail.addView(volumeUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
@@ -540,7 +540,7 @@ public final class PlayerActivity extends Activity {
         FrameLayout volumeSeekHolder = new FrameLayout(this);
         volumeSeekHolder.addView(volumeSeek, new FrameLayout.LayoutParams(dp(112), dp(36), Gravity.CENTER));
         volumeRail.addView(volumeSeekHolder, new LinearLayout.LayoutParams(dp(44), dp(112)));
-        Button volumeDown = overlayButton("⌄", 24);
+        Button volumeDown = overlayButton("icon:down", 24);
         volumeDown.setContentDescription("Decrease volume");
         volumeDown.setOnClickListener(v -> adjustVolume(-1));
         volumeRail.addView(volumeDown, new LinearLayout.LayoutParams(dp(44), dp(42)));
@@ -645,7 +645,7 @@ public final class PlayerActivity extends Activity {
         headphones.setContentDescription("Audio track options");
         headphones.setOnClickListener(v -> showTrackMenu());
         rightTools.addView(headphones, new LinearLayout.LayoutParams(dp(38), -1));
-        Button pip = overlayButton("▣", 19);
+        Button pip = overlayButton("icon:pip", 19);
         pip.setContentDescription("Picture in Picture");
         pip.setOnClickListener(v -> enterPipIfSupported());
         rightTools.addView(pip, new LinearLayout.LayoutParams(dp(38), -1));
