@@ -145,6 +145,7 @@ public final class PlayerActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        applyImmersivePlayback();
         getWindow().setStatusBarColor(Color.rgb(12, 12, 18));
         getWindow().setNavigationBarColor(Color.rgb(12, 12, 18));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -161,6 +162,32 @@ public final class PlayerActivity extends Activity {
         subtitleStylePreset = prefs.getInt("subtitle_style", 0);
         buildPlayerUi();
         applySubtitleAppearance();
+    }
+
+    private void applyImmersivePlayback() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.view.WindowInsetsController insetsController = getWindow().getInsetsController();
+            if (insetsController != null) {
+                insetsController.hide(android.view.WindowInsets.Type.statusBars()
+                        | android.view.WindowInsets.Type.navigationBars());
+                insetsController.setSystemBarsBehavior(
+                        android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && !isInPictureInPictureMode()) applyImmersivePlayback();
     }
 
     private GradientDrawable rounded(int color, int stroke, int radiusDp) {
@@ -1083,6 +1110,7 @@ public final class PlayerActivity extends Activity {
             if (playerView != null) playerView.setUseController(true);
             setPlaybackControlsVisible(false);
         } else if (!requestedAudio) {
+            applyImmersivePlayback();
             if (controller != null && controller.isPlaying()) showPlaybackControlsTemporarily();
             else showPlaybackControlsUntilResumed();
         } else {
