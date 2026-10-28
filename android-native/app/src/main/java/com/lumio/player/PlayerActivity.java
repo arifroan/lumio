@@ -8,6 +8,13 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.PixelFormat;
+import android.graphics.ColorFilter;
+import android.graphics.drawable.Drawable;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -138,12 +145,58 @@ public final class PlayerActivity extends Activity {
                 timelineSeekBar.setProgress((int) Math.min(Integer.MAX_VALUE, Math.max(0L, position)));
                 if (currentTimeText != null) currentTimeText.setText(formatClock(position));
                 if (durationTimeText != null) durationTimeText.setText(formatClock(duration));
-                if (playPauseButton != null) playPauseButton.setText(controller.isPlaying() ? "Ⅱ" : "▶");
+                if (playPauseButton != null) setButtonIcon(playPauseButton, controller.isPlaying() ? "pause" : "play");
             }
             controlsHandler.removeCallbacks(this);
             if (!isFinishing() && !isDestroyed()) controlsHandler.postDelayed(this, 500L);
         }
     };
+
+
+    /** Thin, consistent outline icons matching the reference playback interface. */
+    private static final class PlaybackIconDrawable extends Drawable {
+        private final String name;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        PlaybackIconDrawable(String name) {
+            this.name = name; paint.setColor(Color.WHITE); paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.65f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
+        }
+        @Override public void draw(Canvas canvas) {
+            RectF b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
+            canvas.save(); canvas.translate(b.centerX()-size/2f,b.centerY()-size/2f); canvas.scale(size/24f,size/24f);
+            switch(name) {
+                case "back": line(canvas,19,12,5,12); line(canvas,5,12,12,5); line(canvas,5,12,12,19); break;
+                case "cast": canvas.drawRoundRect(new RectF(4,4,21,17),1.4f,1.4f,paint); arc(canvas,3,18,9,24,270,90); arc(canvas,3,18,14,24,270,90); break;
+                case "cc": canvas.drawRoundRect(new RectF(2.5f,5,21.5f,19),2,2,paint); text(canvas,"CC",6,15.5f,7.2f); break;
+                case "music": line(canvas,14,4,14,17); line(canvas,14,4,21,2.5f); line(canvas,21,2.5f,21,15); canvas.drawOval(new RectF(8,15,14,20),paint); canvas.drawOval(new RectF(15,13,21,18),paint); break;
+                case "settings": canvas.drawCircle(12,12,7.1f,paint); canvas.drawCircle(12,12,2.5f,paint); for(int a=0;a<8;a++){double t=Math.PI*a/4;line(canvas,(float)(12+8*Math.cos(t)),(float)(12+8*Math.sin(t)),(float)(12+10*Math.cos(t)),(float)(12+10*Math.sin(t)));} break;
+                case "pip": canvas.drawRect(new RectF(2.5f,4.5f,21.5f,19.5f),paint); canvas.drawRect(new RectF(12,11,19,17),paint); break;
+                case "more": canvas.drawCircle(12,5,1,paint); canvas.drawCircle(12,12,1,paint); canvas.drawCircle(12,19,1,paint); break;
+                case "brightness": canvas.drawCircle(12,12,4,paint); for(int a=0;a<8;a++){double t=Math.PI*a/4;line(canvas,(float)(12+6.5*Math.cos(t)),(float)(12+6.5*Math.sin(t)),(float)(12+9*Math.cos(t)),(float)(12+9*Math.sin(t)));} break;
+                case "up": line(canvas,5,15,12,8); line(canvas,12,8,19,15); break;
+                case "down": line(canvas,5,9,12,16); line(canvas,12,16,19,9); break;
+                case "volume": Path sp=new Path(); sp.moveTo(3,9);sp.lineTo(7,9);sp.lineTo(12,5);sp.lineTo(12,19);sp.lineTo(7,15);sp.lineTo(3,15);sp.close();canvas.drawPath(sp,paint);arc(canvas,9,6,19,18,-55,110);arc(canvas,9,3,23,21,-55,110);break;
+                case "lock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,6,3,18,15,180,180);line(canvas,12,14,12,17);break;
+                case "rotate": arc(canvas,3,3,21,21,35,250);line(canvas,3,4,3,10);line(canvas,3,4,9,4);arc(canvas,3,3,21,21,215,250);line(canvas,21,20,21,14);line(canvas,21,20,15,20);break;
+                case "playlist": canvas.drawRoundRect(new RectF(3,3,21,21),1.5f,1.5f,paint);for(int y=8;y<=16;y+=4){line(canvas,7,y,9,y);line(canvas,12,y,18,y);}break;
+                case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
+                case "forward": arc(canvas,4,3,20,21,-130,285);line(canvas,20,3,20,9);line(canvas,20,3,14,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
+                case "play": paint.setStyle(Paint.Style.FILL);Path tri=new Path();tri.moveTo(7,4);tri.lineTo(19,12);tri.lineTo(7,20);tri.close();canvas.drawPath(tri,paint);paint.setStyle(Paint.Style.STROKE);break;
+                case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(1.65f);break;
+                case "headphones": arc(canvas,3,2,21,22,180,180);canvas.drawRoundRect(new RectF(3,12,7,19),1.2f,1.2f,paint);canvas.drawRoundRect(new RectF(17,12,21,19),1.2f,1.2f,paint);break;
+                case "fullscreen": line(canvas,4,9,4,4);line(canvas,4,4,9,4);line(canvas,15,4,20,4);line(canvas,20,4,20,9);line(canvas,4,15,4,20);line(canvas,4,20,9,20);line(canvas,15,20,20,20);line(canvas,20,15,20,20);break;
+                case "unlock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,8,3,20,15,190,160);line(canvas,12,14,12,17);break;
+            }
+            canvas.restore();
+        }
+        private void line(Canvas c,float x1,float y1,float x2,float y2){c.drawLine(x1,y1,x2,y2,paint);}
+        private void arc(Canvas c,float l,float t,float r,float b,float start,float sweep){c.drawArc(new RectF(l,t,r,b),start,sweep,false,paint);}
+        private void text(Canvas c,String value,float x,float y,float size){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(Color.WHITE);p.setTextSize(size);c.drawText(value,x,y,p);}
+        @Override public void setAlpha(int alpha){paint.setAlpha(alpha);invalidateSelf();}
+        @Override public void setColorFilter(ColorFilter filter){paint.setColorFilter(filter);invalidateSelf();}
+        @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    }
+    private void setButtonIcon(Button button,String name){if(button!=null){button.setText("");button.setBackground(new PlaybackIconDrawable(name));button.setPadding(0,0,0,0);}}
 
     private String formatClock(long millis) {
         long seconds = Math.max(0L, millis / 1000L);
@@ -159,6 +212,7 @@ public final class PlayerActivity extends Activity {
         b.setTextSize(sizeSp);
         b.setTextColor(Color.WHITE);
         b.setBackgroundColor(Color.TRANSPARENT);
+        if (label.startsWith("icon:")) setButtonIcon(b, label.substring(5));
         b.setStateListAnimator(null);
         b.setPadding(dp(7), dp(3), dp(7), dp(3));
         b.setMinHeight(dp(42));
@@ -372,7 +426,7 @@ public final class PlayerActivity extends Activity {
         FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, dp(54), Gravity.TOP);
         controlsOverlay.addView(topBar, topParams);
 
-        Button back = overlayButton("‹", 30);
+        Button back = overlayButton("icon:back", 30);
         back.setContentDescription("Back");
         back.setOnClickListener(v -> finish());
         topBar.addView(back, new LinearLayout.LayoutParams(dp(42), -1));
@@ -388,32 +442,32 @@ public final class PlayerActivity extends Activity {
         titleParams.setMargins(dp(7), 0, dp(8), 0);
         topBar.addView(titleText, titleParams);
 
-        Button cast = overlayButton("▣", 21);
+        Button cast = overlayButton("icon:cast", 21);
         cast.setContentDescription("Cast");
         cast.setOnClickListener(v -> showHint("Casting is not available in this build"));
         topBar.addView(cast, new LinearLayout.LayoutParams(dp(38), -1));
 
-        Button cc = overlayButton("CC", 15);
+        Button cc = overlayButton("icon:cc", 15);
         cc.setContentDescription("Subtitles");
         cc.setOnClickListener(v -> showSubtitleMenu());
         topBar.addView(cc, new LinearLayout.LayoutParams(dp(38), -1));
 
-        Button audio = overlayButton("♫", 23);
+        Button audio = overlayButton("icon:music", 23);
         audio.setContentDescription("Audio tracks");
         audio.setOnClickListener(v -> showTrackMenu());
         topBar.addView(audio, new LinearLayout.LayoutParams(dp(38), -1));
 
-        Button settings = overlayButton("⚙", 22);
+        Button settings = overlayButton("icon:settings", 22);
         settings.setContentDescription("Playback settings");
         settings.setOnClickListener(v -> showPlaybackSettings());
         topBar.addView(settings, new LinearLayout.LayoutParams(dp(38), -1));
 
-        pipButton = overlayButton("▣", 20);
+        pipButton = overlayButton("icon:pip", 20);
         pipButton.setContentDescription("Picture in Picture");
         pipButton.setOnClickListener(v -> enterPipIfSupported());
         topBar.addView(pipButton, new LinearLayout.LayoutParams(dp(38), -1));
 
-        Button overflow = overlayButton("⋮", 24);
+        Button overflow = overlayButton("icon:more", 24);
         overflow.setContentDescription("More playback options");
         overflow.setOnClickListener(v -> showPlaybackSettings());
         topBar.addView(overflow, new LinearLayout.LayoutParams(dp(34), -1));
@@ -423,12 +477,13 @@ public final class PlayerActivity extends Activity {
         brightnessRail.setOrientation(LinearLayout.VERTICAL);
         brightnessRail.setGravity(Gravity.CENTER);
         brightnessRail.setBackgroundColor(Color.TRANSPARENT);
-        Button brightUp = overlayButton("⌃", 24);
+        Button brightUp = overlayButton("icon:up", 24);
         brightUp.setContentDescription("Increase brightness");
         brightUp.setOnClickListener(v -> adjustBrightness(0.08f));
         brightnessRail.addView(brightUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
         TextView sun = new TextView(this);
-        sun.setText("☼");
+        sun.setText("");
+        sun.setBackground(new PlaybackIconDrawable("brightness"));
         sun.setTextColor(Color.WHITE);
         sun.setTextSize(27);
         sun.setGravity(Gravity.CENTER);
@@ -449,7 +504,7 @@ public final class PlayerActivity extends Activity {
         FrameLayout brightSeekHolder = new FrameLayout(this);
         brightSeekHolder.addView(brightSeek, new FrameLayout.LayoutParams(dp(112), dp(36), Gravity.CENTER));
         brightnessRail.addView(brightSeekHolder, new LinearLayout.LayoutParams(dp(44), dp(112)));
-        Button brightDown = overlayButton("⌄", 24);
+        Button brightDown = overlayButton("icon:down", 24);
         brightDown.setContentDescription("Decrease brightness");
         brightDown.setOnClickListener(v -> adjustBrightness(-0.08f));
         brightnessRail.addView(brightDown, new LinearLayout.LayoutParams(dp(44), dp(42)));
@@ -465,7 +520,7 @@ public final class PlayerActivity extends Activity {
         volumeUp.setContentDescription("Increase volume");
         volumeUp.setOnClickListener(v -> adjustVolume(1));
         volumeRail.addView(volumeUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
-        Button speaker = overlayButton("◖))", 17);
+        Button speaker = overlayButton("icon:volume", 17);
         speaker.setContentDescription("Volume");
         speaker.setOnClickListener(v -> showHint("Volume " + Math.round(currentVolumeFraction() * 100) + "%"));
         volumeRail.addView(speaker, new LinearLayout.LayoutParams(dp(44), dp(42)));
@@ -540,11 +595,11 @@ public final class PlayerActivity extends Activity {
         leftTools.setOrientation(LinearLayout.HORIZONTAL);
         leftTools.setGravity(Gravity.CENTER_VERTICAL);
         bottomRow.addView(leftTools, new LinearLayout.LayoutParams(0, -1, 1f));
-        lockButton = overlayButton("♙", 21);
+        lockButton = overlayButton("icon:lock", 21);
         lockButton.setContentDescription("Lock playback controls");
         lockButton.setOnClickListener(v -> toggleLock());
         leftTools.addView(lockButton, new LinearLayout.LayoutParams(dp(40), -1));
-        Button rotate = overlayButton("⟳", 23);
+        Button rotate = overlayButton("icon:rotate", 23);
         rotate.setContentDescription("Rotate screen");
         rotate.setOnClickListener(v -> {
             int orientation = getResources().getConfiguration().orientation;
@@ -552,7 +607,7 @@ public final class PlayerActivity extends Activity {
                     ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         });
         leftTools.addView(rotate, new LinearLayout.LayoutParams(dp(40), -1));
-        Button playlist = overlayButton("☷", 23);
+        Button playlist = overlayButton("icon:playlist", 23);
         playlist.setContentDescription("Playback list");
         playlist.setOnClickListener(v -> showPlaylistMenu());
         leftTools.addView(playlist, new LinearLayout.LayoutParams(dp(40), -1));
@@ -561,11 +616,11 @@ public final class PlayerActivity extends Activity {
         centerControls.setOrientation(LinearLayout.HORIZONTAL);
         centerControls.setGravity(Gravity.CENTER);
         bottomRow.addView(centerControls, new LinearLayout.LayoutParams(-2, -1));
-        Button rewind = overlayButton("↶\n10", 16);
+        Button rewind = overlayButton("icon:rewind", 16);
         rewind.setContentDescription("Rewind 10 seconds");
         rewind.setOnClickListener(v -> seekBy(-10_000L));
         centerControls.addView(rewind, new LinearLayout.LayoutParams(dp(58), -1));
-        playPauseButton = overlayButton("Ⅱ", 30);
+        playPauseButton = overlayButton("icon:pause", 30);
         playPauseButton.setContentDescription("Play or pause");
         playPauseButton.setOnClickListener(v -> {
             if (controller == null) return;
@@ -573,7 +628,7 @@ public final class PlayerActivity extends Activity {
             showPlaybackControlsTemporarily();
         });
         centerControls.addView(playPauseButton, new LinearLayout.LayoutParams(dp(58), -1));
-        Button forward = overlayButton("↷\n10", 16);
+        Button forward = overlayButton("icon:forward", 16);
         forward.setContentDescription("Forward 10 seconds");
         forward.setOnClickListener(v -> seekBy(10_000L));
         centerControls.addView(forward, new LinearLayout.LayoutParams(dp(58), -1));
@@ -586,7 +641,7 @@ public final class PlayerActivity extends Activity {
         speedButton.setContentDescription("Playback speed");
         speedButton.setOnClickListener(v -> cycleSpeed());
         rightTools.addView(speedButton, new LinearLayout.LayoutParams(dp(48), -1));
-        Button headphones = overlayButton("♬", 22);
+        Button headphones = overlayButton("icon:headphones", 22);
         headphones.setContentDescription("Audio track options");
         headphones.setOnClickListener(v -> showTrackMenu());
         rightTools.addView(headphones, new LinearLayout.LayoutParams(dp(38), -1));
@@ -594,7 +649,7 @@ public final class PlayerActivity extends Activity {
         pip.setContentDescription("Picture in Picture");
         pip.setOnClickListener(v -> enterPipIfSupported());
         rightTools.addView(pip, new LinearLayout.LayoutParams(dp(38), -1));
-        Button fullscreen = overlayButton("⛶", 23);
+        Button fullscreen = overlayButton("icon:fullscreen", 23);
         fullscreen.setContentDescription("Toggle fit and fill");
         fullscreen.setOnClickListener(v -> cycleZoom());
         rightTools.addView(fullscreen, new LinearLayout.LayoutParams(dp(38), -1));
@@ -613,7 +668,8 @@ public final class PlayerActivity extends Activity {
         lockOverlay = new FrameLayout(this);
         lockOverlay.setBackgroundColor(0x33000000);
         lockOverlay.setVisibility(View.GONE);
-        Button unlock = overlayButton("🔒  Unlock playback", 14);
+        Button unlock = overlayButton("Unlock playback", 14);
+        unlock.setCompoundDrawablesWithIntrinsicBounds(new PlaybackIconDrawable("unlock"), null, null, null);
         unlock.setOnClickListener(v -> toggleLock());
         FrameLayout.LayoutParams unlockParams = new FrameLayout.LayoutParams(-2, dp(52), Gravity.CENTER);
         lockOverlay.addView(unlock, unlockParams);
