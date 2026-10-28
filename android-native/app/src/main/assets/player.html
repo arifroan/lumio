@@ -1440,7 +1440,6 @@ function choosePage(page){
    if(currentPage!=='music')return;
    if(musicBrowseView!=='playlists'&&musicLibrary)musicLibrary.hidden=false;
    if(musicPlaylistsPanel)musicPlaylistsPanel.hidden=musicBrowseView!=='playlists';
-   renderMusic();
   });
   if(musicBrowseView==='playlists')renderMusicPlaylists();
   scheduleMusicLibraryRedraw();
@@ -1466,8 +1465,8 @@ function resetPageHome(page){
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
   const page=button.dataset.page;
-  /* Active section taps reset to Home. Drop video markup cache to prevent stale folders. */
-  if(page==='videos')pageRenderCache.videos.clear();
+  /* Active section taps reset to Home. Keep valid cached home markup for fast return;
+     the cache key includes folder, search, mode and filter, so other views cannot be reused. */
   resetPageHome(page);
   choosePage(page);
   requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0});
