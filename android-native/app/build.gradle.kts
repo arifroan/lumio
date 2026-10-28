@@ -21,10 +21,15 @@ android {
 
     defaultConfig {
         applicationId = "com.lumio.player"
-        minSdk = 23
+        minSdk = 33
         targetSdk = 35
         versionCode = 22
         versionName = "0.2.20"
+        // This preview targets modern 64-bit Android phones to avoid bundling duplicate
+        // 32-bit and emulator native decoder libraries in the APK.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     signingConfigs {
@@ -64,8 +69,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
@@ -80,4 +85,6 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("androidx.media3:media3-session:1.11.1")
+    // NextLib adds FFmpeg software decoders (including HEVC video) to Media3.
+    implementation("io.github.anilbeesetti:nextlib-media3ext:1.11.1-0.16.0")
 }

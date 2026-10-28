@@ -13,7 +13,7 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .info-card{margin-top:12px}.info-stats{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.info-stats .stat{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px}.info-stats .stat strong{order:2}.info-stats .stat span{order:1;font-size:11px}
 .sectionhead{display:flex;align-items:end;justify-content:space-between;margin:23px 2px 13px}.sectionhead h2{font-size:20px;letter-spacing:-.6px;margin:0}.sectionhead span{font-size:11px;color:var(--muted)}
 .media-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 2px 13px}
-.media-heading{min-width:0}.media-heading h2{font-size:20px;letter-spacing:-.6px;margin:0}.media-heading span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.media-heading{min-width:0}.media-heading h2{display:flex;align-items:center;gap:8px;font-size:20px;letter-spacing:-.6px;margin:0;min-height:32px}.media-heading h2 svg{display:block;flex:0 0 22px;width:22px;height:22px}.media-heading span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 .media-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .icon-button{display:grid;place-items:center;width:43px;height:43px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--ink);padding:9px}
 .icon-button svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -140,7 +140,7 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 @media(max-width:380px){.video-toolbar-row #addFolderButton{flex:1}}
 
 
-.player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
+.player{display:none;margin-top:20px;background:#08080d;border:1px solid #353044;border-radius:23px;overflow:hidden}.player.visible{display:block}.player{position:relative;padding-top:0}.player-dismiss{position:absolute;z-index:3;right:9px;top:9px;display:grid;place-items:center;width:34px;height:34px;border:1px solid #ffffff35;border-radius:50%;background:#17171de8;color:var(--ink);font-size:27px;line-height:1}.player-dismiss:active{background:#34343d}.player .nowplaying{padding-right:48px}.playerhead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #2c2b38}.playerhead span{font-size:11px;color:var(--muted);letter-spacing:.7px}.smallbtn{border:1px solid #393549;background:#1b1926;color:#eee8ff;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}
 .screen{aspect-ratio:16/9;min-height:180px;position:relative;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#29213d,#09090f 70%);overflow:hidden;touch-action:none;user-select:none}.screen audio{position:absolute;bottom:0;width:100%;z-index:2}.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:center;transition:transform .12s linear}.placeholder{text-align:center;padding:20px}.placeholder .playdisc{width:57px;height:57px;border-radius:21px;background:var(--violet);color:#181322;display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.placeholder strong{font-size:14px}.placeholder p{color:var(--muted);font-size:11px;margin:4px 0}
 .gesture-hint{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);background:#171520d9;border:1px solid #ffffff22;border-radius:18px;padding:8px 12px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}.gesture-hint.show{opacity:1}.lockoverlay{display:none;position:absolute;z-index:5;inset:0;background:#08080d55;align-items:center;justify-content:center}.lockoverlay.show{display:flex}.lockoverlay button{background:#171520e8;color:white;border:1px solid #ffffff44;border-radius:18px;padding:13px 17px;font-weight:850}
 .playerbar{padding:14px 15px 16px}.timeline{width:100%;accent-color:var(--lime);height:4px}.times{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:10px;margin:2px 0 10px}.times input{flex:1}.playrow{display:flex;align-items:center;justify-content:space-between;gap:5px}.playrow button{background:transparent;border:0;color:var(--ink);padding:8px 9px;font-weight:800}.playrow .primary{background:var(--lime);color:#15151b;border-radius:50%;width:44px;height:44px;font-size:19px}.speed{border:1px solid var(--line)!important;border-radius:10px!important;font-size:11px!important}.nowplaying{padding:12px 15px 15px;border-top:1px solid #2c2b38;font-size:12px}.nowplaying strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowplaying span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
@@ -869,7 +869,7 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 <body>
 <main>
 <section id="mediaPage">
-<section class="player" id="player"><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
+<section class="player" id="player"><button class="player-dismiss" id="playerDismiss" type="button" aria-label="Close recent media card" title="Close">×</button><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
 <div class="media-header">
   <div class="media-heading"><h2 id="mediaTitle">Videos</h2><span id="count">0 items</span></div>
   <div class="media-header-actions">
@@ -1167,10 +1167,10 @@ function mountChatStyleIcons(){
  });
 }
 
-function readViewPreferences(){try{const raw=localStorage.getItem('lumio.viewPreferences');const value=raw?JSON.parse(raw):{};return value&&typeof value==='object'?value:{}}catch(e){return {}}}
+function readViewPreferences(){try{const raw=localStorage.getItem('lumio.viewPreferences');const value=raw?JSON.parse(raw):{};return value&&typeof value==='object'&&value.version===2?value:{}}catch(e){return {}}}
 const savedViewPreferences=readViewPreferences();
-function saveViewPreferences(){try{localStorage.setItem('lumio.viewPreferences',JSON.stringify({videoSort,videoViewMode,sortDirection,mediaContentMode}))}catch(e){}}
-let items=[],active='video',selectedKey=null,currentPage='videos',musicSearchText='',musicLibraryFilter='all',musicSearchExpanded=false,musicSort='title',videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='list'?'list':'grid',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'folders',videoContentModePreference='folders',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
+function saveViewPreferences(){try{localStorage.setItem('lumio.viewPreferences',JSON.stringify({version:2,videoSort,videoViewMode,sortDirection,mediaContentMode}))}catch(e){}}
+let items=[],active='video',selectedKey=null,currentPage='videos',musicSearchText='',musicLibraryFilter='all',musicSearchExpanded=false,musicSort='title',videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='grid'?'grid':'list',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'all',videoContentModePreference='all',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
@@ -1190,7 +1190,6 @@ function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('
 function persistMediaCache(){try{const compact=items.map(({key,uri,name,artist,album,genre,size,mime,type,folder,lastModified,duration,width,height,frameRate,resolution,identity,source,available})=>({key,uri,name,artist,album,genre,size,mime,type,folder,lastModified,duration,width,height,frameRate,resolution,identity,source,available}));localStorage.setItem('lumio.mediaCache.v1',JSON.stringify(compact))}catch(e){}}
 function restoreMediaCache(){try{const raw=localStorage.getItem('lumio.mediaCache.v1');if(!raw)return;const cached=JSON.parse(raw);if(Array.isArray(cached)&&cached.length)mergeMedia(cached,false,false)}catch(e){}}
 function mergeMedia(records,replaceExisting=false,shouldRender=true){
- lumioMusicDiagSnapshot('mergeMedia:start',{records:Array.isArray(records)?records.length:-1,replaceExisting,shouldRender,audioIncoming:Array.isArray(records)?records.filter(x=>x&&(x.type==='audio'||String(x.mime||'').startsWith('audio/'))).length:-1});
  // A changed library invalidates cached HTML for both tabs.
  pageRenderCache.videos.clear();
  if(replaceExisting){items=[];mediaLookup.clear()}
@@ -1215,23 +1214,6 @@ function mergeMedia(records,replaceExisting=false,shouldRender=true){
  if(shouldRender)render()
 }
 window.onNativeMediaPicked=function(records){mergeMedia(records,false,false);if(records&&records.length){const record=records[0];choosePage('videos');const item=items.find(x=>x.key===(record.key||record.uri)||x.uri===record.uri);if(item)openItem(item.key)}else render()};
-/* TEMP MUSIC DIAGNOSTICS: collect evidence without changing library behavior. */
-const lumioMusicDiag=[];
-function lumioMusicDiagSnapshot(event,extra={}){
- try{
-  const lib=document.getElementById('musicLibrary');
-  const page=document.getElementById('musicPage');
-  const snap={t:new Date().toLocaleTimeString(),event,page:currentPage,view:typeof musicBrowseView==='undefined'?'?':musicBrowseView,
-   items:typeof items==='undefined'?-1:items.length,audio:typeof items==='undefined'?-1:items.filter(x=>x&&x.type==='audio').length,
-   libExists:!!lib,libHidden:lib?lib.hidden:null,libDisplay:lib?getComputedStyle(lib).display:null,
-   libChildren:lib?lib.children.length:-1,trackRows:lib?lib.querySelectorAll('[data-mkey]').length:0,
-   pageHidden:page?page.hidden:null,...extra};
-  lumioMusicDiag.push(snap);if(lumioMusicDiag.length>12)lumioMusicDiag.shift();
-  let panel=document.getElementById('lumioMusicDiagPanel');
-  if(!panel&&page){panel=document.createElement('details');panel.id='lumioMusicDiagPanel';panel.style.cssText='margin:12px;padding:10px;border:1px solid #789;border-radius:8px;font:12px monospace;color:var(--ink);background:var(--surface);';panel.innerHTML='<summary style="font-weight:700;cursor:pointer">Temporary Music diagnostics (tap to expand)</summary><pre id="lumioMusicDiagText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto"></pre>';page.appendChild(panel);}
-  const out=document.getElementById('lumioMusicDiagText');if(out)out.textContent=lumioMusicDiag.map(x=>JSON.stringify(x)).join('\\n');
- }catch(e){}
-}
 let lastInvisibleMusicScanRequest=0;
 function requestInvisibleMusicScan(){
  /* Video-only cache must not suppress the initial Music scan. Cached songs render immediately;
@@ -1261,16 +1243,16 @@ function redrawMusicIfVisible(reason){
  if(currentPage!=='music'||!MusicNavigation||typeof MusicNavigation.render!=='function')return;
  const page=$('musicPage');
  if(!page||page.hidden)return;
- lumioMusicDiagSnapshot('musicLifecycle:redraw',{reason,visibility:document.visibilityState});
  MusicNavigation.render(MusicNavigation.getCurrent());
 }
 function scheduleMusicLibraryRedraw(){
- /* Android WebView may complete a page transition before its layout/render state settles.
-    Retry through later frames and short delays, but only while Music is the active page. */
- [0,120,400,800,1500].forEach(delay=>setTimeout(()=>{
-  if(delay===0&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>redrawMusicIfVisible('scheduled-frame'));
-  else redrawMusicIfVisible('scheduled-'+delay+'ms');
- },delay));
+ /* One post-layout correction only. Repeated redraws at 120/400/800/1500 ms
+    rebuilt the full Music DOM several times after every navigation and caused jank. */
+ if(typeof requestAnimationFrame==='function'){
+  requestAnimationFrame(()=>redrawMusicIfVisible('scheduled-frame'));
+ }else{
+  redrawMusicIfVisible('scheduled-immediate');
+ }
 }
 let musicLifecycleHooksBound=false;
 function bindMusicLifecycleHooks(){
@@ -1287,7 +1269,6 @@ function bindMusicLifecycleHooks(){
 }
 bindMusicLifecycleHooks();
 window.onNativeMediaScan=function(records,error,status){
- lumioMusicDiagSnapshot('nativeScan:received',{records:Array.isArray(records)?records.length:-1,error:error||null,audioIncoming:Array.isArray(records)?records.filter(x=>x&&(x.type==='audio'||String(x.mime||'').startsWith('audio/'))).length:-1,status:status||null});
  try{localStorage.setItem('lumio.lastScanAttemptAt',String(Date.now()))}catch(e){}
  if(error&&status&&typeof status==='object'){
   const incoming=new Set();
@@ -1303,9 +1284,13 @@ window.onNativeMediaScan=function(records,error,status){
   if(kept.length!==items.length){items=kept;rebuildMediaLookup();persistMediaCache()}
  }
  mergeMedia(records,!error,false);
- if(!refreshLibraryState())render();
- /* Force a post-scan redraw after the data merge and any synchronous library-state callback. */
- renderMusic();
+ if(currentPage==='music'){
+  active='audio';
+  renderMusic();
+ }else{
+  active='video';
+  if(!refreshLibraryState())render();
+ }
  if(musicBrowseView==='playlists'&&typeof renderMusicPlaylists==='function')renderMusicPlaylists();
  scheduleMusicLibraryRedraw();
  if(!error){try{localStorage.setItem('lumio.lastSuccessfulScanAt',String(Date.now()))}catch(e){}}
@@ -1344,6 +1329,7 @@ function observeThumbnails(){
 function pick(){safeBridge('pickMedia')} function scan(){safeBridge('scanLocalMedia')} function openVault(){safeBridge('openVault')}
 $('settingsAdd').onclick=pick;$('appearanceSettings').onclick=openAppearancePage;$('appearanceBack').onclick=()=>choosePage('settings');
 $('vaultSettings').onclick=openVault;$('playAgain').onclick=()=>{if(selectedKey)playKey(selectedKey);else pick()};
+$('playerDismiss').onclick=()=>{$('player').classList.remove('visible');$('player').setAttribute('aria-hidden','true')};
 $('browseFoldersButton').onclick=()=>setContentMode(mediaContentMode==='folders'?'all':'folders');
 let searchRenderFrame=0;
 $('videoSearch').addEventListener('input',()=>{if(searchRenderFrame)cancelAnimationFrame(searchRenderFrame);searchRenderFrame=requestAnimationFrame(()=>{searchRenderFrame=0;videoSearchText=$('videoSearch').value.trim().toLocaleLowerCase();render()})});
@@ -1398,9 +1384,9 @@ function pageCacheKey(page){
  return 'videos|'+String(mediaContentMode||'')+'|'+normalizeFolder(currentFolderPath||'')+'|'+String(videoSearchText||'')+'|'+String(videoLibraryFilter||'');
 }
 function choosePage(page){
- lumioMusicDiagSnapshot('choosePage:enter',{requestedPage:page});
  const previousPage=currentPage,library=$('library');
- if(previousPage==='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading'))pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
+ /* Cache the current Videos view only when leaving the section. */
+ if(previousPage==='videos'&&page!=='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading'))pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
  ++libraryRenderGeneration;
  const ticket=++pendingPageRender;
  if(!['videos','music','stream','settings'].includes(page))page='videos';
@@ -1437,7 +1423,6 @@ function choosePage(page){
    if(currentPage!=='music')return;
    if(musicBrowseView!=='playlists'&&musicLibrary)musicLibrary.hidden=false;
    if(musicPlaylistsPanel)musicPlaylistsPanel.hidden=musicBrowseView!=='playlists';
-   renderMusic();
   });
   if(musicBrowseView==='playlists')renderMusicPlaylists();
   scheduleMusicLibraryRedraw();
@@ -1449,8 +1434,20 @@ function choosePage(page){
  }
 }
 
+function resetPageHome(page){
+ if(page==='music'){
+  musicSearchExpanded=false;musicSearchText='';$('musicSearch').value='';$('musicToolbar').hidden=true;
+  musicLibraryFilter='all';musicBrowseView='all';currentMusicFolder='';currentMusicPlaylistId='';currentMusicGroup=null;
+  /* choosePage() renders Music once after switching sections; avoid a duplicate render here. */
+ }
+}
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
-  choosePage(button.dataset.page);
+  const page=button.dataset.page;
+  /* Tapping Videos while already in Videos keeps the current folder/search/view intact. */
+  if(page==='videos'&&currentPage==='videos')return;
+  resetPageHome(page);
+  choosePage(page);
+  requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0});
 }));
 
  $('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
@@ -1726,7 +1723,6 @@ function musicTracksForCurrentView(){
 function bindMusicTrackRows(lib){lib.querySelectorAll('[data-mkey]').forEach(row=>row.onclick=e=>{if(!e.target.closest('[data-ma]'))playMusicItem(row.dataset.mkey)});lib.querySelectorAll('[data-ma="play"]').forEach(b=>b.onclick=e=>{e.stopPropagation();playMusicItem(b.closest('[data-mkey]').dataset.mkey)});lib.querySelectorAll('[data-ma="more"]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=items.find(y=>y.key===b.closest('[data-mkey]').dataset.mkey);if(x)showMediaActions(x)});lib.querySelectorAll('[data-ma="favorite"]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=items.find(y=>y.key===b.closest('[data-mkey]').dataset.mkey);if(x)toggleFavorite(x);renderMusic()})}
 function lumioBaseRenderMusic(){
  const lib=$('musicLibrary');if(!lib)return;
- lumioMusicDiagSnapshot('songsRenderer:enter',{browseView:musicBrowseView});
  const tracks=items.filter(x=>x&&x.type==='audio'),favs=tracks.filter(isFavorite);
  const recentCount=tracks.filter(x=>watchHistory.some(h=>h&&h.uri===x.uri)).length;
  const list=musicTracksForCurrentView();
@@ -1754,7 +1750,6 @@ function lumioBaseRenderMusic(){
   return '<div class="file" data-mkey="'+escapeHtml(x.key)+'" data-track-index="'+index+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(title)+'</strong><small>'+escapeHtml(detail)+'</small></div><button type="button" class="openfile music-favorite '+(isFavorite(x)?'favorited':'')+'" data-ma="favorite" aria-label="'+(isFavorite(x)?'Remove from favorites':'Add to favorites')+'">'+uiIcon(isFavorite(x)?'starFilled':'star')+'</button><button type="button" class="openfile" data-ma="play" aria-label="Play '+escapeHtml(title)+'">'+uiIcon('play')+'</button><button type="button" class="openfile" data-ma="more" aria-label="More actions for '+escapeHtml(title)+'">'+uiIcon('more')+'</button></div>';
  }).join('');
  bindMusicTrackRows(lib);
- lumioMusicDiagSnapshot('songsRenderer:rowsWritten',{listLength:list.length});
 }
 function renderMusicPlaylists(){const box=$('musicPlaylistsList');if(!box)return;box.innerHTML=musicPlaylists.map(p=>'<div class="music-playlist-row"><div class="music-playlist-art">♫</div><div class="music-playlist-copy"><strong>'+escapeHtml(p.name)+'</strong><small>'+p.uris.length+' saved tracks</small></div><button data-playlist="'+escapeHtml(p.id)+'" aria-label="Play playlist">▶</button><button data-remove-playlist="'+escapeHtml(p.id)+'" aria-label="Delete playlist">×</button></div>').join('')||'<div class="empty"><strong>No playlists yet</strong><p>Create a playlist, then use a track’s menu to add songs.</p></div>';box.querySelectorAll('[data-playlist]').forEach(b=>b.onclick=()=>playMusicPlaylist(b.dataset.playlist));box.querySelectorAll('[data-remove-playlist]').forEach(b=>b.onclick=()=>{const p=musicPlaylists.find(p=>p.id===b.dataset.removePlaylist);if(p&&confirm('Delete playlist "'+p.name+'"?')){musicPlaylists=musicPlaylists.filter(x=>x.id!==p.id);saveMusicPlaylists();renderMusicPlaylists();renderMusic()}})}
 function playMusicPlaylist(id){const p=musicPlaylists.find(x=>x.id===id);if(!p)return;const list=p.uris.map(uri=>items.find(x=>x.uri===uri&&x.type==='audio')).filter(Boolean);if(!list.length){showMessage('This playlist has no available local tracks.');return}selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
@@ -1866,14 +1861,12 @@ const MusicNavigation = (() => {
  }
 
  function render(view=current){
-  lumioMusicDiagSnapshot('MusicNavigation.render:enter',{requestedView:view});
   const page=$('musicPage');
   if(!page)return;
   current=view;musicBrowseView=view;
   syncChrome(view);
   const lib=$('musicLibrary'),playlists=$('musicPlaylistsPanel');
   if(view==='all'||view==='recent'||view==='favorites'){
-   lumioMusicDiagSnapshot('MusicNavigation.render:songs',{view});
    currentMusicFolder='';currentMusicGroup=null;
    if(lib)lib.hidden=false;
    if(playlists)playlists.hidden=true;
@@ -1961,7 +1954,7 @@ function showMusicInfo(view){
 
 /* Compatibility entry points route into the single controller; no independent navigation logic. */
 function setMusicBrowseView(view){MusicNavigation.navigate(view)}
-function renderMusic(){lumioMusicDiagSnapshot('renderMusic:before');MusicNavigation.render(musicBrowseView);lumioMusicDiagSnapshot('renderMusic:after')}
+function renderMusic(){MusicNavigation.render(musicBrowseView)}
 
 function renderMusicPlaylists(){
  const box=$('musicPlaylistsList');if(!box)return;
