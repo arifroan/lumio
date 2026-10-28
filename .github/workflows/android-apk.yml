@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "release/android13-45mb", "experiment/libmpv-hevc", "feature/embedded-mpv-player"]
+    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "release/android13-45mb", "experiment/libmpv-hevc", "feature/embedded-mpv-player", "feature/media3-ffmpeg-migration"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
@@ -74,8 +74,8 @@ jobs:
       - name: Publish direct APK download (no ZIP)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name == 'main' && 'android-preview' || github.ref_name == 'release/android13-45mb' && 'android13-45mb-test' || github.ref_name == 'experiment/libmpv-hevc' && 'lumio-lightweight-hevc-test' || github.ref_name == 'feature/embedded-mpv-player' && 'embedded-mpv-player-test' || 'pre-stream-fixes-preview' }}
-          name: ${{ github.ref_name == 'main' && 'Lumio Android Preview' || github.ref_name == 'release/android13-45mb' && 'Lumio Android 13 Size Test' || github.ref_name == 'experiment/libmpv-hevc' && 'Lumio Lightweight HEVC Test' || github.ref_name == 'feature/embedded-mpv-player' && 'Lumio Embedded libmpv Test' || 'Lumio Pre-Stream Fixes Preview' }}
+          tag_name: ${{ github.ref_name == 'main' && 'android-preview' || github.ref_name == 'release/android13-45mb' && 'android13-45mb-test' || github.ref_name == 'experiment/libmpv-hevc' && 'lumio-lightweight-hevc-test' || github.ref_name == 'feature/embedded-mpv-player' && 'embedded-mpv-player-test' || github.ref_name == 'feature/media3-ffmpeg-migration' && 'media3-ffmpeg-test' || 'pre-stream-fixes-preview' }}
+          name: ${{ github.ref_name == 'main' && 'Lumio Android Preview' || github.ref_name == 'release/android13-45mb' && 'Lumio Android 13 Size Test' || github.ref_name == 'experiment/libmpv-hevc' && 'Lumio Lightweight HEVC Test' || github.ref_name == 'feature/embedded-mpv-player' && 'Lumio Embedded libmpv Test' || github.ref_name == 'feature/media3-ffmpeg-migration' && 'Lumio Media3 FFmpeg Test' || 'Lumio Pre-Stream Fixes Preview' }}
           target_commitish: ${{ github.sha }}
           body: |
             Direct APK download for the Lumio Android preview.
