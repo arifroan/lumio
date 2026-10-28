@@ -1402,8 +1402,7 @@ function pageCacheKey(page){
 function choosePage(page){
  lumioMusicDiagSnapshot('choosePage:enter',{requestedPage:page});
  const previousPage=currentPage,library=$('library');
- /* Cache only when leaving Videos. A tap on Videos itself resets the home view; caching here
-    would save the old folder contents under the newly reset cache key and restore stale UI. */
+ /* Cache the current Videos view only when leaving the section. */
  if(previousPage==='videos'&&page!=='videos'&&library&&library.dataset.renderComplete==='true'&&!library.querySelector('.library-loading'))pageRenderCache[previousPage].set(pageCacheKey(previousPage),library.innerHTML);
  ++libraryRenderGeneration;
  const ticket=++pendingPageRender;
@@ -1453,12 +1452,7 @@ function choosePage(page){
 }
 
 function resetPageHome(page){
- if(page==='videos'){
-  searchExpanded=false;videoSearchText='';$('videoSearch').value='';$('videoToolbar').hidden=true;$('searchToggle').setAttribute('aria-expanded','false');
-  videoLibraryFilter='all';currentFolderPath='';folderNavigationHistory=[];
-  mediaContentMode=videoContentModePreference||'folders';folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';groupByFolder=folderBrowseActive;
-  $('showAllVideos').classList.add('active');$('showFavoriteVideos').classList.remove('active');$('showAllVideos').setAttribute('aria-pressed','true');$('showFavoriteVideos').setAttribute('aria-pressed','false');syncOptionsSelection();
- }else if(page==='music'){
+ if(page==='music'){
   musicSearchExpanded=false;musicSearchText='';$('musicSearch').value='';$('musicToolbar').hidden=true;
   musicLibraryFilter='all';musicBrowseView='all';currentMusicFolder='';currentMusicPlaylistId='';currentMusicGroup=null;
   /* choosePage() renders Music once after switching sections; avoid a duplicate render here. */
@@ -1466,8 +1460,8 @@ function resetPageHome(page){
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
   const page=button.dataset.page;
-  /* Active section taps reset to Home. Keep valid cached home markup for fast return;
-     the cache key includes folder, search, mode and filter, so other views cannot be reused. */
+  /* Tapping Videos while already in Videos keeps the current folder/search/view intact. */
+  if(page==='videos'&&currentPage==='videos')return;
   resetPageHome(page);
   choosePage(page);
   requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0});
