@@ -145,13 +145,50 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             mpv.init();
             mpv.setOptionString("force-window", "no");
             mpv.setOptionString("idle", "once");
+            // Observe key properties so device Logcat can separate demux/decode failures
+            // from a video-output/surface failure. mpv format values: string=1, flag=3,
+            // int64=4, double=5.
+            observeDiagnosticProperty("filename", 1);
+            observeDiagnosticProperty("file-format", 1);
+            observeDiagnosticProperty("video-codec", 1);
+            observeDiagnosticProperty("video-codec-name", 1);
+            observeDiagnosticProperty("hwdec-current", 1);
+            observeDiagnosticProperty("vo", 1);
+            observeDiagnosticProperty("vo-configured", 3);
+            observeDiagnosticProperty("vid", 4);
+            observeDiagnosticProperty("aid", 4);
+            observeDiagnosticProperty("pause", 3);
+            observeDiagnosticProperty("time-pos", 5);
+            observeDiagnosticProperty("duration", 5);
+            observeDiagnosticProperty("estimated-vf-fps", 5);
             // Register only after MPV is initialized so no surface callback can race init().
             surface.getHolder().addCallback(this);
-            Log.i(TAG, "libmpv initialized; sourceScheme=" + Uri.parse(uri).getScheme());
+            Log.i(TAG, "DIAG init complete; sourceScheme=" + Uri.parse(uri).getScheme()
+                    + ", vo=" + safeGetProperty("vo")
+                    + ", hwdec=" + safeGetProperty("hwdec")
+                    + ", voConfigured=" + safeGetProperty("vo-configured"));
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
             // Keep failures in Logcat rather than adding a transient UI overlay over the video.
             release();
+        }
+    }
+
+    private void observeDiagnosticProperty(String property, int format) {
+        try {
+            mpv.observeProperty(property, format);
+            Log.i(TAG, "DIAG observing property=" + property + " format=" + format);
+        } catch (Throwable error) {
+            Log.w(TAG, "DIAG unable to observe property=" + property, error);
+        }
+    }
+
+    private String safeGetProperty(String property) {
+        try {
+            String value = mpv.getPropertyString(property);
+            return value == null ? "<null>" : value;
+        } catch (Throwable error) {
+            return "<unavailable:" + error.getClass().getSimpleName() + ">";
         }
     }
 
@@ -205,12 +242,19 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             // Initializing vo=gpu before surface creation can leave audio playing over a black view.
             mpv.setOptionString("force-window", "yes");
             mpv.setPropertyString("vo", "gpu");
-            Log.i(TAG, "Surface attached; GPU video output enabled at " + width + "x" + height);
+            Log.i(TAG, "DIAG surface attached; valid=" + holder.getSurface().isValid()
+                    + ", viewSize=" + width + "x" + height
+                    + ", vo=" + safeGetProperty("vo")
+                    + ", voConfigured=" + safeGetProperty("vo-configured")
+                    + ", hwdecCurrent=" + safeGetProperty("hwdec-current"));
 
             if (!loaded) {
                 String playablePath = resolvePlayablePath(uri);
-                Log.i(TAG, "Loadfile requested. sourceScheme="
-                        + Uri.parse(uri).getScheme() + ", resolvedPath=" + playablePath);
+                Log.i(TAG, "DIAG loadfile requested; sourceScheme="
+                        + Uri.parse(uri).getScheme() + ", pathType="
+                        + (playablePath.startsWith("/proc/self/fd/") ? "provider-fd"
+                        : playablePath.startsWith("/") ? "filesystem" : "uri")
+                        + ", startPositionMs=" + startPositionMs);
                 command("loadfile", playablePath, "replace");
                 loaded = true;
                 if (startPositionMs > 0L) command("seek", Double.toString(startPositionMs / 1000.0), "absolute");
@@ -250,9 +294,21 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     }
 
     @Override public void event(int eventId) {
-        Log.i(TAG, "mpv event=" + eventId
+        Log.i(TAG, "DIAG event=" + eventId
                 + (eventId == 8 ? " (FILE_LOADED)" : eventId == 21 ? " (PLAYBACK_RESTART)"
                 : eventId == 7 ? " (END_FILE)" : ""));
+        if (eventId == 8 || eventId == 21 || eventId == 7) {
+            Log.i(TAG, "DIAG state event=" + eventId
+                    + ", filename=" + safeGetProperty("filename")
+                    + ", videoCodec=" + safeGetProperty("video-codec")
+                    + ", videoCodecName=" + safeGetProperty("video-codec-name")
+                    + ", hwdecCurrent=" + safeGetProperty("hwdec-current")
+                    + ", vo=" + safeGetProperty("vo")
+                    + ", voConfigured=" + safeGetProperty("vo-configured")
+                    + ", vid=" + safeGetProperty("vid")
+                    + ", timePos=" + safeGetProperty("time-pos")
+                    + ", duration=" + safeGetProperty("duration"));
+        }
     }
 
     @Override public void eventProperty(String property) {
@@ -272,7 +328,8 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
     }
     @Override public void logMessage(String prefix, int level, String text) {
         if (level <= 40) Log.i(TAG, "mpv/" + prefix + ": " + text);
-        else Log.d(TAG, "mpv/" + prefix + ": " + text);
+        else if (level <= 50) Log.d(TAG, "mpv/" + prefix + ": " + text);
+        else Log.v(TAG, "mpv/" + prefix + ": " + text);
     }
 
     public boolean isAvailable() { return mpv != null && !released; }
