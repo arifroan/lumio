@@ -1466,20 +1466,11 @@ function resetPageHome(page){
 }
 document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{
   const page=button.dataset.page;
-  /* The active bottom-nav item is also a Home shortcut, not a no-op. Clear stale
-     video markup cache before resetting so a folder screen cannot be restored. */
+  /* Active section taps reset to Home. Drop video markup cache to prevent stale folders. */
   if(page==='videos')pageRenderCache.videos.clear();
   resetPageHome(page);
   choosePage(page);
-  if(page==='videos'){
-    $('mediaTitle').textContent=folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos';
-    $('mediaTitle').style.cursor='';$('mediaTitle').setAttribute('role','heading');$('mediaTitle').removeAttribute('aria-label');$('mediaTitle').tabIndex=-1;$('mediaTitle').onclick=null;$('mediaTitle').onkeydown=null;
-    requestAnimationFrame(()=>{if(currentPage==='videos'){render();document.documentElement.scrollTop=0;document.body.scrollTop=0}});
-  }else if(page==='music'){
-    requestAnimationFrame(()=>{if(currentPage==='music'){renderMusic();document.documentElement.scrollTop=0;document.body.scrollTop=0}});
-  }else{
-    document.documentElement.scrollTop=0;document.body.scrollTop=0;
-  }
+  requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0});
 }));
 
  $('musicDensityToggle').onclick=()=>{const compact=$('musicPage').classList.toggle('music-compact-list');$('musicDensityToggle').setAttribute('aria-pressed',String(compact));};
