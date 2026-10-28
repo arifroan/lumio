@@ -50,7 +50,6 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
         setBackgroundColor(Color.BLACK);
         surface = new SurfaceView(context);
         surface.setBackgroundColor(Color.BLACK);
-        surface.getHolder().addCallback(this);
         addView(surface, new FrameLayout.LayoutParams(-1, -1));
         buildControls();
         initializeEngine();
@@ -134,11 +133,19 @@ public final class EmbeddedMpvView extends FrameLayout implements SurfaceHolder.
             // Let libmpv initialize without a video output; create the GPU output only
             // after Android supplies a real Surface, as required by the Android GPU context.
             mpv.setOptionString("gpu-context", "android");
+            // Match the upstream mpv-android lifecycle: select the video output before init,
+            // keep the window disabled until a real Android Surface is available, and let mpv
+            // enter idle once before the first loadfile command.
+            mpv.setOptionString("vo", "gpu");
             mpv.setOptionString("keep-open", "yes");
             mpv.setOptionString("osd-level", "0");
             mpv.setOptionString("video-unscaled", "no");
             mpv.setOptionString("keepaspect", "yes");
             mpv.init();
+            mpv.setOptionString("force-window", "no");
+            mpv.setOptionString("idle", "once");
+            // Register only after MPV is initialized so no surface callback can race init().
+            surface.getHolder().addCallback(this);
             Log.i(TAG, "libmpv initialized; sourceScheme=" + Uri.parse(uri).getScheme());
         } catch (Throwable error) {
             Log.e(TAG, "libmpv initialization failed", error);
