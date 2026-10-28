@@ -12,6 +12,7 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.audio.AudioProcessor;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.audio.DefaultAudioSink;
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
@@ -82,7 +83,7 @@ public final class PlaybackService extends MediaSessionService {
         volumeBoostProcessor.setGain(prefs.getFloat("volume_boost", 1.0f));
         sharedVolumeBoostProcessor = volumeBoostProcessor;
 
-        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(this) {
+        NextRenderersFactory renderersFactory = new NextRenderersFactory(this) {
             @Override
             protected AudioSink buildAudioSink(Context context, boolean enableFloatOutput,
                     boolean enableAudioOutputPlaybackParams) {
@@ -97,6 +98,7 @@ public final class PlaybackService extends MediaSessionService {
                 return sink;
             }
         };
+        renderersFactory.setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
         renderersFactory.setEnableDecoderFallback(true);
         renderersFactory.setMediaCodecSelector(createCodecSelector(decoderMode));
 
