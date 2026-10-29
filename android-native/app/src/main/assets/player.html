@@ -881,6 +881,31 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 #startupScanScreen strong{font-size:11px;font-weight:500}
 #startupScanScreen small{display:none}
 @keyframes lumioScanSpin{to{transform:rotate(360deg)}}
+
+/* Appearance compatibility pass: use active theme tokens instead of fixed dark/light colors. */
+:root{--control-bg:var(--surface2);--control-border:var(--line);--control-ink:var(--ink);--control-shadow:0 2px 8px color-mix(in srgb,var(--ink) 14%,transparent)}
+#mediaTitle,#mediaTitle>span{color:var(--ink)!important}
+.file-more,.history-card .file-more{
+ background:var(--surface2)!important;
+ color:var(--ink)!important;
+ border:1px solid var(--line)!important;
+ box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 14%,transparent)!important
+}
+.folder-overview-row{border-color:var(--line)!important;color:var(--ink)!important}
+.folder-overview-row:active{background:var(--surface2)!important}
+.folder-overview-row .folder-entry-icon{color:var(--accent)!important}
+.folder-entry-meta>span:first-child{color:var(--muted)!important}
+.folder-size{background:var(--surface2)!important;color:var(--ink)!important;border:1px solid var(--line)}
+.folder-overview-row .folder-path{color:var(--muted)!important}
+.folder-entry .folder-entry-icon{background:var(--accent-soft)!important;color:var(--accent)!important}
+.folder-heading{background:var(--surface)!important;color:var(--muted)!important;border-color:var(--line)!important}
+.folder-breadcrumb button{background:var(--surface2)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.folder-breadcrumb button.current{background:var(--accent)!important;color:var(--accent-ink)!important;border-color:var(--accent)!important}
+.video-library-filters button{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.video-library-filters button.active{background:var(--accent-soft)!important;border-color:var(--accent)!important;color:var(--ink)!important}
+.video-library-filters .filter-count{background:color-mix(in srgb,var(--ink) 9%,transparent)!important;color:var(--ink)}
+.video-toolbar-row #browseFoldersButton[aria-pressed="true"]{background:var(--accent-soft)!important;border-color:var(--accent)!important;color:var(--ink)!important}
+
 </style></head>
 <body>
 <div id="startupScanScreen" role="status" aria-live="polite">
