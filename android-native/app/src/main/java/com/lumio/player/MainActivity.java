@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.RecoverableSecurityException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -217,6 +219,21 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public void showMediaActions(String uri, String title, long sizeBytes, long durationMs, boolean isAudio, String identity) {
             runOnUiThread(() -> showMediaActionsDialog(uri, title, sizeBytes, durationMs, isAudio, identity));
+        }
+
+        @JavascriptInterface
+        public void copyFilename(String filename) {
+            runOnUiThread(() -> {
+                String value = filename == null ? "" : filename.trim();
+                if (value.isEmpty()) return;
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Filename", value));
+                    Toast.makeText(MainActivity.this, "Filename copied", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Could not access clipboard", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
         @JavascriptInterface
@@ -461,6 +478,7 @@ public final class MainActivity extends Activity {
         List<String> labels = new ArrayList<>();
         List<String> actions = new ArrayList<>();
         labels.add("Play now"); actions.add("play");
+        labels.add("Copy filename"); actions.add("copy_filename");
         labels.add("Rename"); actions.add("rename");
         labels.add("Delete file"); actions.add("delete");
         labels.add("Share"); actions.add("share");
@@ -474,7 +492,15 @@ public final class MainActivity extends Activity {
                 .setTitle(safeTitle)
                 .setItems(labels.toArray(new String[0]), (dialog, which) -> {
                     String action = actions.get(which);
-                    if ("play".equals(action)) {
+                    if ("copy_filename".equals(action)) {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        if (clipboard != null) {
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Filename", safeTitle));
+                            Toast.makeText(MainActivity.this, "Filename copied", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Could not access clipboard", Toast.LENGTH_SHORT).show();
+                        }
+                    } else if ("play".equals(action)) {
                         Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
                         intent.putExtra(PlayerActivity.EXTRA_URI, uri);
                         intent.putExtra(PlayerActivity.EXTRA_TITLE, safeTitle);
