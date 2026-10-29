@@ -906,6 +906,15 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .video-library-filters .filter-count{background:color-mix(in srgb,var(--ink) 9%,transparent)!important;color:var(--ink)}
 .video-toolbar-row #browseFoldersButton[aria-pressed="true"]{background:var(--accent-soft)!important;border-color:var(--accent)!important;color:var(--ink)!important}
 
+/* File selection and batch actions */
+#mediaSelectionToolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink)}
+#mediaSelectionToolbar[hidden]{display:none!important}
+#mediaSelectionToolbar .selection-count{font-weight:700;margin-right:auto}
+#mediaSelectionToolbar button{border:1px solid var(--line);border-radius:10px;background:var(--surface-2,var(--surface));color:var(--ink);padding:8px 11px;font:inherit;font-size:12px}
+.file.selection-enabled{position:relative;padding-left:38px}
+.file.selection-enabled:before{content:'';position:absolute;left:10px;top:50%;transform:translateY(-50%);width:17px;height:17px;border:1.5px solid var(--muted);border-radius:5px;background:transparent}
+.file.selection-enabled.is-selected:before{content:'✓';display:grid;place-items:center;background:var(--accent);border-color:var(--accent);color:white;font-size:12px;font-weight:800}
+.file.selection-enabled.is-selected{background:var(--accent-soft);outline:1px solid var(--accent)}
 </style></head>
 <body>
 <div id="startupScanScreen" role="status" aria-live="polite">
@@ -1218,6 +1227,7 @@ const savedViewPreferences=readViewPreferences();
 function saveViewPreferences(){try{localStorage.setItem('lumio.viewPreferences',JSON.stringify({version:2,videoSort,videoViewMode,sortDirection,mediaContentMode}))}catch(e){}}
 let items=[],active='video',selectedKey=null,currentPage='videos',musicSearchText='',musicLibraryFilter='all',musicSearchExpanded=false,musicSort='title',videoSort=['title','date','played','status','length','size','resolution','path','framerate','type'].includes(savedViewPreferences.videoSort)?savedViewPreferences.videoSort:'title',videoViewMode=savedViewPreferences.videoViewMode==='grid'?'grid':'list',groupByFolder=true,videoSearchText='',videoLibraryFilter='all',favoriteUris=new Set(),favoriteIdentities=new Set(),watchHistory=[],folderBrowseActive=true,currentFolderPath='',folderNavigationHistory=[],mediaContentMode=['all','files','folders'].includes(savedViewPreferences.mediaContentMode)?savedViewPreferences.mediaContentMode:'all',videoContentModePreference='all',sortDirection=savedViewPreferences.sortDirection==='desc'?'desc':'asc',searchExpanded=false;
 const mediaLookup=new Map(),historyLookup=new Map(),thumbnailNodesByKey=new Map(),thumbnailRequestsInFlight=new Set();
+const selectedMediaKeys=new Set();let selectionMode=false,longPressTimer=null,longPressTriggered=false;
 function mediaLookupTokens(item){return [['u:',item.uri],['k:',item.key],['i:',item.identity]]}
 function indexMediaItem(item,index){for(const [prefix,value] of mediaLookupTokens(item)){if(value&&!mediaLookup.has(prefix+value))mediaLookup.set(prefix+value,index)}}
 function removeMediaItemFromLookup(item,index){for(const [prefix,value] of mediaLookupTokens(item)){const token=prefix+value;if(value&&mediaLookup.get(token)===index)mediaLookup.delete(token)}}
@@ -1692,9 +1702,43 @@ function findMediaByKey(key){
  const token='k:'+String(key),index=mediaLookup.get(token);
  return index===undefined?items.find(item=>item.key===String(key))||null:items[index]||null;
 }
+function ensureSelectionToolbar(){
+ let bar=$('mediaSelectionToolbar');
+ if(bar)return bar;
+ bar=document.createElement('div');bar.id='mediaSelectionToolbar';bar.hidden=true;
+ bar.innerHTML='<span class="selection-count" id="mediaSelectionCount">0 selected</span><button type="button" id="mediaSelectAll">Select all</button><button type="button" id="mediaRenameSelected">Rename</button><button type="button" id="mediaShareSelected">Share</button><button type="button" id="mediaDeleteSelected">Delete</button><button type="button" id="mediaCancelSelection">Cancel</button>';
+ const library=$('library');if(library&&library.parentNode)library.parentNode.insertBefore(bar,library);
+ $('mediaSelectAll').onclick=()=>{const visible=visibleSelectableMedia();if(visible.length&&visible.every(x=>selectedMediaKeys.has(x.key)))visible.forEach(x=>selectedMediaKeys.delete(x.key));else visible.forEach(x=>selectedMediaKeys.add(x.key));updateSelectionUI()};
+ $('mediaCancelSelection').onclick=()=>clearMediaSelection();
+ $('mediaRenameSelected').onclick=()=>{const list=selectedMediaItems();if(list.length!==1)return;safeBridge('renameMedia',list[0].uri,list[0].name)};
+ $('mediaShareSelected').onclick=()=>{const list=selectedMediaItems();if(list.length!==1){showMessage('Select one file to share.');return}safeBridge('shareMedia',list[0].uri,list[0].name,list[0].mime|| (list[0].type==='audio'?'audio/*':'video/*'))};
+ $('mediaDeleteSelected').onclick=()=>{const list=selectedMediaItems();if(!list.length)return;if(!confirm('Delete '+list.length+' selected file'+(list.length===1?'':'s')+' from your device? This cannot be undone.'))return;list.forEach(item=>safeBridge('deleteMediaDirect',item.uri));};
+ return bar;
+}
+function selectedMediaItems(){return items.filter(x=>selectedMediaKeys.has(x.key))}
+function visibleSelectableMedia(){return items.filter(x=>x&&x.uri&&((active==='video'&&x.type==='video')||(active==='audio'&&x.type==='audio')))}
+function updateSelectionUI(){
+ const bar=ensureSelectionToolbar();bar.hidden=!selectionMode;
+ const count=selectedMediaKeys.size;const label=$('mediaSelectionCount');if(label)label.textContent=count+' selected';
+ const rename=$('mediaRenameSelected'),share=$('mediaShareSelected');if(rename)rename.hidden=count!==1;if(share)share.hidden=count!==1;
+ document.querySelectorAll('#library .file[data-key]').forEach(row=>{row.classList.toggle('selection-enabled',selectionMode);row.classList.toggle('is-selected',selectedMediaKeys.has(row.dataset.key))});
+}
+function beginMediaSelection(key){selectionMode=true;if(key)selectedMediaKeys.add(key);updateSelectionUI()}
+function toggleMediaSelection(key){if(!key)return;if(selectedMediaKeys.has(key))selectedMediaKeys.delete(key);else selectedMediaKeys.add(key);if(!selectedMediaKeys.size)selectionMode=false;updateSelectionUI()}
+function clearMediaSelection(){selectedMediaKeys.clear();selectionMode=false;updateSelectionUI()}
+window.onNativeFileOperation=function(operation,success,uri){if(!success)return;const item=items.find(x=>x.uri===uri);if(operation==='delete'&&item){selectedMediaKeys.delete(item.key);items=items.filter(x=>x.uri!==uri);rebuildMediaLookup();persistMediaCache();render()}else if(operation==='rename'){try{localStorage.removeItem('lumio.mediaCache.v1')}catch(e){}safeBridge('scanLocalMedia')}};
 function bindMediaRows(library){
  if(library.dataset.delegatedHandlers==='1')return;
  library.dataset.delegatedHandlers='1';
+ library.addEventListener('pointerdown',event=>{
+  const row=event.target&&event.target.closest?event.target.closest('.file[data-key]'):null;
+  if(!row||event.target.closest('button'))return;
+  longPressTriggered=false;clearTimeout(longPressTimer);
+  longPressTimer=setTimeout(()=>{longPressTriggered=true;beginMediaSelection(row.dataset.key)},500);
+ });
+ library.addEventListener('pointerup',()=>clearTimeout(longPressTimer));
+ library.addEventListener('pointercancel',()=>clearTimeout(longPressTimer));
+ library.addEventListener('pointerleave',()=>clearTimeout(longPressTimer));
  library.addEventListener('click',event=>{
   const target=event.target&&typeof event.target.closest==='function'?event.target:event.target&&event.target.parentElement;
   if(!target||typeof target.closest!=='function')return;
@@ -1709,6 +1753,8 @@ function bindMediaRows(library){
   if(!row||!library.contains(row))return;
   const item=findMediaByKey(row.dataset.key);
   if(!item)return;
+  if(longPressTriggered){longPressTriggered=false;return}
+  if(selectionMode){toggleMediaSelection(item.key);return}
   const action=target.closest('[data-file-action]');
   if(action){if(action.dataset.fileAction==='favorite')toggleFavorite(item);else showMediaActions(item);return}
   openItem(item.key);
@@ -1800,7 +1846,7 @@ function renderMusicPlaylists(){const box=$('musicPlaylistsList');if(!box)return
 function playMusicPlaylist(id){const p=musicPlaylists.find(x=>x.id===id);if(!p)return;const list=p.uris.map(uri=>items.find(x=>x.uri===uri&&x.type==='audio')).filter(Boolean);if(!list.length){showMessage('This playlist has no available local tracks.');return}selectedKey=list[0].key;safeBridge('playMedia',list[0].uri,list[0].name,true,JSON.stringify(list.map(y=>({uri:y.uri,name:y.name,type:y.type}))))}
 function createMusicPlaylist(){const name=prompt('Playlist name');if(!name||!name.trim())return;const trimmed=name.trim().slice(0,80);if(musicPlaylists.some(p=>p.name.toLocaleLowerCase()===trimmed.toLocaleLowerCase())){showMessage('A playlist with that name already exists.');return}musicPlaylists.push({id:'pl-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),name:trimmed,uris:[]});saveMusicPlaylists();setMusicBrowseView('playlists')}
 function addToMusicPlaylist(item){if(!item)return;if(!musicPlaylists.length){showMessage('Create a playlist first.');return}const options=musicPlaylists.map(p=>p.name+' ('+p.uris.length+' tracks)');const selected=prompt('Enter a playlist number to add "'+item.name+'":\n'+options.map((v,i)=>(i+1)+'. '+v).join('\n'));const index=Number(selected)-1;const p=musicPlaylists[index];if(!p)return;if(!p.uris.includes(item.uri))p.uris.push(item.uri);saveMusicPlaylists();renderMusicPlaylists();showMessage('Added to '+p.name)}
-function showMusicActionsMenu(item){if(!item)return;const actions=[{title:'Play',run:()=>playMusicItem(item.key)},{title:isFavorite(item)?'Remove favorite':'Add to favorites',run:()=>toggleFavorite(item)},{title:'Add to playlist',run:()=>addToMusicPlaylist(item)},{title:'File details',run:()=>safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,true,item.identity||'')}];const choice=prompt('Actions for '+item.name+'\n'+actions.map((a,i)=>(i+1)+'. '+a.title).join('\n')+'\nEnter a number:');const action=actions[Number(choice)-1];if(action)action.run()}
+function showMusicActionsMenu(item){if(!item)return;const actions=[{title:'Play',run:()=>playMusicItem(item.key)},{title:isFavorite(item)?'Remove favorite':'Add to favorites',run:()=>toggleFavorite(item)},{title:'Add to playlist',run:()=>addToMusicPlaylist(item)},{title:'Rename file',run:()=>safeBridge('renameMedia',item.uri,item.name)},{title:'Delete file',run:()=>safeBridge('deleteMedia',item.uri,item.name)},{title:'Share file',run:()=>safeBridge('shareMedia',item.uri,item.name,item.mime||'audio/*')},{title:'File details',run:()=>safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,true,item.identity||'')}];const choice=prompt('Actions for '+item.name+'\n'+actions.map((a,i)=>(i+1)+'. '+a.title).join('\n')+'\nEnter a number:');const action=actions[Number(choice)-1];if(action)action.run()}
 function showMediaActions(item){if(!item)return;if(item.type==='audio'&&typeof showMusicActionsMenu==='function'){showMusicActionsMenu(item);return}safeBridge('showMediaActions',item.uri,item.name||'Media item',Number(item.size)||0,Number(item.duration)||0,false,item.identity||'')}
 function bindMusicActions(){
  $('musicCreatePlaylist').onclick=createMusicPlaylist;$('musicCreatePlaylistPanel').onclick=createMusicPlaylist;

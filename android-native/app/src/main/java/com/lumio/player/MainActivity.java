@@ -3,7 +3,9 @@ package com.lumio.player;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.RecoverableSecurityException;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -64,6 +66,10 @@ public final class MainActivity extends Activity {
     private static final int REQUEST_SCAN_PERMISSION = 4108;
     private static final int REQUEST_SCAN_AFTER_PICK = 4109;
     private static final int REQUEST_PICK_FOLDER = 4110;
+    private static final int REQUEST_MEDIA_WRITE_CONSENT = 4111;
+    private String pendingMediaOperation = "";
+    private Uri pendingMediaUri;
+    private String pendingMediaName = "";
     private static final int MAX_TREE_MEDIA_FILES = 10000;
     private static final int MAX_TREE_DEPTH = 32;
     private WebView webView;
@@ -214,6 +220,26 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void renameMedia(String uri, String currentName) {
+            runOnUiThread(() -> promptRenameMedia(uri, currentName));
+        }
+
+        @JavascriptInterface
+        public void deleteMedia(String uri, String title) {
+            runOnUiThread(() -> confirmDeleteMedia(uri, title));
+        }
+
+        @JavascriptInterface
+        public void deleteMediaDirect(String uri) {
+            runOnUiThread(() -> { if (uri != null && !uri.trim().isEmpty()) deleteMediaFile(Uri.parse(uri)); });
+        }
+
+        @JavascriptInterface
+        public void shareMedia(String uri, String title, String mime) {
+            runOnUiThread(() -> shareMediaFile(uri, title, mime));
+        }
+
+        @JavascriptInterface
         public void playMedia(String uri, String title, boolean isAudio, String playlistJson) {
             runOnUiThread(() -> {
                 if (uri == null || uri.trim().isEmpty()) {
@@ -342,12 +368,102 @@ public final class MainActivity extends Activity {
         editor.apply();
     }
 
+    private void promptRenameMedia(String rawUri, String currentName) {
+        if (rawUri == null || rawUri.trim().isEmpty()) return;
+        final Uri uri;
+        try { uri = Uri.parse(rawUri); } catch (Exception e) { return; }
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setSingleLine(true);
+        input.setText(currentName == null ? "" : currentName);
+        input.setSelection(input.length());
+        new AlertDialog.Builder(this).setTitle("Rename file").setView(input)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Rename", (dialog, which) -> {
+                    String newName = input.getText().toString().trim();
+                    if (newName.isEmpty() || newName.equals(currentName)) return;
+                    if (newName.contains("/") || newName.contains("\\") || newName.equals(".") || newName.equals("..")) {
+                        Toast.makeText(this, "Enter a valid file name", Toast.LENGTH_SHORT).show(); return;
+                    }
+                    renameMediaFile(uri, newName);
+                }).show();
+    }
+
+    private void renameMediaFile(Uri uri, String newName) {
+        try {
+            Uri renamed = null;
+            if (DocumentsContract.isDocumentUri(this, uri)) {
+                try { renamed = DocumentsContract.renameDocument(getContentResolver(), uri, newName); }
+                catch (Exception ignored) { }
+            }
+            if (renamed == null) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, newName);
+                int changed = getContentResolver().update(uri, values, null, null);
+                if (changed <= 0) throw new IOException("This storage provider does not support renaming this file");
+            }
+            Toast.makeText(this, "File renamed", Toast.LENGTH_SHORT).show();
+            callJs("window.onNativeFileOperation && window.onNativeFileOperation('rename',true," + JSONObject.quote(uri.toString()) + ")");
+            beginMediaScan();
+        } catch (RecoverableSecurityException e) {
+            try {
+                pendingMediaOperation = "rename"; pendingMediaUri = uri; pendingMediaName = newName;
+                startIntentSenderForResult(e.getUserAction().getActionIntent().getIntentSender(), REQUEST_MEDIA_WRITE_CONSENT, null, 0, 0, 0);
+            } catch (Exception denied) { Toast.makeText(this, "Android did not grant permission to rename this file", Toast.LENGTH_LONG).show(); }
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not rename file. This storage provider may not support renaming.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void confirmDeleteMedia(String rawUri, String title) {
+        if (rawUri == null || rawUri.trim().isEmpty()) return;
+        new AlertDialog.Builder(this).setTitle("Delete file?")
+                .setMessage("Delete \"" + (title == null ? "this file" : title) + "\" from your device? This cannot be undone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteMediaFile(Uri.parse(rawUri))).show();
+    }
+
+    private void deleteMediaFile(Uri uri) {
+        try {
+            int deleted;
+            if (DocumentsContract.isDocumentUri(this, uri)) {
+                try { deleted = DocumentsContract.deleteDocument(getContentResolver(), uri) ? 1 : 0; }
+                catch (Exception e) { deleted = getContentResolver().delete(uri, null, null); }
+            } else deleted = getContentResolver().delete(uri, null, null);
+            if (deleted <= 0) throw new IOException("The provider did not delete the file");
+            removeFromWatchHistory(uri.toString(), savedMediaIdentity(uri));
+            Toast.makeText(this, "File deleted", Toast.LENGTH_SHORT).show();
+            callJs("window.onNativeFileOperation && window.onNativeFileOperation('delete',true," + JSONObject.quote(uri.toString()) + ")");
+            beginMediaScan();
+        } catch (RecoverableSecurityException e) {
+            try {
+                pendingMediaOperation = "delete"; pendingMediaUri = uri; pendingMediaName = "";
+                startIntentSenderForResult(e.getUserAction().getActionIntent().getIntentSender(), REQUEST_MEDIA_WRITE_CONSENT, null, 0, 0, 0);
+            } catch (Exception denied) { Toast.makeText(this, "Android did not grant permission to delete this file", Toast.LENGTH_LONG).show(); }
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not delete this file. Check storage permissions or folder access.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void shareMediaFile(String rawUri, String title, String mime) {
+        try {
+            Uri uri = Uri.parse(rawUri);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType(mime == null || mime.trim().isEmpty() ? "*/*" : mime);
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Share " + (title == null ? "media" : title)));
+        } catch (Exception e) { Toast.makeText(this, "Could not share this file", Toast.LENGTH_SHORT).show(); }
+    }
+
     private void showMediaActionsDialog(String uri, String title, long sizeBytes, long durationMs, boolean isAudio, String identity) {
         if (uri == null || uri.trim().isEmpty()) return;
         String safeTitle = title == null || title.trim().isEmpty() ? "Media item" : title;
         List<String> labels = new ArrayList<>();
         List<String> actions = new ArrayList<>();
         labels.add("Play now"); actions.add("play");
+        labels.add("Rename"); actions.add("rename");
+        labels.add("Delete file"); actions.add("delete");
+        labels.add("Share"); actions.add("share");
         boolean favorite = isFavoriteUri(uri, identity);
         labels.add(favorite ? "Remove from Favorites" : "Add to Favorites"); actions.add("favorite");
         if (hasHistoryEntry(uri, identity)) {
@@ -369,6 +485,12 @@ public final class MainActivity extends Activity {
                         catch (Exception e) {
                             Toast.makeText(MainActivity.this, "Could not open this media file", Toast.LENGTH_LONG).show();
                         }
+                    } else if ("rename".equals(action)) {
+                        promptRenameMedia(uri, safeTitle);
+                    } else if ("delete".equals(action)) {
+                        confirmDeleteMedia(uri, safeTitle);
+                    } else if ("share".equals(action)) {
+                        shareMediaFile(uri, safeTitle, isAudio ? "audio/*" : "video/*");
                     } else if ("favorite".equals(action)) {
                         boolean nowFavorite = toggleFavoriteUri(uri, identity);
                         Toast.makeText(MainActivity.this, nowFavorite ? "Added to Favorites" : "Removed from Favorites", Toast.LENGTH_SHORT).show();
@@ -1195,6 +1317,15 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_MEDIA_WRITE_CONSENT) {
+            Uri uri = pendingMediaUri; String operation = pendingMediaOperation; String name = pendingMediaName;
+            pendingMediaUri = null; pendingMediaOperation = ""; pendingMediaName = "";
+            if (resultCode == RESULT_OK && uri != null) {
+                if ("delete".equals(operation)) deleteMediaFile(uri);
+                else if ("rename".equals(operation)) renameMediaFile(uri, name);
+            } else Toast.makeText(this, "File operation cancelled", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (resultCode != RESULT_OK || data == null) return;
 
         if (requestCode == REQUEST_PICK_FOLDER) {
