@@ -134,13 +134,15 @@ public final class PlayerActivity extends Activity {
     private long loadingStartedAt;
     private boolean loadingPlaybackReady;
     private static final long LOADING_MIN_VISIBLE_MS = 2300L;
-    private final Runnable finishLoadingOverlay = () -> {
-        if (loadingOverlay == null || !loadingPlaybackReady) return;
-        long remaining = LOADING_MIN_VISIBLE_MS - (System.currentTimeMillis() - loadingStartedAt);
-        if (remaining > 0L) controlsHandler.postDelayed(finishLoadingOverlay, remaining);
-        else loadingOverlay.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
-            if (loadingOverlay != null) loadingOverlay.setVisibility(View.GONE);
-        }).start();
+    private final Runnable finishLoadingOverlay = new Runnable() {
+        @Override public void run() {
+            if (loadingOverlay == null || !loadingPlaybackReady) return;
+            long remaining = LOADING_MIN_VISIBLE_MS - (System.currentTimeMillis() - loadingStartedAt);
+            if (remaining > 0L) controlsHandler.postDelayed(this, remaining);
+            else loadingOverlay.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
+                if (loadingOverlay != null) loadingOverlay.setVisibility(View.GONE);
+            }).start();
+        }
     };
     private LinearLayout timelineRow;
     private LinearLayout bottomRow;
