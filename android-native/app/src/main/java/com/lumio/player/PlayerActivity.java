@@ -271,6 +271,17 @@ public final class PlayerActivity extends Activity {
     private File generatedSubtitleFile;
     private float touchDownX;
     private float touchDownY;
+    // Gesture axis is locked after the initial movement threshold so seek and
+    // vertical brightness/volume adjustments cannot both react to one swipe.
+    private static final int GESTURE_UNDECIDED = 0;
+    private static final int GESTURE_SEEK = 1;
+    private static final int GESTURE_BRIGHTNESS = 2;
+    private static final int GESTURE_VOLUME = 3;
+    private static final int GESTURE_IGNORE = 4;
+    private int gestureMode = GESTURE_UNDECIDED;
+    private float gestureStartBrightness = 0.7f;
+    private int gestureStartVolume = 0;
+    private long gestureStartPosition = 0L;
     private boolean gestureHandled;
     private boolean scaling;
     private AudioManager audioManager;
@@ -1027,7 +1038,16 @@ public final class PlayerActivity extends Activity {
     private void installGestures() {
         android.view.GestureDetector gestureDetector = new android.view.GestureDetector(this,
                 new android.view.GestureDetector.SimpleOnGestureListener() {
-                    @Override public boolean onDown(MotionEvent e) { touchDownX = e.getX(); touchDownY = e.getY(); gestureHandled = false; return true; }
+                    @Override public boolean onDown(MotionEvent e) {
+                        touchDownX = e.getX();
+                        touchDownY = e.getY();
+                        gestureMode = GESTURE_UNDECIDED;
+                        gestureStartBrightness = brightness;
+                        gestureStartVolume = audioManager == null ? 5 : audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        gestureStartPosition = controller == null ? 0L : Math.max(0L, controller.getCurrentPosition());
+                        gestureHandled = false;
+                        return true;
+                    }
                     @Override public boolean onSingleTapConfirmed(MotionEvent e) {
                         if (locked) return false;
                         // A tap toggles the whole control layer: reveal if hidden, fade if visible.
@@ -1047,8 +1067,9 @@ public final class PlayerActivity extends Activity {
                     }
                     @Override public boolean onScroll(MotionEvent first, MotionEvent current, float distanceX, float distanceY) {
                         if (locked || controller == null || first == null || scaling) return false;
-                        if (Math.abs(current.getX() - first.getX()) < dp(14)
-                                && Math.abs(current.getY() - first.getY()) < dp(14)) return false;
+                        float totalX = current.getX() - first.getX();
+                        float totalY = current.getY() - first.getY();
+                        if (Math.abs(totalX) < dp(14) && Math.abs(totalY) < dp(14)) return false;
                         gestureHandled = true;
                         if (zoom > 1f) {
                             panX = clamp(panX - distanceX, -dp(160) * (zoom - 1f), dp(160) * (zoom - 1f));
@@ -1057,30 +1078,44 @@ public final class PlayerActivity extends Activity {
                             contentFrame.setTranslationY(panY);
                             return true;
                         }
-                        if (Math.abs(distanceX) > Math.abs(distanceY)) {
+
+                        // Choose one gesture mode once, based on the initial direction.
+                        // Horizontal motion seeks; vertical motion only adjusts the
+                        // side zone where the gesture began (left=brightness, right=volume).
+                        if (gestureMode == GESTURE_UNDECIDED) {
+                            if (Math.abs(totalX) > Math.abs(totalY) * 1.15f) {
+                                gestureMode = GESTURE_SEEK;
+                            } else if (Math.abs(totalY) > Math.abs(totalX) * 1.15f) {
+                                float width = Math.max(1, playerView.getWidth());
+                                if (first.getX() < width * 0.35f) gestureMode = GESTURE_BRIGHTNESS;
+                                else if (first.getX() > width * 0.65f) gestureMode = GESTURE_VOLUME;
+                                else gestureMode = GESTURE_IGNORE;
+                            } else {
+                                return true;
+                            }
+                        }
+
+                        if (gestureMode == GESTURE_SEEK) {
                             long duration = controller.getDuration();
-                            if (duration > 0) {
-                                long delta = (long) (-distanceX / Math.max(1, playerView.getWidth()) * duration * 1.4f);
-                                long target = Math.max(0L, Math.min(duration, controller.getCurrentPosition() + delta));
+                            if (duration > 0L) {
+                                long delta = (long) (-totalX / Math.max(1, playerView.getWidth()) * duration * 1.4f);
+                                long target = Math.max(0L, Math.min(duration, gestureStartPosition + delta));
                                 controller.seekTo(target);
                                 showHint((delta >= 0 ? "+" : "") + Math.round(delta / 1000f) + "s");
                             }
-                        } else {
-                            float fraction = distanceY / Math.max(1, playerView.getHeight());
-                            if (first.getX() < playerView.getWidth() / 2f) {
-                                brightness = clamp(brightness + fraction * 1.25f, 0.08f, 1f);
-                                WindowManager.LayoutParams attrs = getWindow().getAttributes();
-                                attrs.screenBrightness = brightness;
-                                getWindow().setAttributes(attrs);
-                                showHint("Brightness " + Math.round(brightness * 100) + "%");
-                            } else {
-                                int max = audioManager == null ? 15 : audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                                int currentVolume = audioManager == null ? 5 : audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                int change = Math.abs(fraction) < 0.01f ? 0 : (fraction > 0 ? 1 : -1);
-                                int target = Math.max(0, Math.min(max, currentVolume + change));
-                                if (audioManager != null && target != currentVolume) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0);
-                                showHint("Volume " + Math.round(target * 100f / Math.max(1, max)) + "%");
+                        } else if (gestureMode == GESTURE_BRIGHTNESS) {
+                            float fraction = -totalY / Math.max(1, playerView.getHeight());
+                            setBrightness(gestureStartBrightness + fraction * 1.25f);
+                            showHint("Brightness " + Math.round(brightness * 100) + "%");
+                        } else if (gestureMode == GESTURE_VOLUME) {
+                            int max = audioManager == null ? 15 : audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                            int change = Math.round((-totalY / Math.max(1, playerView.getHeight())) * max);
+                            int target = Math.max(0, Math.min(max, gestureStartVolume + change));
+                            if (audioManager != null && audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) != target) {
+                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0);
                             }
+                            volumeFraction = target / (float) Math.max(1, max);
+                            showHint("Volume " + Math.round(volumeFraction * 100) + "%");
                         }
                         return true;
                     }
@@ -1122,6 +1157,10 @@ public final class PlayerActivity extends Activity {
             gestureDetector.onTouchEvent(event);
             if (event.getActionMasked() == MotionEvent.ACTION_UP && gestureHandled) {
                 v.performClick();
+            }
+            if (event.getActionMasked() == MotionEvent.ACTION_UP
+                    || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                gestureMode = GESTURE_UNDECIDED;
             }
             return true;
         });
