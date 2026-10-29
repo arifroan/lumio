@@ -94,14 +94,14 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .history-thumb-fallback{display:grid;place-items:center;width:100%;height:100%;color:var(--violet);font-size:24px}
 .history-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .16s ease}
 .history-thumb.loaded{opacity:1}
-.history-card .file-more{position:absolute;right:6px;top:6px;z-index:2;width:30px;height:30px;padding:0;border:1px solid #ffffff30;border-radius:10px;background:#101018d9;color:#fff;font-size:18px}
+.history-card .file-more{position:absolute;left:6px;top:6px;z-index:2;width:30px;height:30px;padding:0;border:1px solid #ffffff30;border-radius:10px;background:#101018d9;color:#fff;font-size:18px}
 .history-card-copy{padding:10px 11px 11px}
 .history-card-copy strong{display:block;font-size:12px;line-height:1.35;min-height:2.7em;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .history-card-copy small{display:block;margin-top:5px;color:var(--muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .watch-progress{height:4px;margin-top:9px;overflow:hidden;border-radius:9px;background:#ffffff18}
 .watch-progress span{display:block;height:100%;border-radius:9px;background:var(--lime)}
 .video-thumb-wrap{position:relative}
-.video-thumb-actions{position:absolute;right:5px;top:5px;z-index:2;display:flex;gap:4px}
+.video-thumb-actions{position:absolute;left:5px;top:5px;z-index:2;display:flex;gap:4px}
 .video-thumb-actions button{display:grid;place-items:center;width:29px;height:29px;padding:0;border:1px solid #ffffff30;border-radius:9px;background:#101018d9;color:#fff;font-size:16px;line-height:1}
 .video-thumb-actions .favorited{color:var(--lime);border-color:#d7ff7280}
 .video-grid .video-thumb-actions{gap:5px}
@@ -1511,7 +1511,7 @@ function mediaItemMarkup(x){
  const isVideo=x.type==='video',isFav=isFavorite(x),unavailable=x.available===false;
  const note=unavailable?'<span class="availability-note">Access unavailable · restore folder permission</span>':'';
  if(isVideo){
-  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="video-thumb-wrap"><div class="thumb-fallback" aria-hidden="true">'+uiIcon('play')+'</div><img class="video-thumb" loading="lazy" decoding="async" alt="" data-thumb-uri="'+escapeHtml(x.uri)+'" data-thumb-key="'+escapeHtml(x.key)+'"><div class="video-thumb-actions"><button type="button" class="video-favorite '+(isFav?'favorited':'')+'" data-file-action="favorite" aria-label="'+(isFav?'Remove from favorites':'Add to favorites')+'">'+uiIcon(isFav?'starFilled':'star','favorite-icon')+'</button><button type="button" class="file-more" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">'+uiIcon('more')+'</button></div></div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div></div>';
+  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="video-thumb-wrap"><div class="thumb-fallback" aria-hidden="true">'+uiIcon('play')+'</div><img class="video-thumb" loading="lazy" decoding="async" alt="" data-thumb-uri="'+escapeHtml(x.uri)+'" data-thumb-key="'+escapeHtml(x.key)+'"><div class="video-thumb-actions"><button type="button" class="file-more" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">'+uiIcon('more')+'</button></div></div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>'+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div></div>';
  }
  return '<div class="file '+(unavailable?'unavailable':'')+'" data-key="'+escapeHtml(x.key)+'"><div class="file-icon">'+uiIcon('music')+'</div><div class="file-name"><strong>'+escapeHtml(x.name)+'</strong><small>AUDIO · '+fmtSize(x.size)+(x.duration?' · '+Math.floor(x.duration/60000)+' min':'')+'</small>'+note+'</div><button class="openfile" data-file-action="more" aria-label="More actions for '+escapeHtml(x.name)+'">'+uiIcon('more')+'</button></div>';
 }
