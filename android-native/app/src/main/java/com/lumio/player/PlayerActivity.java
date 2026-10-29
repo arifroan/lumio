@@ -153,16 +153,29 @@ public final class PlayerActivity extends Activity {
     };
 
 
-    /** Thin, consistent outline icons matching the reference playback interface. */
+    /** Consistent 24-unit playback icon grid: outlined utility actions, solid transport controls. */
+    private int playbackIconColor() {
+        int nightMode = getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+        return nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+                ? Color.WHITE : Color.rgb(38, 40, 44);
+    }
+
     private static final class PlaybackIconDrawable extends Drawable {
         private final String name;
+        private final int iconColor;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        PlaybackIconDrawable(String name) {
-            this.name = name; paint.setColor(Color.WHITE); paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(1.8f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
+        PlaybackIconDrawable(String name, int iconColor) {
+            this.name = name;
+            this.iconColor = iconColor;
+            paint.setColor(iconColor);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.8f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
         }
         @Override public void draw(Canvas canvas) {
-            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.48f;
+            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.64f;
             canvas.save(); canvas.translate(b.centerX()-size/2f,b.centerY()-size/2f); canvas.scale(size/24f,size/24f);
             switch(name) {
                 case "back": line(canvas,19,12,5,12); line(canvas,5,12,12,5); line(canvas,5,12,12,19); break;
@@ -181,8 +194,19 @@ public final class PlayerActivity extends Activity {
                 case "playlist": canvas.drawRoundRect(new RectF(3,3,21,21),1.5f,1.5f,paint);for(int y=8;y<=16;y+=4){line(canvas,7,y,9,y);line(canvas,12,y,18,y);}break;
                 case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",6.2f,15.4f,7.4f);break;
                 case "forward": arc(canvas,4,3,20,21,-130,285);line(canvas,20,3,20,9);line(canvas,20,3,14,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
-                case "play": paint.setStyle(Paint.Style.FILL);Path tri=new Path();tri.moveTo(7,4);tri.lineTo(19,12);tri.lineTo(7,20);tri.close();canvas.drawPath(tri,paint);paint.setStyle(Paint.Style.STROKE);break;
-                case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(1.65f);break;
+                case "play": {
+                    paint.setStyle(Paint.Style.FILL);
+                    Path tri = new Path(); tri.moveTo(7, 4); tri.lineTo(19, 12); tri.lineTo(7, 20); tri.close();
+                    canvas.drawPath(tri, paint);
+                    paint.setStyle(Paint.Style.STROKE);
+                    break;
+                }
+                case "pause":
+                    paint.setStyle(Paint.Style.FILL);
+                    canvas.drawRoundRect(new RectF(6.5f, 4, 10.5f, 20), 1f, 1f, paint);
+                    canvas.drawRoundRect(new RectF(13.5f, 4, 17.5f, 20), 1f, 1f, paint);
+                    paint.setStyle(Paint.Style.STROKE);
+                    break;
                 case "headphones": arc(canvas,3,2,21,22,180,180);canvas.drawRoundRect(new RectF(3,12,7,19),1.2f,1.2f,paint);canvas.drawRoundRect(new RectF(17,12,21,19),1.2f,1.2f,paint);break;
                 case "fullscreen": line(canvas,4,9,4,4);line(canvas,4,4,9,4);line(canvas,15,4,20,4);line(canvas,20,4,20,9);line(canvas,4,15,4,20);line(canvas,4,20,9,20);line(canvas,15,20,20,20);line(canvas,20,15,20,20);break;
                 case "unlock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,8,3,20,15,190,160);line(canvas,12,14,12,17);break;
@@ -191,12 +215,12 @@ public final class PlayerActivity extends Activity {
         }
         private void line(Canvas c,float x1,float y1,float x2,float y2){c.drawLine(x1,y1,x2,y2,paint);}
         private void arc(Canvas c,float l,float t,float r,float b,float start,float sweep){c.drawArc(new RectF(l,t,r,b),start,sweep,false,paint);}
-        private void text(Canvas c,String value,float x,float y,float size){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(Color.WHITE);p.setTextSize(size);c.drawText(value,x,y,p);}
+        private void text(Canvas c,String value,float x,float y,float size){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(iconColor);p.setTextSize(size);p.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));c.drawText(value,x,y,p);}
         @Override public void setAlpha(int alpha){paint.setAlpha(alpha);invalidateSelf();}
         @Override public void setColorFilter(ColorFilter filter){paint.setColorFilter(filter);invalidateSelf();}
         @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
-    private void setButtonIcon(Button button,String name){if(button!=null){button.setText("");button.setBackground(new PlaybackIconDrawable(name));button.setPadding(0,0,0,0);}}
+    private void setButtonIcon(Button button,String name){if(button!=null){button.setText("");button.setTextColor(playbackIconColor());button.setBackground(new PlaybackIconDrawable(name, playbackIconColor()));button.setPadding(0,0,0,0);}}
 
     private String formatClock(long millis) {
         long seconds = Math.max(0L, millis / 1000L);
@@ -210,7 +234,7 @@ public final class PlayerActivity extends Activity {
     private Button overlayButton(String label, float sizeSp) {
         Button b = button(label);
         b.setTextSize(sizeSp);
-        b.setTextColor(Color.WHITE);
+        b.setTextColor(playbackIconColor());
         b.setBackgroundColor(Color.TRANSPARENT);
         if (label.startsWith("icon:")) setButtonIcon(b, label.substring(5));
         b.setStateListAnimator(null);
