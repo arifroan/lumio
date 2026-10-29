@@ -915,7 +915,17 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .file.selection-enabled:before{content:'';position:absolute;left:10px;top:50%;transform:translateY(-50%);width:17px;height:17px;border:1.5px solid var(--muted);border-radius:5px;background:transparent}
 .file.selection-enabled.is-selected:before{content:'✓';display:grid;place-items:center;background:var(--accent);border-color:var(--accent);color:white;font-size:12px;font-weight:800}
 .file.selection-enabled.is-selected{background:var(--accent-soft);outline:1px solid var(--accent)}
-</style></head>
+</style><style id="lumio-whole-file-selection-fix">
+/* File rows are controls, not selectable text. Long-press is reserved for whole-file selection. */
+#library .file[data-key],
+#library .file[data-key] * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+#library .file[data-key] img { -webkit-user-drag: none; user-drag: none; }
+</style>
+</head>
 <body>
 <div id="startupScanScreen" role="status" aria-live="polite">
  <div class="scan-spinner" aria-hidden="true"></div>
@@ -1730,6 +1740,10 @@ window.onNativeFileOperation=function(operation,success,uri){if(!success)return;
 function bindMediaRows(library){
  if(library.dataset.delegatedHandlers==='1')return;
  library.dataset.delegatedHandlers='1';
+ library.addEventListener('contextmenu',event=>{
+  const row=event.target&&event.target.closest?event.target.closest('.file[data-key]'):null;
+  if(row)event.preventDefault();
+ });
  library.addEventListener('pointerdown',event=>{
   const row=event.target&&event.target.closest?event.target.closest('.file[data-key]'):null;
   if(!row||event.target.closest('button'))return;
