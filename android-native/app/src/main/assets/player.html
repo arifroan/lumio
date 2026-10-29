@@ -82,6 +82,7 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .video-list .file{min-width:0}
 @media(min-width:620px){.library.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.video-toolbar-row{gap:10px}.sort-control{max-width:250px}}
 
+#videoLibraryFilters{display:none!important}
 .video-library-filters{display:flex;gap:8px;margin:0 0 12px}
 .video-library-filters button{border:1px solid var(--line);background:var(--surface);color:#c2bfd4;border-radius:12px;padding:9px 13px;font-size:12px;font-weight:800}
 .video-library-filters button.active{background:#302842;border-color:#8b78b8;color:#f4edff}.music-controls{margin:0 0 12px}.music-controls .sort-control{flex:1;min-width:145px}.music-controls .video-sort{min-height:38px}.music-controls button:disabled{opacity:.45;cursor:default}
@@ -1807,9 +1808,9 @@ function render(){
  $('videoCount').textContent=videoTotal;
 
  $('totalSize').textContent=fmtSize(totalSize);
- $('allVideoCount').textContent=videoTotal;
- $('favoriteVideoCount').textContent=favoritesTotal;
- $('videoLibraryFilters').hidden=active!=='video';
+ // Filter labels/count badges were removed from the UI; do not dereference their deleted DOM nodes.
+ const videoFilters=$('videoLibraryFilters');
+ if(videoFilters)videoFilters.hidden=true;
  $('videoToolbar').hidden=!((active==='video')&&searchExpanded);
  $('browseFoldersButton').setAttribute('aria-pressed',String(folderBrowseActive));
  $('browseFoldersButton').textContent=folderBrowseActive?'All videos':'Browse folders';
