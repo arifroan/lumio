@@ -648,6 +648,27 @@ public final class PlayerActivity extends Activity {
         LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(0, dp(32), 1f);
         seekParams.setMargins(dp(10), 0, dp(10), 0);
         timelineRow.addView(timelineSeekBar, seekParams);
+        timelineSeekBar.setOnTouchListener((view, event) -> {
+            // Seek immediately when the user taps anywhere on the progress track.
+            // Returning false preserves native thumb dragging and accessibility behavior.
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                    && controller != null && controller.getDuration() > 0L) {
+                int availableWidth = timelineSeekBar.getWidth()
+                        - timelineSeekBar.getPaddingLeft() - timelineSeekBar.getPaddingRight();
+                if (availableWidth > 0) {
+                    float x = event.getX() - timelineSeekBar.getPaddingLeft();
+                    float fraction = clamp(x / availableWidth, 0f, 1f);
+                    long duration = controller.getDuration();
+                    long target = Math.round(duration * fraction);
+                    timelineSeekBar.setMax((int) Math.min(Integer.MAX_VALUE, duration));
+                    timelineSeekBar.setProgress((int) Math.min(Integer.MAX_VALUE, target));
+                    if (currentTimeText != null) currentTimeText.setText(formatClock(target));
+                    controller.seekTo(target);
+                    showPlaybackControlsTemporarily();
+                }
+            }
+            return false;
+        });
         timelineSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
                 if (fromUser && currentTimeText != null) currentTimeText.setText(formatClock(progress));
