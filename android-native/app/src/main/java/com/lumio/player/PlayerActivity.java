@@ -107,12 +107,15 @@ public final class PlayerActivity extends Activity {
         }
         @Override public void onPlaybackStateChanged(int playbackState) {
             if (playbackState == Player.STATE_ENDED) persistPosition();
+            if (playbackState == Player.STATE_BUFFERING || playbackState == Player.STATE_IDLE) showLoadingOverlay();
+            else if (playbackState == Player.STATE_READY) markLoadingReady();
             if (requestedAudio) return;
             if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
                 showPlaybackControlsUntilResumed();
             }
         }
         @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
+            hideLoadingOverlayImmediately();
             android.util.Log.e("LUMIO_PLAYBACK", "Playback failed for URI=" + requestedUri
                     + ", code=" + error.getErrorCodeName(), error);
             showPlaybackFailure(error);
@@ -127,6 +130,18 @@ public final class PlayerActivity extends Activity {
     private Button zoomButton;
     private Button lockButton;
     private FrameLayout controlsOverlay;
+    private FrameLayout loadingOverlay;
+    private long loadingStartedAt;
+    private boolean loadingPlaybackReady;
+    private static final long LOADING_MIN_VISIBLE_MS = 2300L;
+    private final Runnable finishLoadingOverlay = () -> {
+        if (loadingOverlay == null || !loadingPlaybackReady) return;
+        long remaining = LOADING_MIN_VISIBLE_MS - (System.currentTimeMillis() - loadingStartedAt);
+        if (remaining > 0L) controlsHandler.postDelayed(finishLoadingOverlay, remaining);
+        else loadingOverlay.animate().alpha(0f).setDuration(180L).withEndAction(() -> {
+            if (loadingOverlay != null) loadingOverlay.setVisibility(View.GONE);
+        }).start();
+    };
     private LinearLayout timelineRow;
     private LinearLayout bottomRow;
     private LinearLayout centerControls;
@@ -159,10 +174,10 @@ public final class PlayerActivity extends Activity {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         PlaybackIconDrawable(String name) {
             this.name = name; paint.setColor(Color.WHITE); paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(2.05f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeWidth(2.0f); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND);
         }
         @Override public void draw(Canvas canvas) {
-            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.68f;
+            android.graphics.Rect b=getBounds(); float size=Math.min(b.width(),b.height())*0.76f;
             canvas.save(); canvas.translate(b.centerX()-size/2f,b.centerY()-size/2f); canvas.scale(size/24f,size/24f);
             switch(name) {
                 case "back": line(canvas,19,12,5,12); line(canvas,5,12,12,5); line(canvas,5,12,12,19); break;
@@ -179,8 +194,16 @@ public final class PlayerActivity extends Activity {
                 case "lock": canvas.drawRoundRect(new RectF(4,10,20,21),2,2,paint);arc(canvas,6,3,18,15,180,180);line(canvas,12,14,12,17);break;
                 case "rotate": arc(canvas,3,3,21,21,35,250);line(canvas,3,4,3,10);line(canvas,3,4,9,4);arc(canvas,3,3,21,21,215,250);line(canvas,21,20,21,14);line(canvas,21,20,15,20);break;
                 case "playlist": canvas.drawRoundRect(new RectF(3,3,21,21),1.5f,1.5f,paint);for(int y=8;y<=16;y+=4){line(canvas,7,y,9,y);line(canvas,12,y,18,y);}break;
-                case "rewind": arc(canvas,4,3,20,21,205,285);line(canvas,4,3,4,9);line(canvas,4,3,10,3);text(canvas,"10",6.2f,15.4f,7.4f);break;
-                case "forward": arc(canvas,4,3,20,21,-130,285);line(canvas,20,3,20,9);line(canvas,20,3,14,3);text(canvas,"10",7.1f,15.4f,6.7f);break;
+                case "rewind":
+                    arc(canvas,4,4,20,20,42,278);
+                    line(canvas,4,4,4,10); line(canvas,4,4,10,4);
+                    text(canvas,"10",6.1f,15.2f,7.2f);
+                    break;
+                case "forward":
+                    arc(canvas,4,4,20,20,220,278);
+                    line(canvas,20,4,20,10); line(canvas,20,4,14,4);
+                    text(canvas,"10",6.7f,15.2f,7.2f);
+                    break;
                 case "play": paint.setStyle(Paint.Style.FILL);Path tri=new Path();tri.moveTo(7,4);tri.lineTo(19,12);tri.lineTo(7,20);tri.close();canvas.drawPath(tri,paint);paint.setStyle(Paint.Style.STROKE);break;
                 case "pause": paint.setStrokeWidth(3.3f);line(canvas,8,4,8,20);line(canvas,16,4,16,20);paint.setStrokeWidth(2.05f);break;
                 case "headphones": arc(canvas,3,2,21,22,180,180);canvas.drawRoundRect(new RectF(3,12,7,19),1.2f,1.2f,paint);canvas.drawRoundRect(new RectF(17,12,21,19),1.2f,1.2f,paint);break;
@@ -400,6 +423,33 @@ public final class PlayerActivity extends Activity {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    private void showLoadingOverlay() {
+        if (loadingOverlay == null || isFinishing() || isDestroyed()) return;
+        controlsHandler.removeCallbacks(finishLoadingOverlay);
+        if (loadingOverlay.getVisibility() != View.VISIBLE) {
+            loadingStartedAt = System.currentTimeMillis();
+            loadingPlaybackReady = false;
+            loadingOverlay.setAlpha(1f);
+            loadingOverlay.setVisibility(View.VISIBLE);
+        } else loadingPlaybackReady = false;
+    }
+
+    private void markLoadingReady() {
+        loadingPlaybackReady = true;
+        controlsHandler.removeCallbacks(finishLoadingOverlay);
+        controlsHandler.post(finishLoadingOverlay);
+    }
+
+    private void hideLoadingOverlayImmediately() {
+        controlsHandler.removeCallbacks(finishLoadingOverlay);
+        loadingPlaybackReady = true;
+        if (loadingOverlay != null) {
+            loadingOverlay.animate().cancel();
+            loadingOverlay.setVisibility(View.GONE);
+            loadingOverlay.setAlpha(1f);
+        }
+    }
+
     private void buildPlayerUi() {
         FrameLayout root = new FrameLayout(this);
         rootFrame = root;
@@ -417,6 +467,33 @@ public final class PlayerActivity extends Activity {
         controlsOverlay = new FrameLayout(this);
         controlsOverlay.setBackgroundColor(Color.TRANSPARENT);
         root.addView(controlsOverlay, new FrameLayout.LayoutParams(-1, -1));
+
+        // Minimal loading layer shown while a song/video is being prepared.
+        loadingOverlay = new FrameLayout(this);
+        loadingOverlay.setBackgroundColor(0xB8000000);
+        loadingOverlay.setClickable(true);
+        loadingOverlay.setFocusable(true);
+        LinearLayout loadingStack = new LinearLayout(this);
+        loadingStack.setOrientation(LinearLayout.VERTICAL);
+        loadingStack.setGravity(Gravity.CENTER);
+        android.widget.ProgressBar loadingSpinner = new android.widget.ProgressBar(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            loadingSpinner.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        }
+        LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(dp(38), dp(38));
+        spinnerParams.bottomMargin = dp(15);
+        loadingStack.addView(loadingSpinner, spinnerParams);
+        TextView loadingBrand = new TextView(this);
+        loadingBrand.setText("L U M I O");
+        loadingBrand.setTextColor(Color.WHITE);
+        loadingBrand.setTextSize(13);
+        loadingBrand.setLetterSpacing(0.18f);
+        loadingBrand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        loadingStack.addView(loadingBrand, new LinearLayout.LayoutParams(-2, -2));
+        loadingOverlay.addView(loadingStack, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+        loadingOverlay.setVisibility(View.GONE);
+        loadingOverlay.setAlpha(1f);
+        root.addView(loadingOverlay, new FrameLayout.LayoutParams(-1, -1));
 
         topBar = new LinearLayout(this);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -777,6 +854,7 @@ public final class PlayerActivity extends Activity {
         // Resume each media item independently, not only the most recently opened URI.
         // Completed items are saved at position zero so reopening them starts from the beginning.
         long startPosition = Math.max(0L, prefs.getLong("position:" + requestedUri, 0L));
+        showLoadingOverlay();
         controller.setMediaItems(playlist, selectedIndex, startPosition);
         controller.prepare();
         controller.play();
@@ -859,6 +937,7 @@ public final class PlayerActivity extends Activity {
             controller.clearMediaItems();
         }
         controlsHandler.removeCallbacks(hidePlaybackControls);
+        controlsHandler.removeCallbacks(finishLoadingOverlay);
         controlsHandler.removeCallbacks(savePlaybackProgress);
         if (controller != null) controller.removeListener(playbackUiListener);
         if (playerView != null) playerView.setPlayer(null);
