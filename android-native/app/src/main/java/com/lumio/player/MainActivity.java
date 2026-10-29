@@ -230,6 +230,11 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void deleteMediaDirect(String uri) {
+            runOnUiThread(() -> { if (uri != null && !uri.trim().isEmpty()) deleteMediaFile(Uri.parse(uri)); });
+        }
+
+        @JavascriptInterface
         public void shareMedia(String uri, String title, String mime) {
             runOnUiThread(() -> shareMediaFile(uri, title, mime));
         }
