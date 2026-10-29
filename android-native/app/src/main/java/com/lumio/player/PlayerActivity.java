@@ -569,6 +569,25 @@ public final class PlayerActivity extends Activity {
         LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(0, dp(32), 1f);
         seekParams.setMargins(dp(10), 0, dp(10), 0);
         timelineRow.addView(timelineSeekBar, seekParams);
+        // A direct tap should seek as well as thumb dragging. Some Android skins only
+        // begin seeking when the thumb itself is touched, which makes timeline taps appear broken.
+        timelineSeekBar.setOnTouchListener((view, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_UP && controller != null) {
+                long duration = controller.getDuration();
+                int availableWidth = view.getWidth() - view.getPaddingLeft() - view.getPaddingRight();
+                if (duration > 0L && availableWidth > 0) {
+                    float fraction = (event.getX() - view.getPaddingLeft()) / (float) availableWidth;
+                    fraction = clamp(fraction, 0f, 1f);
+                    int target = (int) Math.min(Integer.MAX_VALUE,
+                            Math.max(0L, Math.round(duration * (double) fraction)));
+                    timelineSeekBar.setProgress(target);
+                    controller.seekTo(target);
+                    if (currentTimeText != null) currentTimeText.setText(formatClock(target));
+                    showPlaybackControlsTemporarily();
+                }
+            }
+            return false; // Preserve native dragging and accessibility behavior.
+        });
         timelineSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
                 if (fromUser && currentTimeText != null) currentTimeText.setText(formatClock(progress));
