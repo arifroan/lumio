@@ -1753,8 +1753,8 @@ function bindMediaRows(library){
   if(!row||!library.contains(row))return;
   const item=findMediaByKey(row.dataset.key);
   if(!item)return;
-  if(selectionMode){toggleMediaSelection(item.key);return}
   if(longPressTriggered){longPressTriggered=false;return}
+  if(selectionMode){toggleMediaSelection(item.key);return}
   const action=target.closest('[data-file-action]');
   if(action){if(action.dataset.fileAction==='favorite')toggleFavorite(item);else showMediaActions(item);return}
   openItem(item.key);
