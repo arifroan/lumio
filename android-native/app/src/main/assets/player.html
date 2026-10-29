@@ -873,8 +873,20 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 #musicPage .music-playlist-row,#musicPage .music-playlist-track,#musicPage .music-playlist-detail-head{background:var(--surface);color:var(--ink);border-color:var(--line)}
 @media(max-width:380px){#musicPage #musicSearch{min-height:56px;padding:12px 15px}#musicPage #musicLibrary .file{padding:11px;gap:10px}#musicPage #musicLibrary .file-icon{flex-basis:46px;width:46px;height:46px}}
 
+
+/* Startup scan screen: show immediately, but never block the app for more than 3 seconds. */
+#startupScanScreen{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#090909;color:#f4f4f4;font:500 16px system-ui,-apple-system,sans-serif;transition:opacity .18s ease}
+#startupScanScreen[hidden]{display:none}
+#startupScanScreen .scan-spinner{width:30px;height:30px;border:3px solid #3b3b3b;border-top-color:#f1f1f1;border-radius:50%;animation:lumioScanSpin .8s linear infinite}
+#startupScanScreen small{color:#aaa;font-size:13px}
+@keyframes lumioScanSpin{to{transform:rotate(360deg)}}
 </style></head>
 <body>
+<div id="startupScanScreen" role="status" aria-live="polite">
+ <div class="scan-spinner" aria-hidden="true"></div>
+ <strong>Scanning your media library</strong>
+ <small>Preparing videos and music…</small>
+</div>
 <main>
 <section id="mediaPage">
 <section class="player" id="player"><button class="player-dismiss" id="playerDismiss" type="button" aria-label="Close recent media card" title="Close">×</button><div class="nowplaying"><strong id="title">Nothing selected yet</strong><span id="meta">Choose a local file to play it with Lumio.</span></div><div class="tools"><button id="playAgain"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18.2 12z" fill="currentColor" stroke="none"/></svg><span>Play in Lumio</span></button></div></section>
@@ -1276,7 +1288,11 @@ function bindMusicLifecycleHooks(){
  window.addEventListener('focus',()=>refresh('focus'));
 }
 bindMusicLifecycleHooks();
+function hideStartupScanScreen(){const screen=$('startupScanScreen');if(screen)screen.hidden=true}
+const startupScanHideTimer=setTimeout(hideStartupScanScreen,3000);
 window.onNativeMediaScan=function(records,error,status){
+ clearTimeout(startupScanHideTimer);
+ hideStartupScanScreen();
  try{localStorage.setItem('lumio.lastScanAttemptAt',String(Date.now()))}catch(e){}
  if(error&&status&&typeof status==='object'){
   const incoming=new Set();
