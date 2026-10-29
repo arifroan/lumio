@@ -507,7 +507,7 @@ public final class PlayerActivity extends Activity {
         brightnessRail.addView(brightUp, new LinearLayout.LayoutParams(dp(44), dp(42)));
         TextView sun = new TextView(this);
         sun.setText("");
-        sun.setBackground(new PlaybackIconDrawable("brightness"));
+        sun.setBackground(new PlaybackIconDrawable("brightness", playbackIconColor()));
         sun.setTextColor(Color.WHITE);
         sun.setTextSize(27);
         sun.setGravity(Gravity.CENTER);
@@ -712,7 +712,7 @@ public final class PlayerActivity extends Activity {
         lockOverlay.setBackgroundColor(0x33000000);
         lockOverlay.setVisibility(View.GONE);
         Button unlock = overlayButton("Unlock playback", 14);
-        unlock.setCompoundDrawablesWithIntrinsicBounds(new PlaybackIconDrawable("unlock"), null, null, null);
+        unlock.setCompoundDrawablesWithIntrinsicBounds(new PlaybackIconDrawable("unlock", playbackIconColor()), null, null, null);
         unlock.setOnClickListener(v -> toggleLock());
         FrameLayout.LayoutParams unlockParams = new FrameLayout.LayoutParams(-2, dp(52), Gravity.CENTER);
         lockOverlay.addView(unlock, unlockParams);
