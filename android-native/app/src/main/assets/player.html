@@ -15,8 +15,17 @@ main{max-width:900px;margin:auto;padding:7px 18px 112px}.stat{background:var(--s
 .media-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 2px 13px}
 .media-heading{min-width:0}.media-heading h2{display:flex;align-items:center;gap:8px;font-size:26px;line-height:1.18;letter-spacing:-.7px;margin:0;min-height:36px}.media-heading h2 svg{display:block;flex:0 0 24px;width:24px;height:24px}.media-heading span{display:block;font-size:14px;line-height:1.35;color:var(--muted);margin-top:4px}
 /* Strong, explicit sizing for the folder title and item count on Android WebView. */
-#mediaTitle{font-size:32px!important;line-height:1.15!important;min-height:40px;letter-spacing:-.6px!important}
+/* Match the compact, bold folder header used by modern file managers. */
+#mediaTitle{display:flex;align-items:center;gap:12px;font-size:32px!important;font-weight:750!important;line-height:1.15!important;min-height:44px;letter-spacing:-.6px!important;color:#f7f7f7!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mediaTitle>span{display:inline!important;flex:0 1 auto;min-width:0;font-size:32px!important;font-weight:750!important;line-height:1.15!important;letter-spacing:-.6px!important;color:#f7f7f7!important;margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mediaTitle>svg{flex:0 0 24px;width:24px;height:24px;stroke-width:2.5}
 #count{font-size:18px!important;line-height:1.35!important;margin-top:7px!important}
+.media-heading:has(#mediaTitle[role="button"]) #count{display:none!important}
+.media-header:has(#mediaTitle[role="button"]){align-items:center;margin-top:16px;margin-bottom:18px}
+.media-header:has(#mediaTitle[role="button"]) .media-heading{display:flex;align-items:center;min-height:48px}
+.media-header:has(#mediaTitle[role="button"]) .media-heading h2{width:100%;min-width:0}
+.media-header:has(#mediaTitle[role="button"]) .media-header-actions .icon-button{width:44px;height:44px;border-radius:0;border-color:transparent;background:transparent}
+@media(max-width:380px){#mediaTitle,#mediaTitle>span{font-size:28px!important}.media-header:has(#mediaTitle[role="button"]){gap:6px}.media-header:has(#mediaTitle[role="button"]) .media-header-actions{gap:2px}}
 .media-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .icon-button{display:grid;place-items:center;width:43px;height:43px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--ink);padding:9px}
 .icon-button svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -1803,6 +1812,7 @@ function render(){
  titleEl.onclick=canGoUp?returnToPreviousFolder:null;
  titleEl.onkeydown=canGoUp?event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();returnToPreviousFolder()}}:null;
  $('count').textContent=filtered.length+' item'+(filtered.length===1?'':'s');
+ $('count').hidden=canGoUp;
  $('videoCount').textContent=videoTotal;
 
  $('totalSize').textContent=fmtSize(totalSize);
