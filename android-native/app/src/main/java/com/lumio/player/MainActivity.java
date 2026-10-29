@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,6 +71,8 @@ public final class MainActivity extends Activity {
     private boolean pendingScan;
     private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor();
+    // Audio and video MediaStore queries are independent; execute them concurrently.
+    private final ExecutorService mediaQueryExecutor = Executors.newFixedThreadPool(2);
     private final AtomicInteger scanGeneration = new AtomicInteger();
     private volatile boolean incompleteSavedPicksScan;
 
@@ -577,8 +580,34 @@ public final class MainActivity extends Activity {
         final boolean completeMediaStoreAccess = canReadVideo() && canReadAudio();
         scanExecutor.execute(() -> {
             JSONArray array = new JSONArray();
-            boolean videoScanFailed = canReadVideo() && !appendAllStoreVolumes(array, true);
-            boolean audioScanFailed = canReadAudio() && !appendAllStoreVolumes(array, false);
+            JSONArray videoRecords = new JSONArray();
+            JSONArray audioRecords = new JSONArray();
+
+            // Separate arrays avoid concurrent writes to JSONArray while the independent
+            // audio and video MediaStore collections are queried in parallel.
+            boolean readVideo = canReadVideo();
+            boolean readAudio = canReadAudio();
+            CompletableFuture<Boolean> videoQuery = CompletableFuture.supplyAsync(
+                    () -> !readVideo || appendAllStoreVolumes(videoRecords, true), mediaQueryExecutor);
+            CompletableFuture<Boolean> audioQuery = CompletableFuture.supplyAsync(
+                    () -> !readAudio || appendAllStoreVolumes(audioRecords, false), mediaQueryExecutor);
+            boolean videoScanFailed;
+            boolean audioScanFailed;
+            try {
+                videoScanFailed = readVideo && !videoQuery.join();
+                audioScanFailed = readAudio && !audioQuery.join();
+            } catch (RuntimeException scanException) {
+                videoScanFailed = readVideo;
+                audioScanFailed = readAudio;
+            }
+            for (int i = 0; i < videoRecords.length(); i++) {
+                JSONObject record = videoRecords.optJSONObject(i);
+                if (record != null) array.put(record);
+            }
+            for (int i = 0; i < audioRecords.length(); i++) {
+                JSONObject record = audioRecords.optJSONObject(i);
+                if (record != null) array.put(record);
+            }
 
             int[] treeCount = new int[]{0};
             boolean treesComplete = appendSavedTreeMedia(array, treeCount);
