@@ -874,11 +874,12 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 @media(max-width:380px){#musicPage #musicSearch{min-height:56px;padding:12px 15px}#musicPage #musicLibrary .file{padding:11px;gap:10px}#musicPage #musicLibrary .file-icon{flex-basis:46px;width:46px;height:46px}}
 
 
-/* Startup scan screen: show immediately, but never block the app for more than 3 seconds. */
-#startupScanScreen{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#090909;color:#f4f4f4;font:500 16px system-ui,-apple-system,sans-serif;transition:opacity .18s ease}
+/* VLC-style discovery: cached library stays visible; scanning is a tiny, non-blocking status strip. */
+#startupScanScreen{position:fixed;inset:0 0 auto 0;z-index:99999;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;min-height:30px;padding:5px 12px;background:var(--surface);border-bottom:1px solid var(--line);color:var(--muted);font:500 11px system-ui,-apple-system,sans-serif;pointer-events:none;transition:opacity .18s ease}
 #startupScanScreen[hidden]{display:none}
-#startupScanScreen .scan-spinner{width:30px;height:30px;border:3px solid #3b3b3b;border-top-color:#f1f1f1;border-radius:50%;animation:lumioScanSpin .8s linear infinite}
-#startupScanScreen small{color:#aaa;font-size:13px}
+#startupScanScreen .scan-spinner{width:13px;height:13px;flex:0 0 13px;border:2px solid var(--line);border-top-color:var(--accent,var(--violet));border-radius:50%;animation:lumioScanSpin .8s linear infinite}
+#startupScanScreen strong{font-size:11px;font-weight:500}
+#startupScanScreen small{display:none}
 @keyframes lumioScanSpin{to{transform:rotate(360deg)}}
 </style></head>
 <body>
@@ -1246,18 +1247,13 @@ function requestInvisibleMusicScan(){
 }
 function finishStartupGate(){}
 window.requestNativeStartupScan=function(){
- const now=Date.now();let lastSuccessful=0,lastAttempt=0;
- try{
-  lastSuccessful=Number(localStorage.getItem('lumio.lastSuccessfulScanAt'))||0;
-  lastAttempt=Number(localStorage.getItem('lumio.lastScanAttemptAt'))||0;
- }catch(e){}
- const hasCache=items.length>0;
- const cacheFresh=hasCache&&lastSuccessful>0&&(now-lastSuccessful)<6*60*60*1000;
- const recentlyAttempted=lastAttempt>0&&(now-lastAttempt)<60*60*1000;
- if(!cacheFresh&&(!hasCache||!recentlyAttempted)){
-  try{localStorage.setItem('lumio.lastScanAttemptAt',String(now))}catch(e){}
-  safeBridge('scanLocalMedia');
- }
+ /* Render the persisted library first, then refresh on every app launch like VLC.
+    A short debounce prevents duplicate bridge calls during rapid WebView reloads. */
+ const now=Date.now();let lastAttempt=0;
+ try{lastAttempt=Number(localStorage.getItem('lumio.lastScanAttemptAt'))||0}catch(e){}
+ if(lastAttempt>0&&(now-lastAttempt)<30000)return;
+ try{localStorage.setItem('lumio.lastScanAttemptAt',String(now))}catch(e){}
+ safeBridge('scanLocalMedia');
 };
 function redrawMusicIfVisible(reason){
  if(currentPage!=='music'||!MusicNavigation||typeof MusicNavigation.render!=='function')return;
