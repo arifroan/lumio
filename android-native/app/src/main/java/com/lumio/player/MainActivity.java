@@ -94,6 +94,10 @@ public final class MainActivity extends Activity {
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(16, 16, 24));
+        // Consume Android WebView long-clicks so its native text-selection toolbar/handles
+        // cannot compete with LUMIO media-row selection. DOM pointer events still drive
+        // the app-owned 500 ms long-press selection handler in player.html.
+        webView.setOnLongClickListener(view -> true);
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
