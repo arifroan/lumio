@@ -908,14 +908,24 @@ h1,h2,h3,.media-heading h2,.sectionhead h2,.options-head h2,.setting-copy strong
 .video-library-filters .filter-count{background:color-mix(in srgb,var(--ink) 9%,transparent)!important;color:var(--ink)}
 .video-toolbar-row #browseFoldersButton[aria-pressed="true"]{background:var(--accent-soft)!important;border-color:var(--accent)!important;color:var(--ink)!important}
 
-/* File selection and batch actions */
-#mediaSelectionToolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 12px;margin:0 0 12px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink)}
+/* LUMIO Selection Deck — contextual file-action catalogue */
+#mediaSelectionToolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:13px;margin:0 0 13px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:18px;background:linear-gradient(145deg,var(--surface2,var(--surface)),var(--surface));color:var(--ink);box-shadow:0 8px 22px #00000012}
 #mediaSelectionToolbar[hidden]{display:none!important}
-#mediaSelectionToolbar .selection-count{display:flex;align-items:center;min-height:38px;font-weight:800;font-size:14px;letter-spacing:-.2px;margin-right:auto;white-space:nowrap}
-#mediaSelectionToolbar button{min-height:38px;border:1px solid var(--line);border-radius:11px;background:var(--surface2,var(--surface));color:var(--ink);padding:8px 13px;font:inherit;font-size:12px;font-weight:650;white-space:nowrap}
+#mediaSelectionToolbar .selection-count{display:flex;align-items:center;gap:10px;min-width:0;font-weight:800;font-size:14px;letter-spacing:-.2px}
+#mediaSelectionToolbar .selection-count:before{content:'✓';display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:11px;background:var(--accent);color:var(--accent-ink,#fff);font-size:17px}
+#mediaSelectionToolbar .selection-count:after{content:'FILES SELECTED';display:block;position:absolute;transform:translate(44px,15px);font-size:8px;font-weight:750;letter-spacing:1px;color:var(--muted);pointer-events:none}
+#mediaSelectionToolbar button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:9px 12px;font:inherit;font-size:12px;font-weight:700;white-space:nowrap}
 #mediaSelectionToolbar button:active{background:var(--accent-soft);border-color:var(--accent)}
 #mediaSelectionToolbar button[hidden]{display:none!important}
-@media(max-width:430px){#mediaSelectionToolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:10px}#mediaSelectionToolbar .selection-count{grid-column:1/-1;min-height:30px;margin:0;padding:0 2px}#mediaSelectionToolbar button{width:100%;min-width:0;padding:8px 5px;font-size:11px}#mediaSelectionToolbar #mediaCancelSelection{grid-column:1/-1;width:auto;justify-self:start;padding:8px 14px}}
+#mediaSelectionToolbar #mediaSelectAll{justify-self:end;min-height:36px;padding:7px 12px;border-radius:20px;background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,var(--line));font-size:11px}
+#mediaSelectionToolbar .selection-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#mediaSelectionToolbar .selection-actions button{flex-direction:column;gap:4px;min-width:0;min-height:64px;padding:8px 5px;background:color-mix(in srgb,var(--surface) 88%,var(--accent) 12%)}
+#mediaSelectionToolbar .selection-actions button .selection-action-icon{font-size:19px;line-height:1}
+#mediaSelectionToolbar #mediaDeleteSelected{color:#d84b54;border-color:color-mix(in srgb,#d84b54 30%,var(--line))}
+#mediaSelectionToolbar #mediaCancelSelection{grid-column:2;grid-row:1;align-self:start;width:36px;min-width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;font-size:0;background:transparent;border-color:transparent}
+#mediaSelectionToolbar #mediaCancelSelection:before{content:'×';font-size:25px;font-weight:400;line-height:1}
+@media(max-width:430px){#mediaSelectionToolbar{grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px}#mediaSelectionToolbar .selection-count{min-height:38px}#mediaSelectionToolbar #mediaSelectAll{font-size:10px;padding:7px 9px}#mediaSelectionToolbar .selection-actions{gap:6px}#mediaSelectionToolbar .selection-actions button{min-height:61px;font-size:11px}#mediaSelectionToolbar #mediaCancelSelection{grid-column:2;grid-row:1}}
+
 .file.selection-enabled{position:relative;padding-left:38px}
 .file.selection-enabled:before{content:'';position:absolute;left:10px;top:50%;transform:translateY(-50%);width:17px;height:17px;border:1.5px solid var(--muted);border-radius:5px;background:transparent}
 .file.selection-enabled.is-selected:before{content:'✓';display:grid;place-items:center;background:var(--accent);border-color:var(--accent);color:white;font-size:12px;font-weight:800}
@@ -1722,7 +1732,7 @@ function ensureSelectionToolbar(){
  let bar=$('mediaSelectionToolbar');
  if(bar)return bar;
  bar=document.createElement('div');bar.id='mediaSelectionToolbar';bar.hidden=true;
- bar.innerHTML='<span class="selection-count" id="mediaSelectionCount">0 selected</span><button type="button" id="mediaSelectAll">Select all</button><button type="button" id="mediaRenameSelected">Rename</button><button type="button" id="mediaShareSelected">Share</button><button type="button" id="mediaDeleteSelected">Delete</button><button type="button" id="mediaCancelSelection">Cancel</button>';
+ bar.innerHTML='<span class="selection-count" id="mediaSelectionCount">0 selected</span><button type="button" id="mediaSelectAll">Select all</button><button type="button" id="mediaCancelSelection" aria-label="Cancel selection">Cancel</button><div class="selection-actions"><button type="button" id="mediaRenameSelected"><span class="selection-action-icon" aria-hidden="true">✎</span><span>Rename</span></button><button type="button" id="mediaShareSelected"><span class="selection-action-icon" aria-hidden="true">↗</span><span>Share</span></button><button type="button" id="mediaDeleteSelected"><span class="selection-action-icon" aria-hidden="true">⌫</span><span>Delete</span></button></div>';
  const library=$('library');if(library&&library.parentNode)library.parentNode.insertBefore(bar,library);
  $('mediaSelectAll').onclick=()=>{const visible=visibleSelectableMedia();if(!visible.length)return;const allSelected=visible.every(x=>selectedMediaKeys.has(x.key));visible.forEach(x=>allSelected?selectedMediaKeys.delete(x.key):selectedMediaKeys.add(x.key));selectionMode=selectedMediaKeys.size>0;updateSelectionUI()};
  $('mediaCancelSelection').onclick=()=>clearMediaSelection();
