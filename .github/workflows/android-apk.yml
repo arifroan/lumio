@@ -3,7 +3,7 @@ name: Build Lumio Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "release/android13-45mb", "experiment/libmpv-hevc", "feature/embedded-mpv-player", "feature/media3-ffmpeg-migration", "feature/media-file-management"]
+    branches: ["main", "fix/v1.6-disable-native-text-selection", "fix/v1.6-reset-selection-on-navigation", "fix/pre-stream-videos-music", "optimize/apk-size-audit", "release/android13-45mb", "experiment/libmpv-hevc", "feature/embedded-mpv-player", "feature/media3-ffmpeg-migration", "feature/media-file-management"]
     paths:
       - "android-native/**"
       - ".github/workflows/android-apk.yml"
