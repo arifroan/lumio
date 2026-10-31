@@ -1485,7 +1485,7 @@ function choosePage(page){
   folderBrowseActive=mediaContentMode==='all'||mediaContentMode==='folders';currentFolderPath='';
   groupByFolder=mediaContentMode==='all'||mediaContentMode==='folders';syncOptionsSelection();
  }
- $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!isMusic;
+ $('mediaPage').hidden=!isMedia;$('musicPage').hidden=!isMusic;$('streamPage').hidden=page!=='stream';$('settingsPage').hidden=page!=='settings';$('appearancePage').hidden=true;$('appFooter').hidden=false;$('videosFab').hidden=page!=='videos';$('videoToolbar').hidden=!(isMedia&&searchExpanded);$('mediaTitle').textContent=folderBrowseActive?'All Folders':'Videos';$('videoSearch').placeholder='Search videos by name…';$('musicToolbar').hidden=!isMusic;
  document.querySelectorAll('.nav-item').forEach(button=>{const selected=button.dataset.page===page;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
  if(isMusic){
   /* The Songs pane must never inherit a hidden state from a prior tab/view. */
@@ -1919,7 +1919,7 @@ function render(){
  if(videoSearchText)filtered=filtered.filter(x=>(x.searchText||'').includes(videoSearchText));
  if(active==='video'&&videoLibraryFilter==='favorites')filtered=filtered.filter(isFavorite);
  const titleEl=$('mediaTitle'),currentParts=normalizeFolder(currentFolderPath).split('/').filter(Boolean),canGoUp=active==='video'&&folderBrowseActive&&currentParts.length>0;
- const sectionTitle=folderBrowseActive?(mediaContentMode==='all'?'All folders':'Folders'):'Videos';
+ const sectionTitle=folderBrowseActive?'All Folders':'Videos';
  titleEl.innerHTML=canGoUp?uiIcon('chevronLeft')+'<span>'+escapeHtml(currentParts[currentParts.length-1])+'</span>':escapeHtml(sectionTitle);
  titleEl.style.cursor=canGoUp?'pointer':'';
  titleEl.setAttribute('role',canGoUp?'button':'heading');
