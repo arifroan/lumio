@@ -1739,7 +1739,7 @@ function updateSelectionUI(){
  const rename=$('mediaRenameSelected'),share=$('mediaShareSelected'),selectAll=$('mediaSelectAll');
  if(rename)rename.hidden=count!==1;if(share)share.hidden=count!==1;
  const visible=visibleSelectableMedia(),allSelected=visible.length>0&&visible.every(item=>selectedMediaKeys.has(item.key));
- if(selectAll)selectAll.textContent=allSelected?'Deselect all':'Select all;
+ if(selectAll)selectAll.textContent=allSelected?'Deselect all':'Select all';
  document.querySelectorAll('#library .file[data-key]').forEach(row=>{row.classList.toggle('selection-enabled',selectionMode);row.classList.toggle('is-selected',selectedMediaKeys.has(row.dataset.key))});
 }
 function beginMediaSelection(key){selectionMode=true;if(key)selectedMediaKeys.add(key);updateSelectionUI()}
